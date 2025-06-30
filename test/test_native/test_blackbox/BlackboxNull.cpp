@@ -37,7 +37,7 @@
 
 
 /*!
-Transmit a portion of the system information headers. Call the first time with xmitState.headerIndex == 0.
+Transmit a portion of the system information headers. Call the first time with _xmitState.headerIndex == 0.
 Returns true iff transmission is complete, otherwise call again later to continue transmission.
 */
 Blackbox::write_e BlackboxNull::writeSystemInformation()
@@ -54,7 +54,7 @@ Blackbox::write_e BlackboxNull::writeSystemInformation()
     }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-    switch (xmitState.headerIndex) {
+    switch (_xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "ProtoFlight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    "ProtoFlight", "0.0.1", "-", "alpha");
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                "Jun 28 2025", "00:00:00");
@@ -79,6 +79,6 @@ Blackbox::write_e BlackboxNull::writeSystemInformation()
     }
 // NOLINTEND(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
-    xmitState.headerIndex++;
+    _xmitState.headerIndex++;
         return WRITE_NOT_COMPLETE;
 }

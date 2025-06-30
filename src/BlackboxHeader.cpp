@@ -317,15 +317,15 @@ Blackbox::write_e Blackbox::writeHeader()
     // Transmit the header in chunks so we don't overflow its transmit
     // buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
     if (_serialDevice.reserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-        for (int ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; ++ii) {
+        for (int ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[_xmitState.headerIndex] != '\0'; ++ii) {
             //Write header, ie
             //"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
             //"H Data version:2\n"
-            _encoder.write(blackboxHeader[xmitState.headerIndex]);
+            _encoder.write(blackboxHeader[_xmitState.headerIndex]);
             blackboxHeaderBudget--;
-            ++xmitState.headerIndex;
+            ++_xmitState.headerIndex;
         }
-        if (blackboxHeader[xmitState.headerIndex] == 0) {
+        if (blackboxHeader[_xmitState.headerIndex] == 0) {
             return WRITE_COMPLETE; // we have finished
         }
     }
@@ -339,27 +339,27 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
 
     // On our first call we need to print the name of the header and a colon
     const int32_t fieldCount = sizeof(blackboxMainFields) / sizeof(blackboxDeltaFieldDefinition_t);
-    if (xmitState.fieldIndex == -1) {
-        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[xmitState.headerIndex]);
+    if (_xmitState.fieldIndex == -1) {
+        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        if (xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
-            blackboxHeaderBudget -= headerPrintf("H Field P %s:", blackboxFieldHeaderNames[xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        if (_xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
+            blackboxHeaderBudget -= headerPrintf("H Field P %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         } else {
-            blackboxHeaderBudget -= headerPrintf("H Field I %s:", blackboxFieldHeaderNames[xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            blackboxHeaderBudget -= headerPrintf("H Field I %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
-        ++xmitState.fieldIndex;
+        ++_xmitState.fieldIndex;
     }
-    if (xmitState.headerIndex == 0) {
+    if (_xmitState.headerIndex == 0) {
         //0: H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
-        for (; xmitState.fieldIndex < fieldCount; ++xmitState.fieldIndex) {
-            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[xmitState.fieldIndex];
+        for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
+            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[_xmitState.fieldIndex];
             if (testFieldCondition(def.condition)) {
                 if (def.fieldNameIndex == -1) {
-                    headerPrintf(xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                    headerPrintf(_xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
                 } else {
-                    headerPrintf(xmitState.fieldIndex == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.fieldNameIndex); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                    headerPrintf(_xmitState.fieldIndex == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.fieldNameIndex); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
                 }
             }
         }
@@ -369,27 +369,27 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
         //3: H Field I encoding: 1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0, 1,0,0,0
         //4: H Field P predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3, 3,3,3,3
         //5: H Field P encoding: 9,0,0,0,0,7,7,7,0,0,0,8,8,8,8,6,6,0,0,0, 0,0,0,0
-        for (; xmitState.fieldIndex < fieldCount; ++xmitState.fieldIndex) {
-            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[xmitState.fieldIndex];
+        for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
+            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[_xmitState.fieldIndex];
             const uint8_t value = 
-                xmitState.headerIndex == 1 ? def.isSigned : 
-                xmitState.headerIndex == 2 ? def.Ipredict : 
-                xmitState.headerIndex == 3 ? def.Iencode : 
-                xmitState.headerIndex == 4 ? def.Ppredict : def.Pencode;
+                _xmitState.headerIndex == 1 ? def.isSigned : 
+                _xmitState.headerIndex == 2 ? def.Ipredict : 
+                _xmitState.headerIndex == 3 ? def.Iencode : 
+                _xmitState.headerIndex == 4 ? def.Ppredict : def.Pencode;
             if (testFieldCondition(def.condition)) {
-                headerPrintf(xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                headerPrintf(_xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             }
         }
     }
-    if (xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         --blackboxHeaderBudget;
         headerWrite('\n');
-        ++xmitState.headerIndex;
-        xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
+        ++_xmitState.headerIndex;
+        _xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
     }
 
     // return WRITE_COMPLETE if we have nothing more to write
-    return xmitState.headerIndex < BLACKBOX_DELTA_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+    return _xmitState.headerIndex < BLACKBOX_DELTA_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 }
 
 Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-function-cognitive-complexity)
@@ -399,40 +399,40 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
 
     const int32_t fieldCount = SLOW_FIELD_COUNT;
     // On our first call we need to print the name of the header and a colon
-    if (xmitState.fieldIndex == -1) {
-        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[xmitState.headerIndex]);
+    if (_xmitState.fieldIndex == -1) {
+        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        blackboxHeaderBudget -= headerPrintf("H Field S %s:", blackboxFieldHeaderNames[xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-        ++xmitState.fieldIndex;
+        blackboxHeaderBudget -= headerPrintf("H Field S %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        ++_xmitState.fieldIndex;
     }
-    if (xmitState.headerIndex == 0) {
+    if (_xmitState.headerIndex == 0) {
         //0:H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid
-        for (; xmitState.fieldIndex < fieldCount; ++xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[xmitState.fieldIndex];
-            headerPrintf(xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
+            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[_xmitState.fieldIndex];
+            headerPrintf(_xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     } else {
         //1:H Field S signed:   0,0,0,0,0
         //2:H Field S predictor:0,0,0,0,0
         //3:H Field S encoding: 1,1,7,7,7
-        for (; xmitState.fieldIndex < SLOW_FIELD_COUNT; ++xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[xmitState.fieldIndex];
+        for (; _xmitState.fieldIndex < SLOW_FIELD_COUNT; ++_xmitState.fieldIndex) {
+            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[_xmitState.fieldIndex];
             const uint8_t value = 
-                xmitState.headerIndex == 1 ? def.isSigned :
-                xmitState.headerIndex == 2 ? def.predict : def.encode;
-            headerPrintf(xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                _xmitState.headerIndex == 1 ? def.isSigned :
+                _xmitState.headerIndex == 2 ? def.predict : def.encode;
+            headerPrintf(_xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     }
-    if (xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         --blackboxHeaderBudget;
         headerWrite('\n');
-        ++xmitState.headerIndex;
-        xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
+        ++_xmitState.headerIndex;
+        _xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
     }
     // return WRITE_COMPLETE if we have nothing more to write
-    return xmitState.headerIndex < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+    return _xmitState.headerIndex < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 }
 
 Blackbox::write_e Blackbox::writeFieldHeaderGPS_H() // NOLINT(readability-convert-member-functions-to-static)
@@ -449,7 +449,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-conver
 /*!
 Called from buildFieldConditionCache(), which is called from start() and init()
 */
-bool Blackbox::testFieldConditionUncached(FlightLogFieldCondition_e condition, const start_t& start) const
+bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition, const start_t& start) const
 {
     switch (condition) {
     case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
@@ -469,7 +469,7 @@ bool Blackbox::testFieldConditionUncached(FlightLogFieldCondition_e condition, c
     case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
         [[fallthrough]];
     case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1);
+        return isFieldEnabled(LOG_SELECT_MOTOR) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1);
 
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM:
         [[fallthrough]];
@@ -486,13 +486,13 @@ bool Blackbox::testFieldConditionUncached(FlightLogFieldCondition_e condition, c
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_7_HAS_RPM:
         [[fallthrough]];
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_8_HAS_RPM:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM) && start.useDshotTelemetry;
+        return isFieldEnabled(LOG_SELECT_MOTOR_RPM) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM) && start.useDshotTelemetry;
 
     case FLIGHT_LOG_FIELD_CONDITION_SERVOS:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_SERVO) && (start.servoCount > 0);
+        return isFieldEnabled(LOG_SELECT_SERVO) && (start.servoCount > 0);
 
     case FLIGHT_LOG_FIELD_CONDITION_PID:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_PID);
+        return isFieldEnabled(LOG_SELECT_PID);
 
     case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         [[fallthrough]];
@@ -502,46 +502,46 @@ bool Blackbox::testFieldConditionUncached(FlightLogFieldCondition_e condition, c
         // always log the dterm, even if it is zero
         // not logging dterm saves little space and means if it is tuned during flight, the value won't be logged.
         //const uint8_t currentPidProfileDTerm = _callbacks.getCurrentPidProfileDTermConstant(condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0);
-        return  isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_PID); // && (currentPidProfileDTerm != 0);
+        return  isFieldEnabled(LOG_SELECT_PID); // && (currentPidProfileDTerm != 0);
     }
     case FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_RC_COMMANDS);
+        return isFieldEnabled(LOG_SELECT_RC_COMMANDS);
 
     case FLIGHT_LOG_FIELD_CONDITION_SETPOINT:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_SETPOINT);
+        return isFieldEnabled(LOG_SELECT_SETPOINT);
 
     case FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER) && start.hasMagnetometer;
+        return isFieldEnabled(LOG_SELECT_MAGNETOMETER) && start.hasMagnetometer;
 
     case FLIGHT_LOG_FIELD_CONDITION_BAROMETER:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_ALTITUDE) && start.hasBarometer;
+        return isFieldEnabled(LOG_SELECT_ALTITUDE) && start.hasBarometer;
 
     case FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_BATTERY)  && start.hasVoltageMeter;
+        return isFieldEnabled(LOG_SELECT_BATTERY)  && start.hasVoltageMeter;
 
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_BATTERY) && start.hasCurrentMeter;
+        return isFieldEnabled(LOG_SELECT_BATTERY) && start.hasCurrentMeter;
 
     case FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_ALTITUDE) && start.hasRangefinder;
+        return isFieldEnabled(LOG_SELECT_ALTITUDE) && start.hasRangefinder;
 
     case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_RSSI) && start.isRSSI_configured;
+        return isFieldEnabled(LOG_SELECT_RSSI) && start.isRSSI_configured;
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
 
     case FLIGHT_LOG_FIELD_CONDITION_GYRO:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GYRO);
+        return isFieldEnabled(LOG_SELECT_GYRO);
 
     case FLIGHT_LOG_FIELD_CONDITION_GYRO_UNFILTERED:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GYRO_UNFILTERED);
+        return isFieldEnabled(LOG_SELECT_GYRO_UNFILTERED);
 
     case FLIGHT_LOG_FIELD_CONDITION_ACC:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_ACC);
+        return isFieldEnabled(LOG_SELECT_ACC);
 
     case FLIGHT_LOG_FIELD_CONDITION_DEBUG:
-        return isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG) && (start.debugMode != 0);
+        return isFieldEnabled(LOG_SELECT_DEBUG_LOG) && (start.debugMode != 0);
 
     case FLIGHT_LOG_FIELD_CONDITION_NEVER:
         return false;
@@ -558,7 +558,7 @@ void Blackbox::buildFieldConditionCache(const start_t& start) // NOLINT(readabil
 {
     _conditionCache.reset();
     for (size_t ii = FLIGHT_LOG_FIELD_CONDITION_FIRST; ii <= FLIGHT_LOG_FIELD_CONDITION_LAST; ++ii) {
-        const auto condition = static_cast<FlightLogFieldCondition_e>(ii);
+        const auto condition = static_cast<flight_log_field_condition_e>(ii);
         if (testFieldConditionUncached(condition, start)) {
             _conditionCache.set(condition);
         }

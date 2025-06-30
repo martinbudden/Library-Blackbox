@@ -1,4 +1,5 @@
 #include "BlackboxCallbacksNull.h"
+#include "BlackboxFieldDefinitions.h"
 #include "BlackboxNull.h"
 #include "BlackboxSerialDeviceNull.h"
 
@@ -30,7 +31,7 @@ public:
     uint16_t getBlackboxPFrameIndex() const { return blackboxPFrameIndex; }
 
     state_e getBlackboxState() const { return _state; }
-    xmitState_t getXmitState() const { return xmitState; }
+    xmit_state_t getXmitState() const { return _xmitState; }
     int32_t getHeaderBudget() const { return blackboxHeaderBudget; }
 };
 
@@ -50,14 +51,13 @@ void test_blackbox_init()
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
 
     blackbox.init({
-        .fields_disabled_mask = FLIGHT_LOG_FIELD_SELECT_BATTERY
-            | FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER
-            | FLIGHT_LOG_FIELD_SELECT_ALTITUDE
-            | FLIGHT_LOG_FIELD_SELECT_RSSI
-            | FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG
-            | FLIGHT_LOG_FIELD_SELECT_GPS
-            | FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
-            | FLIGHT_LOG_FIELD_SELECT_SERVO,
+        .logSelectEnabled = Blackbox::LOG_SELECT_PID
+            | Blackbox::LOG_SELECT_RC_COMMANDS
+            | Blackbox::LOG_SELECT_SETPOINT
+            | Blackbox::LOG_SELECT_GYRO
+            | Blackbox::LOG_SELECT_ACC
+            | Blackbox::LOG_SELECT_MOTOR
+            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -83,14 +83,13 @@ void test_blackbox_init2()
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
 
     blackbox.init({
-        .fields_disabled_mask = FLIGHT_LOG_FIELD_SELECT_BATTERY
-            | FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER
-            | FLIGHT_LOG_FIELD_SELECT_ALTITUDE
-            | FLIGHT_LOG_FIELD_SELECT_RSSI
-            | FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG
-            | FLIGHT_LOG_FIELD_SELECT_GPS
-            | FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
-            | FLIGHT_LOG_FIELD_SELECT_SERVO,
+        .logSelectEnabled = Blackbox::LOG_SELECT_PID
+            | Blackbox::LOG_SELECT_RC_COMMANDS
+            | Blackbox::LOG_SELECT_SETPOINT
+            | Blackbox::LOG_SELECT_GYRO
+            | Blackbox::LOG_SELECT_ACC
+            | Blackbox::LOG_SELECT_MOTOR
+            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -103,7 +102,7 @@ void test_blackbox_init2()
 /*
 H Product:Blackbox flight data recorder by Nicholas Sherlock
 H Data version:2
-H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axiserialDevice[0],axiserialDevice[1],axiserialDevice[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
 H Field I signed:   0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1, 0,0,0,0
 H Field I predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,9,0,0,0,0,11,5,5,5
 H Field I encoding: 1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0, 1,0,0,0
@@ -126,7 +125,7 @@ void test_blackbox_initial_updates()
 
     TEST_ASSERT_EQUAL(0, blackbox.getDebugMode());
 
-    Blackbox::xmitState_t xmitState = blackbox.getXmitState();
+    Blackbox::xmit_state_t xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(0, xmitState.fieldIndex);
     TEST_ASSERT_EQUAL(0, xmitState.startTime);
@@ -134,13 +133,13 @@ void test_blackbox_initial_updates()
 
 
     blackbox.init({
-        .fields_disabled_mask = FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER
-            | FLIGHT_LOG_FIELD_CONDITION_BAROMETER
-            | FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE
-            | FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC
-            | FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER
-            | FLIGHT_LOG_FIELD_CONDITION_RSSI
-            | FLIGHT_LOG_FIELD_CONDITION_DEBUG,
+        .logSelectEnabled = Blackbox::LOG_SELECT_PID
+            | Blackbox::LOG_SELECT_RC_COMMANDS
+            | Blackbox::LOG_SELECT_SETPOINT
+            | Blackbox::LOG_SELECT_GYRO
+            | Blackbox::LOG_SELECT_ACC
+            | Blackbox::LOG_SELECT_MOTOR
+            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -210,9 +209,8 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
-    //TEST_ASSERT_EQUAL(1, xmitState.startTime);
 
-    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axiserialDevice[0],axiserialDevice[1],axiserialDevice[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
     TEST_ASSERT_EQUAL('H', serialDevice[0]);
     TEST_ASSERT_EQUAL(' ', serialDevice[1]);
     TEST_ASSERT_EQUAL('F', serialDevice[2]);
@@ -287,13 +285,13 @@ void test_blackbox_frames()
 
     serialDevice.resetIndex();
     blackbox.setState(Blackbox::STATE_RUNNING); // for the state to running, so logEvent will write
-    const FlightLogEvent_e event = FLIGHT_LOG_EVENT_DISARM;
-    const flightLogEventData_u flightLogEventData { .disarm = { .reason = 2 } };
-    const bool ret = blackbox.logEvent(event, &flightLogEventData);
+    const Blackbox::log_event_e event = Blackbox::LOG_EVENT_DISARM;
+    const Blackbox::log_event_data_u logEventData { .disarm = { .reason = 2 } };
+    const bool ret = blackbox.logEvent(event, &logEventData);
     TEST_ASSERT_EQUAL(true, ret);
     TEST_ASSERT_EQUAL('E', serialDevice[0]);
     TEST_ASSERT_EQUAL(event, serialDevice[1]);
-    TEST_ASSERT_EQUAL(flightLogEventData.disarm.reason, serialDevice[2]); // NOLINT(cppcoreguidelines-pro-type-union-access)
+    TEST_ASSERT_EQUAL(logEventData.disarm.reason, serialDevice[2]); // NOLINT(cppcoreguidelines-pro-type-union-access)
 }
 
 void test_blackbox_slow_header()
@@ -473,31 +471,30 @@ void test_blackbox_header_printf()
 
 void test_blackbox_fields()
 {
-    const uint32_t disabledMask = 
-        FLIGHT_LOG_FIELD_SELECT_BATTERY
-        | FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER
-        | FLIGHT_LOG_FIELD_SELECT_ALTITUDE
-        | FLIGHT_LOG_FIELD_SELECT_RSSI
-        | FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG
-        | FLIGHT_LOG_FIELD_SELECT_GPS
-        | FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
-        | FLIGHT_LOG_FIELD_SELECT_SERVO;
+    const uint32_t enabledMask = 0
+        | Blackbox::LOG_SELECT_PID
+        | Blackbox::LOG_SELECT_RC_COMMANDS
+        | Blackbox::LOG_SELECT_SETPOINT
+        | Blackbox::LOG_SELECT_GYRO
+        | Blackbox::LOG_SELECT_ACC
+        | Blackbox::LOG_SELECT_MOTOR
+        | Blackbox::LOG_SELECT_GYRO_UNFILTERED;
 
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_PID));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_RC_COMMANDS));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_SETPOINT));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_BATTERY));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_ALTITUDE));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_RSSI));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_GYRO));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_ACC));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_MOTOR));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_GPS));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_GYRO_UNFILTERED));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(disabledMask, FLIGHT_LOG_FIELD_SELECT_SERVO));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_PID));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RC_COMMANDS));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_SETPOINT));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BATTERY));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MAGNETOMETER));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_ALTITUDE));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RSSI));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_GYRO));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_ACC));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_DEBUG_LOG));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MOTOR));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_GPS));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MOTOR_RPM));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_GYRO_UNFILTERED));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_SERVO));
 }
 
 void test_blackbox_conditions()
@@ -509,15 +506,14 @@ void test_blackbox_conditions()
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     blackbox.init({
-        .fields_disabled_mask = 
-            FLIGHT_LOG_FIELD_SELECT_BATTERY
-            | FLIGHT_LOG_FIELD_SELECT_MAGNETOMETER
-            | FLIGHT_LOG_FIELD_SELECT_ALTITUDE
-            | FLIGHT_LOG_FIELD_SELECT_RSSI
-            | FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG
-            | FLIGHT_LOG_FIELD_SELECT_GPS
-            //| FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
-            | FLIGHT_LOG_FIELD_SELECT_SERVO,
+        .logSelectEnabled = Blackbox::LOG_SELECT_PID
+            | Blackbox::LOG_SELECT_RC_COMMANDS
+            | Blackbox::LOG_SELECT_SETPOINT
+            | Blackbox::LOG_SELECT_GYRO
+            | Blackbox::LOG_SELECT_ACC
+            | Blackbox::LOG_SELECT_MOTOR
+            | Blackbox::LOG_SELECT_MOTOR_RPM
+            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_NONE,
         .mode = Blackbox::MODE_NORMAL,
@@ -533,7 +529,8 @@ void test_blackbox_conditions()
         .useDshotTelemetry = true,
         .hasBarometer = false,
         .hasMagnetometer = false,
-        .hasRangefinder = false
+        .hasRangefinder = false,
+        .useGPS = false
     });
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ALWAYS));

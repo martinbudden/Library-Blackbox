@@ -48,12 +48,12 @@
 
 #include "BlackboxCallbacksBase.h"
 #include "BlackboxEncoder.h"
-#include "BlackboxFieldDefinitions.h"
 #include "BlackboxInterface.h"
 
 #include <bitset>
 
 class BlackboxSerialDevice;
+enum flight_log_field_condition_e : uint8_t;
 
 
 class Blackbox {
@@ -65,13 +65,11 @@ public:
         targetPidLooptimeUs(pidLoopTimeUs)
         {}
 public:
-    /*
-    * Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
-    * regular logging iteration. This way we won't hog the CPU by making a gigantic write:
-    */
+    // Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
+    // regular logging iteration. This way we won't hog the CPU by making a gigantic write:
+
     enum { XYZ_AXIS_COUNT = 3 };
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
-    enum { FORMATTED_DATE_TIME_BUFSIZE = 30 };
 
     enum device_e : uint8_t {
         DEVICE_NONE = 0,
@@ -92,6 +90,24 @@ public:
         RATE_QUARTER,
         RATE_8TH,
         RATE_16TH
+    };
+
+    enum log_field_select_e { // no more than 32
+        LOG_SELECT_PID         = 0x01,
+        LOG_SELECT_RC_COMMANDS = 0x02,
+        LOG_SELECT_SETPOINT    = 0x04,
+        LOG_SELECT_BATTERY     = 0x08,
+        LOG_SELECT_MAGNETOMETER = 0x10,
+        LOG_SELECT_ALTITUDE    = 0x20,
+        LOG_SELECT_RSSI        = 0x40,
+        LOG_SELECT_GYRO        = 0x80,
+        LOG_SELECT_ACC         = 0x100,
+        LOG_SELECT_DEBUG_LOG   = 0x200,
+        LOG_SELECT_MOTOR       = 0x400,
+        LOG_SELECT_GPS         = 0x800,
+        LOG_SELECT_MOTOR_RPM   = 0x1000,
+        LOG_SELECT_GYRO_UNFILTERED = 0x2000,
+        LOG_SELECT_SERVO       = 0x4000
     };
 
     enum state_e {
@@ -117,7 +133,7 @@ public:
     typedef uint32_t timeMs_t;
 
     struct config_t {
-        uint32_t fields_disabled_mask;
+        uint32_t logSelectEnabled;
         sample_rate_e sample_rate;
         device_e device;
         mode_e mode;
@@ -135,15 +151,57 @@ public:
         uint8_t hasRangefinder;
         uint8_t useGPS;
     };
-    struct xmitState_t {
+    struct xmit_state_t {
         uint32_t headerIndex;
         int32_t fieldIndex;
         uint32_t startTime;
     };
+    struct log_event_syncBeep_t {
+        uint32_t time;
+    };
+    struct log_event_disarm_t {
+        uint32_t reason;
+    };
+    struct log_event_flightMode_t { // New Event Data type
+        uint32_t flags;
+        uint32_t lastFlags;
+    };
+    struct log_event_inflightAdjustment_t {
+        int32_t newValue;
+        float newFloatValue;
+        uint8_t adjustmentFunction;
+        bool floatFlag;
+    };
+    struct log_event_loggingResume_t {
+        uint32_t logIteration;
+        uint32_t currentTime;
+    };
+    union log_event_data_u {
+        log_event_syncBeep_t syncBeep;
+        log_event_flightMode_t flightMode; // New event data
+        log_event_disarm_t disarm;
+        log_event_inflightAdjustment_t inflightAdjustment;
+        log_event_loggingResume_t loggingResume;
+    };
+    enum log_event_e {
+        LOG_EVENT_SYNC_BEEP = 0,
+        LOG_EVENT_AUTOTUNE_CYCLE_START = 10,   // UNUSED
+        LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,  // UNUSED
+        LOG_EVENT_AUTOTUNE_TARGETS = 12,       // UNUSED
+        LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
+        LOG_EVENT_LOGGING_RESUME = 14,
+        LOG_EVENT_DISARM = 15,
+        LOG_EVENT_FLIGHTMODE = 30, // Add new event type for flight mode status.
+        LOG_EVENT_LOG_END = 255
+    };
+    struct log_event_t {
+        log_event_e event;
+        log_event_data_u data;
+    };
     struct gps_location_t {
-        int32_t latitude;                    // latitude * 1e+7
-        int32_t longitude;                    // longitude * 1e+7
-        int32_t altitudeCm;                  // altitude in 0.01m
+        int32_t latitude;   // latitude * 1e+7
+        int32_t longitude;  // longitude * 1e+7
+        int32_t altitudeCm; // altitude in 0.01m
     };
     // A value below 100 means great accuracy is possible with GPS satellite constellation
     struct gps_dilution_t {
@@ -158,14 +216,14 @@ public:
         uint32_t speedAccuracyMmPS;
     };
     struct gps_solution_data_t {
-        uint32_t time;                  // GPS msToW
-        uint32_t navIntervalMs;         // interval between nav solutions in ms
+        uint32_t time;              // GPS msToW
+        uint32_t navIntervalMs;     // interval between nav solutions in ms
         gps_location_t location;
         gps_dilution_t dilution;
         gps_accuracy_t accuracy;
-        uint16_t speed3d;               // speed in 0.1m/s
-        uint16_t groundSpeed;           // speed in 0.1m/s
-        uint16_t groundCourse;          // degrees * 10
+        uint16_t speed3d;           // speed in 0.1m/s
+        uint16_t groundSpeed;       // speed in 0.1m/s
+        uint16_t groundCourse;      // degrees * 10
         uint8_t satelliteCount;
     };
     struct gps_state_t {
@@ -193,12 +251,12 @@ public:
     write_e writeFieldHeaderGPS_H();
     write_e writeFieldHeaderGPS_G();
 
-    static bool isFieldEnabled(uint32_t mask, FlightLogFieldSelect_e field);
-    bool isFieldEnabled(FlightLogFieldSelect_e field) const;
+    static inline bool isFieldEnabled(uint32_t enabledMask, log_field_select_e field) { return (enabledMask & field) != 0; }
+    inline bool isFieldEnabled(log_field_select_e field) const { return isFieldEnabled(_config.logSelectEnabled, field); }
 
     void buildFieldConditionCache(const start_t& start);
-    bool testFieldConditionUncached(FlightLogFieldCondition_e condition, const start_t& start) const;
-    inline bool testFieldCondition(FlightLogFieldCondition_e condition) const { return _conditionCache.test(condition); }
+    bool testFieldConditionUncached(flight_log_field_condition_e condition, const start_t& start) const;
+    inline bool testFieldCondition(flight_log_field_condition_e condition) const { return _conditionCache.test(condition); }
 
     bool isOnlyLoggingIFrames() const { return blackboxPInterval == 0; }
     bool shouldLogPFrame() const { return blackboxPFrameIndex == 0 && blackboxPInterval != 0; }
@@ -211,7 +269,7 @@ public:
     bool logSFrameIfNeeded();
     void logHFrame(); // GPS home frame
     void logGFrame(timeUs_t currentTimeUs); // GPS frame
-    bool logEvent(FlightLogEvent_e event, const flightLogEventData_u* data); // E-frame
+    bool logEvent(log_event_e event, const log_event_data_u* data); // E-frame
     void logEventArmingBeepIfNeeded(); // E-frame
     void logEventFlightModeIfNeeded(); // E-frame
 
@@ -242,7 +300,7 @@ public:
     int32_t getIInterval() const { return blackboxIInterval; }
     int32_t getPInterval() const { return blackboxPInterval; }
     int32_t getSInterval() const { return blackboxSInterval; }
-
+    friend void test_blackbox_conditions();
 protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
@@ -252,13 +310,13 @@ protected:
     float _motorOutputLow { 0.0F }; //!!TODO allow this to be set
     uint32_t _resetTime = 0;
     config_t _config {
-        .fields_disabled_mask = FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER
-            | FLIGHT_LOG_FIELD_CONDITION_BAROMETER
-            | FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE
-            | FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC
-            | FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER
-            | FLIGHT_LOG_FIELD_CONDITION_RSSI
-            | FLIGHT_LOG_FIELD_CONDITION_DEBUG,
+        .logSelectEnabled = Blackbox::LOG_SELECT_PID
+            | Blackbox::LOG_SELECT_RC_COMMANDS
+            | Blackbox::LOG_SELECT_SETPOINT
+            | Blackbox::LOG_SELECT_GYRO
+            | Blackbox::LOG_SELECT_ACC
+            | Blackbox::LOG_SELECT_MOTOR
+            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = RATE_ONE,
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
@@ -287,7 +345,7 @@ protected:
     // We store voltages in I-frames relative to vbatReference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.
     uint16_t vbatReference {};
-    xmitState_t  xmitState {};
+    xmit_state_t  _xmitState {};
     state_e _cacheFlushNextState {};
 #if defined(USE_GPS)
     gps_solution_data_t _gpsSolutionData {}; // this is a copy of the data received from the GPS

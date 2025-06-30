@@ -46,6 +46,7 @@
 
 #include "Blackbox.h"
 #include "BlackboxCallbacksBase.h"
+#include "BlackboxFieldDefinitions.h"
 #include "BlackboxSerialDevice.h"
 #include <cassert>
 #include <cstring>
@@ -74,9 +75,6 @@ inline uint32_t timeMs() { return millis(); }
 void checkFlashStart();
 void checkFlashStop();
 #endif
-
-//static_assert((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
-
 
 enum { BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS = 200 };
 
@@ -179,7 +177,7 @@ void Blackbox::finish()
     case STATE_RUNNING:
         [[fallthrough]];
     case STATE_PAUSED:
-        logEvent(FLIGHT_LOG_EVENT_LOG_END, nullptr);
+        logEvent(LOG_EVENT_LOG_END, nullptr);
         [[fallthrough]];
     default:
         setState(STATE_SHUTTING_DOWN);
@@ -249,11 +247,11 @@ void Blackbox::setState(state_e newState)
         break;
     case STATE_SEND_HEADER:
         blackboxHeaderBudget = 0;
-        xmitState.headerIndex = 0;
+        _xmitState.headerIndex = 0;
 #if defined(FRAMEWORK_TEST)
-        xmitState.startTime = 0;
+        _xmitState.startTime = 0;
 #else
-        xmitState.startTime = timeMs();
+        _xmitState.startTime = timeMs();
 #endif
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
@@ -263,11 +261,11 @@ void Blackbox::setState(state_e newState)
     case STATE_SEND_GPS_H_HEADER:
         [[fallthrough]];
     case STATE_SEND_SLOW_FIELD_HEADER:
-        xmitState.headerIndex = 0;
-        xmitState.fieldIndex = -1;
+        _xmitState.headerIndex = 0;
+        _xmitState.fieldIndex = -1;
         break;
     case STATE_SEND_SYSINFO:
-        xmitState.headerIndex = 0;
+        _xmitState.headerIndex = 0;
         break;
     case STATE_RUNNING:
         blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
@@ -277,7 +275,7 @@ void Blackbox::setState(state_e newState)
 #endif
         break;
     case STATE_SHUTTING_DOWN:
-        xmitState.startTime = timeMs();
+        _xmitState.startTime = timeMs();
         break;
 
 #ifdef USE_FLASH_TEST_PRBS
@@ -381,7 +379,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const 
             logPFrame();
         }
 #if defined(USE_GPS)
-        if (_start.useGPS && isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GPS)) {
+        if (_start.useGPS && isFieldEnabled(LOG_SELECT_GPS)) {
             if (shouldLogHFrame()) {
                 logHFrame();
                 logGFrame(currentTimeUs);
@@ -428,9 +426,9 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         break;
     case STATE_SEND_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        //On entry of this state, xmitState.headerIndex is 0 and startTime is initialized
+        //On entry of this state, _xmitState.headerIndex is 0 and startTime is initialized
         // Give the UART time to initialize
-        //if (timeMs() < xmitState.startTime + 100) {
+        //if (timeMs() < _xmitState.startTime + 100) {
         //    break;
         //}
         if (writeHeader() == WRITE_COMPLETE) { // keep on writing chunks of the header until it returns false, signalling completion
@@ -439,10 +437,10 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        // On entry of this state, xmitState.headerIndex is 0 and xmitState.fieldIndex is -1
+        // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderMain() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
 #if defined(USE_GPS)
-            setState(_start.useGPS && isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
+            setState(_start.useGPS && isFieldEnabled(LOG_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
 #else
             setState(STATE_SEND_SLOW_FIELD_HEADER);
 #endif
@@ -464,7 +462,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
 #endif
     case STATE_SEND_SLOW_FIELD_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        // On entry of this state, xmitState.headerIndex is 0 and xmitState.fieldIndex is -1
+        // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderSlow() == WRITE_COMPLETE) { // keep on writing chunks of the slow field header until it returns false, signalling completion
             _cacheFlushNextState = STATE_SEND_SYSINFO;
             setState(STATE_CACHE_FLUSH);
@@ -472,7 +470,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         break;
     case STATE_SEND_SYSINFO:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        //On entry of this state, xmitState.headerIndex is 0
+        //On entry of this state, _xmitState.headerIndex is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
         if (writeSystemInformation() == WRITE_COMPLETE) {
@@ -499,13 +497,13 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
             //    .logIteration = blackboxIteration,
             //    .currentTime = currentTimeUs
             //};
-            const flightLogEventData_u resume {
+            const log_event_data_u resume {
                 .loggingResume {
                     .logIteration = blackboxIteration,
                     .currentTime = currentTimeUs
                 }
             };
-            logEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, &resume);
+            logEvent(LOG_EVENT_LOGGING_RESUME, &resume);
             setState(STATE_RUNNING);
 
             logIteration(currentTimeUs, gyroRPS, gyroRPS_unfiltered, acc);
@@ -531,7 +529,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
          *
          * Don't wait longer than it could possibly take if something funky happens.
          */
-        if (_serialDevice.endLog(blackboxLoggedAnyFrames) && (timeMs() > xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) {
+        if (_serialDevice.endLog(blackboxLoggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) {
             _serialDevice.close();
             setState(STATE_STOPPED);
         }
@@ -604,19 +602,6 @@ static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }  
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
     return llog2(32000 / (targetPidLooptimeUs * pRatio));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
-}
-
-/**
- * Return true if it is safe to edit the Blackbox configuration.
- */
-bool Blackbox::isFieldEnabled(uint32_t disabledMask, FlightLogFieldSelect_e field)
-{
-    return (disabledMask & field) == 0;
-}
-
-bool Blackbox::isFieldEnabled(FlightLogFieldSelect_e field) const
-{
-    return isFieldEnabled(_config.fields_disabled_mask, field);
 }
 
 void Blackbox::logIFrame()
@@ -712,7 +697,7 @@ void Blackbox::logIFrame()
         _encoder.writeSigned16VBArray(&mainState->debug[0], blackboxMainState_t::DEBUG_VALUE_COUNT);
     }
 
-    if (isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR)) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR)) {
         //Motors can be below minimum output when disarmed, but that doesn't happen much
         _encoder.writeUnsignedVB(mainState->motor[0] - static_cast<int>(_motorOutputLow));
 
@@ -732,7 +717,7 @@ void Blackbox::logIFrame()
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeUnsignedVB(mainState->erpm[ii]);
         }
@@ -899,7 +884,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
         }
     }
 
-    if (isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR)) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR)) {
         //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor), _motorCount);
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->motor[ii] + _mainStateHistory[2]->motor[ii]) / 2;
@@ -918,7 +903,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeSignedVB(mainState->erpm[ii] - previousMainState->erpm[ii]);
         }
@@ -974,7 +959,7 @@ bool Blackbox::shouldLogHFrame() const
     if ((_gpsHomeLocation.latitude != _gpsState.home.latitude
          || _gpsHomeLocation.longitude != _gpsState.home.longitude
          || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
-        && isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GPS)) {
+        && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
     }
     return false;
@@ -1035,7 +1020,7 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
 /*!
 Write the given event to the log immediately
 */
-bool Blackbox::logEvent(FlightLogEvent_e event, const flightLogEventData_u* data)
+bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
 {
     // Only allow events to be logged after headers have been written
     //if (!(_state == STATE_RUNNING || _state == STATE_PAUSED)) {
@@ -1049,31 +1034,32 @@ bool Blackbox::logEvent(FlightLogEvent_e event, const flightLogEventData_u* data
 
     //Now serialize the data for this specific frame type
     switch (event) {
-    case FLIGHT_LOG_EVENT_SYNC_BEEP:
+    case LOG_EVENT_SYNC_BEEP:
         _encoder.writeUnsignedVB(data->syncBeep.time);
         break;
-    case FLIGHT_LOG_EVENT_FLIGHTMODE: // New flightmode flags write
+    case LOG_EVENT_FLIGHTMODE: // New flightmode flags write
         _encoder.writeUnsignedVB(data->flightMode.flags);
         _encoder.writeUnsignedVB(data->flightMode.lastFlags);
         break;
-    case FLIGHT_LOG_EVENT_DISARM:
+    case LOG_EVENT_DISARM:
         _encoder.writeUnsignedVB(data->disarm.reason);
         break;
-    case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+    case LOG_EVENT_INFLIGHT_ADJUSTMENT:
         if (data->inflightAdjustment.floatFlag) {
-            _encoder.write(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
+            enum { LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG = 128 };
+            _encoder.write(data->inflightAdjustment.adjustmentFunction + LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
             _encoder.writeFloat(data->inflightAdjustment.newFloatValue);
         } else {
             _encoder.write(data->inflightAdjustment.adjustmentFunction);
             _encoder.writeSignedVB(data->inflightAdjustment.newValue);
         }
         break;
-    case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+    case LOG_EVENT_LOGGING_RESUME:
         _encoder.writeUnsignedVB(data->loggingResume.logIteration);
         _encoder.writeUnsignedVB(data->loggingResume.currentTime);
         break;
-    case FLIGHT_LOG_EVENT_LOG_END:
-        // data is nullptr for FLIGHT_LOG_EVENT_LOG_END
+    case LOG_EVENT_LOG_END:
+        // data is nullptr for LOG_EVENT_LOG_END
         headerWriteString("End of log");
         _encoder.write(0);
         break;
@@ -1093,12 +1079,12 @@ void Blackbox::logEventArmingBeepIfNeeded()
     const uint32_t armingBeepTimeMicroSeconds = _callbacks.getArmingBeepTimeMicroSeconds();
     if (armingBeepTimeMicroSeconds != blackboxLastArmingBeep) {
         blackboxLastArmingBeep = armingBeepTimeMicroSeconds;
-        const flightLogEventData_u eventData {
+        const log_event_data_u eventData {
             .syncBeep {
                 .time  = blackboxLastArmingBeep
             }
         };
-        logEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, &eventData);
+        logEvent(LOG_EVENT_SYNC_BEEP, &eventData);
     }
 }
 
@@ -1112,18 +1098,18 @@ void Blackbox::logEventFlightModeIfNeeded()
         eventData.lastFlags = blackboxLastFlightModeFlags;
         memcpy(&blackboxLastFlightModeFlags, &_callbacks._rcModeActivationMask, sizeof(blackboxLastFlightModeFlags));
         memcpy(&eventData.flags, &_callbacks._rcModeActivationMask, sizeof(eventData.flags));
-        logEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        logEvent(LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     }
 #endif
     const uint32_t rcModeActivationMask = _callbacks.rcModeActivationMask();
     if (rcModeActivationMask != blackboxLastFlightModeFlags) {
-        const flightLogEventData_u eventData {
+        const log_event_data_u eventData {
             .flightMode {
                 .flags = rcModeActivationMask,
                 .lastFlags = blackboxLastFlightModeFlags
             }
         };
         blackboxLastFlightModeFlags = rcModeActivationMask;
-        logEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, &eventData);
+        logEvent(LOG_EVENT_FLIGHTMODE, &eventData);
     }
 }

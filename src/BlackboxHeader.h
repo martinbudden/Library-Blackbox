@@ -47,7 +47,6 @@
  */
 
 #include "BlackboxFieldDefinitions.h"
-#include <cstdint>
 
 
 #pragma pack(push, 1)
@@ -79,7 +78,7 @@ struct blackboxDeltaFieldDefinition_t {
     uint8_t Iencode;
     uint8_t Ppredict;
     uint8_t Pencode;
-    FlightLogFieldCondition_e condition; // Decide whether this field should appear in the log
+    flight_log_field_condition_e condition; // Decide whether this field should appear in the log
 };
 #pragma pack(pop)
 
