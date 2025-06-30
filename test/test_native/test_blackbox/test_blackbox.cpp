@@ -61,7 +61,6 @@ void test_blackbox_init()
         .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
         .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
         .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
-        .high_resolution = 0
     });
 
     TEST_ASSERT_EQUAL(32, blackbox.getIInterval());
@@ -95,7 +94,6 @@ void test_blackbox_init2()
         .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
         .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
         .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
-        .high_resolution = 0
     });
 
     TEST_ASSERT_EQUAL(6, blackbox.getIInterval()); // every 6*5000uS = every 30ms
@@ -105,7 +103,7 @@ void test_blackbox_init2()
 /*
 H Product:Blackbox flight data recorder by Nicholas Sherlock
 H Data version:2
-H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axiserialDevice[0],axiserialDevice[1],axiserialDevice[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
 H Field I signed:   0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1, 0,0,0,0
 H Field I predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,9,0,0,0,0,11,5,5,5
 H Field I encoding: 1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0, 1,0,0,0
@@ -146,7 +144,6 @@ void test_blackbox_initial_updates()
         .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
         .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
         .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
-        .high_resolution = 0
     });
 
 
@@ -215,7 +212,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
     //TEST_ASSERT_EQUAL(1, xmitState.startTime);
 
-    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axiserialDevice[0],axiserialDevice[1],axiserialDevice[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
     TEST_ASSERT_EQUAL('H', serialDevice[0]);
     TEST_ASSERT_EQUAL(' ', serialDevice[1]);
     TEST_ASSERT_EQUAL('F', serialDevice[2]);
@@ -363,12 +360,12 @@ void test_blackbox_write_sys_info()
     TEST_ASSERT_EQUAL('p', serialDevice[13]);
     TEST_ASSERT_EQUAL('e', serialDevice[14]);
     TEST_ASSERT_EQUAL(':', serialDevice[15]);
-    TEST_ASSERT_EQUAL('C', serialDevice[16]);
-    TEST_ASSERT_EQUAL('l', serialDevice[17]);
-    TEST_ASSERT_EQUAL('e', serialDevice[18]);
-    TEST_ASSERT_EQUAL('a', serialDevice[19]);
-    TEST_ASSERT_EQUAL('n', serialDevice[20]);
-    TEST_ASSERT_EQUAL('f', serialDevice[21]);
+    TEST_ASSERT_EQUAL('P', serialDevice[16]);
+    TEST_ASSERT_EQUAL('r', serialDevice[17]);
+    TEST_ASSERT_EQUAL('o', serialDevice[18]);
+    TEST_ASSERT_EQUAL('t', serialDevice[19]);
+    TEST_ASSERT_EQUAL('o', serialDevice[20]);
+    TEST_ASSERT_EQUAL('F', serialDevice[21]);
     TEST_ASSERT_EQUAL('l', serialDevice[22]);
     TEST_ASSERT_EQUAL('i', serialDevice[23]);
     TEST_ASSERT_EQUAL('g', serialDevice[24]);
@@ -408,6 +405,51 @@ void test_blackbox_print_header_line()
 }
 
 void test_blackbox_printf()
+{
+    static BlackboxSerialDeviceNull serialDevice; // NOLINT(misc-const-correctness) false positive
+    static  BlackboxCallbacksNull callbacks {}; // NOLINT(misc-const-correctness) false positive
+    enum { PID_LOOP_TIME = 1000 };
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
+
+    serialDevice.fill(0xa5);
+    blackbox.printf("hello"); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+    TEST_ASSERT_EQUAL('h', serialDevice[0]);
+    TEST_ASSERT_EQUAL('e', serialDevice[1]);
+    TEST_ASSERT_EQUAL('l', serialDevice[2]);
+    TEST_ASSERT_EQUAL('l', serialDevice[3]);
+    TEST_ASSERT_EQUAL('o', serialDevice[4]);
+    TEST_ASSERT_EQUAL(0xa5, serialDevice[5]);
+
+    serialDevice.resetIndex();
+    serialDevice.fill(0xa5);
+    blackbox.printf("%s, %d", "world", 3); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+    TEST_ASSERT_EQUAL('w', serialDevice[0]);
+    TEST_ASSERT_EQUAL('o', serialDevice[1]);
+    TEST_ASSERT_EQUAL('r', serialDevice[2]);
+    TEST_ASSERT_EQUAL('l', serialDevice[3]);
+    TEST_ASSERT_EQUAL('d', serialDevice[4]);
+    TEST_ASSERT_EQUAL(',', serialDevice[5]);
+    TEST_ASSERT_EQUAL(' ', serialDevice[6]);
+    TEST_ASSERT_EQUAL('3', serialDevice[7]);
+    TEST_ASSERT_EQUAL(0xa5, serialDevice[8]);
+
+    serialDevice.resetIndex();
+    serialDevice.fill(0xa5);
+    blackbox.printf("S:%s, C:%c", "Ab", 'I'); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+    TEST_ASSERT_EQUAL('S', serialDevice[0]);
+    TEST_ASSERT_EQUAL(':', serialDevice[1]);
+    TEST_ASSERT_EQUAL('A', serialDevice[2]);
+    TEST_ASSERT_EQUAL('b', serialDevice[3]);
+    TEST_ASSERT_EQUAL(',', serialDevice[4]);
+    TEST_ASSERT_EQUAL(' ', serialDevice[5]);
+    TEST_ASSERT_EQUAL('C', serialDevice[6]);
+    TEST_ASSERT_EQUAL(':', serialDevice[7]);
+    TEST_ASSERT_EQUAL('I', serialDevice[8]);
+    TEST_ASSERT_EQUAL(0xa5, serialDevice[9]);
+
+}
+
+void test_blackbox_header_printf()
 {
     static BlackboxSerialDeviceNull serialDevice; // NOLINT(misc-const-correctness) false positive
     //static BlackboxEncode blackboxEncoder(serialDevice);
@@ -479,7 +521,6 @@ void test_blackbox_conditions()
         .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
         .device = Blackbox::BLACKBOX_DEVICE_NONE,
         .mode = Blackbox::BLACKBOX_MODE_NORMAL,
-        .high_resolution = 0
     });
 
     blackbox.start({
@@ -557,6 +598,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv)
     RUN_TEST(test_blackbox_write_sys_info);
     RUN_TEST(test_blackbox_print_header_line);
     RUN_TEST(test_blackbox_printf);
+    RUN_TEST(test_blackbox_header_printf);
 
     UNITY_END();
 }

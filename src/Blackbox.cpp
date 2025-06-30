@@ -332,11 +332,6 @@ void Blackbox::resetIterationTimers()
     blackboxSlowFrameIterationTimer = 0;
 }
 
-uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
-{
-    return update(currentTimeUs, nullptr, nullptr, nullptr);
-}
-
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 void Blackbox::advanceIterationTimers()
 {
@@ -402,6 +397,11 @@ void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const 
     _serialDevice.flush();
 }
 
+uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
+{
+    return update(currentTimeUs, nullptr, nullptr, nullptr);
+}
+
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
@@ -431,14 +431,14 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         //if (timeMs() < xmitState.startTime + 100) {
         //    break;
         //}
-        if (!writeHeader()) { // keep on writing chunks of the header until it returns false, signalling completion
+        if (writeHeader() == WRITE_COMPLETE) { // keep on writing chunks of the header until it returns false, signalling completion
             setState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
         }
         break;
     case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         // On entry of this state, xmitState.headerIndex is 0 and xmitState.fieldIndex is -1
-        if (!writeFieldHeaderMain()) { // keep on writing chunks of the main field header until it returns false, signalling completion
+        if (writeFieldHeaderMain() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
 #if defined(USE_GPS)
             setState((featureIsEnabled(FEATURE_GPS) && isFieldEnabled(FLIGHT_LOG_FIELD_SELECT_GPS))
                 ? BLACKBOX_STATE_SEND_GPS_H_HEADER: BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER);
@@ -450,13 +450,13 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
 #if defined(USE_GPS)
     case BLACKBOX_STATE_SEND_GPS_H_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        if (!writeFieldHeaderGPS_H()) {
+        if (writeFieldHeaderGPS_H() == WRITE_COMPLETE) {
             blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
         }
         break;
     case BLACKBOX_STATE_SEND_GPS_G_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
-        if (!writeFieldHeaderGPS_G()) {
+        if (writeFieldHeaderGPS_G() == WRITE_COMPLETE) {
             blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
         }
         break;
@@ -464,7 +464,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
     case BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         // On entry of this state, xmitState.headerIndex is 0 and xmitState.fieldIndex is -1
-        if (!writeFieldHeaderSlow()) { // keep on writing chunks of the slow field header until it returns false, signalling completion
+        if (writeFieldHeaderSlow() == WRITE_COMPLETE) { // keep on writing chunks of the slow field header until it returns false, signalling completion
             _cacheFlushNextState = BLACKBOX_STATE_SEND_SYSINFO;
             setState(BLACKBOX_STATE_CACHE_FLUSH);
         }
@@ -474,7 +474,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         //On entry of this state, xmitState.headerIndex is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
-        if (writeSystemInformation()) {
+        if (writeSystemInformation() == WRITE_COMPLETE) {
             /*
              * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
              * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations

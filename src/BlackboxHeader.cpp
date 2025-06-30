@@ -47,7 +47,9 @@
 #include "Blackbox.h"
 #include "BlackboxHeader.h"
 #include "BlackboxSerialDevice.h"
+#include "printf.h"
 #include <cassert>
+#include <cstring>
 #include <cstring>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-union-access,readability-magic-numbers)
@@ -124,18 +126,18 @@ static const std::array<blackboxSimpleFieldDefinition_t, GPS_HOME_FIELD_COUNT> b
  * Description of the blackbox fields we are writing in our main I (intra) and P (inter) frames. 
  * This description is written into the flight log header so the log can be properly interpreted.
  * These definitions don't actually cause the encoding to happen,
- * we have to encode the flight log ourselves in write{Inter|Intra}frame() in a way that matches the encoding we've promised here).
+ * we have to encode the flight log ourselves in logPFrame and logIFrame in a way that matches the encoding we've promised here).
  */
 //static const std::array<Blackbox::blackboxDeltaFieldDefinition_t, MAIN_FIELD_COUNT> blackboxMainFields = {{
 static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     /* loopIteration doesn't appear in P frames since it always increments */
     {"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
-    /* Time advances pretty steadily so the P-frame prediction is a straight line */
+    // Time advances pretty steadily so the P-frame prediction is a straight line
     {"time",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(STRAIGHT_LINE), .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"axisP",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisP",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisP",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    /* I terms get special packed encoding in P frames: */
+    // I terms get special packed encoding in P frames:
     {"axisI",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
     {"axisI",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
     {"axisI",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
@@ -145,7 +147,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"axisF",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    /* rcCommands are encoded together as a group in P-frames: */
+    // rcCommands are encoded together as a group in P-frames:
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
     {"rcCommand",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
@@ -170,7 +172,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
-    /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
+    // Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact
     {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
     {"gyroADC",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
     {"gyroADC",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
@@ -188,7 +190,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"debug",       5, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
     {"debug",       6, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
     {"debug",       7, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    /* Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones): */
+    // Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones):
     // must match with enum { MAX_SUPPORTED_MOTORS = 4 };
     {"motor",       0, UNSIGNED, .Ipredict = PREDICT(MINMOTOR), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
     /* Subsequent motors base their I-frame values on the first one, P-frame values on the average of last two frames: */
@@ -202,13 +204,15 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"motor",       7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
 #endif
 #if defined(USE_SERVOS)
-    // must match with enum { MAX_SUPPORTED_SERVO_COUNT = 2 };
-    /* NOTE (ledvinap, hwarhurst): Decoding would fail if previous encoding is also TAG8_8SVB and does not have exactly 8 values. To fix it, inserting ENCODING_NULL dummy value should force end of previous group. */
+    // must match with MAX_SUPPORTED_SERVO_COUNT
+    // NOTE (ledvinap, hwarhurst): Decoding would fail if previous encoding is also TAG8_8SVB and does not have exactly 8 values. To fix it, inserting ENCODING_NULL dummy value should force end of previous group.
     {"servo",       0, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
     {"servo",       1, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       2, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       3, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
 #endif
 #if defined(USE_DSHOT_TELEMETRY)
-    // must match with enum { MAX_SUPPORTED_MOTORS = 4 };
+    // must match with MAX_SUPPORTED_MOTOR_COUNT
     // eRPM / 100
     {"eRPM",        0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
     {"eRPM",        1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
@@ -220,9 +224,26 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"eRPM",        6, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
     {"eRPM",        7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
 #endif
-#endif /* USE_DSHOT_TELEMETRY */
+#endif // USE_DSHOT_TELEMETRY
 #undef CONDITION
 };
+
+int Blackbox::printfv(const char* fmt, va_list va)
+{
+    return tfp_format(&_serialDevice, BlackboxEncoder::putc, fmt, va);
+}
+
+
+//printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
+int Blackbox::printf(const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
+{
+    va_list va;
+    va_start(va, fmt);
+    const int written = printfv(fmt, va);
+    va_end(va);
+
+    return written;
+}
 
 /*!
 `printf` a Blackbox header line with a leading "H " and trailing "\n" added automatically.
@@ -239,7 +260,7 @@ size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) 
     va_start(va, fmt);
 
     //const int ret = _blackboxEncoder.printfHeaderLine(name, fmt, va);
-    const int written = _blackboxEncoder.printfv(fmt, va);
+    const int written = printfv(fmt, va);
 
     va_end(va);
 
@@ -255,7 +276,7 @@ size_t Blackbox::headerPrintf(const char *fmt, ...) // NOLINT(cert-dcl50-cpp)
     va_list va;
     va_start(va, fmt);
 
-    const int ret = _blackboxEncoder.printfv(fmt, va); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+    const int ret = printfv(fmt, va); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
     va_end(va);
 
@@ -293,7 +314,7 @@ bool Blackbox::headerReserveBufferSpace()
 }
 
 
-bool Blackbox::writeHeader()
+Blackbox::write_e Blackbox::writeHeader()
 {
     // Transmit the header in chunks so we don't overflow its transmit
     // buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
@@ -307,13 +328,13 @@ bool Blackbox::writeHeader()
             ++xmitState.headerIndex;
         }
         if (blackboxHeader[xmitState.headerIndex] == 0) {
-            return false; // we have finished
+            return WRITE_COMPLETE; // we have finished
         }
     }
-    return true; //  we have more to write
+    return WRITE_NOT_COMPLETE; //  we have more to write
 }
 
-bool Blackbox::writeFieldHeaderMain() // NOLINT(readability-function-cognitive-complexity)
+Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-function-cognitive-complexity)
 {
     // We're chunking up the header data so we don't exceed our datarate. So we'll be called multiple times to transmit
     // the whole header.
@@ -321,12 +342,9 @@ bool Blackbox::writeFieldHeaderMain() // NOLINT(readability-function-cognitive-c
     // On our first call we need to print the name of the header and a colon
     const int32_t fieldCount = sizeof(blackboxMainFields) / sizeof(blackboxDeltaFieldDefinition_t);
     if (xmitState.fieldIndex == -1) {
-        if (xmitState.headerIndex >= BLACKBOX_DELTA_FIELD_HEADER_COUNT) {
-            return false; //Someone probably called us again after we had already completed transmission
-        }
         const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-            return true; // Try again later
+            return WRITE_NOT_COMPLETE; // Try again later
         }
         if (xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
             blackboxHeaderBudget -= headerPrintf("H Field P %s:", blackboxFieldHeaderNames[xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
@@ -372,10 +390,11 @@ bool Blackbox::writeFieldHeaderMain() // NOLINT(readability-function-cognitive-c
         xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
     }
 
-    return xmitState.headerIndex < BLACKBOX_DELTA_FIELD_HEADER_COUNT; // return true if we have more headers to write
+    // return WRITE_COMPLETE if we have nothing more to write
+    return xmitState.headerIndex < BLACKBOX_DELTA_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 }
 
-bool Blackbox::writeFieldHeaderSlow() // NOLINT(readability-function-cognitive-complexity)
+Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-function-cognitive-complexity)
 {
     // We're chunking up the header data so we don't exceed our datarate. So we'll be called multiple times to transmit
     // the whole header.
@@ -383,12 +402,9 @@ bool Blackbox::writeFieldHeaderSlow() // NOLINT(readability-function-cognitive-c
     const int32_t fieldCount = SLOW_FIELD_COUNT;
     // On our first call we need to print the name of the header and a colon
     if (xmitState.fieldIndex == -1) {
-        if (xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
-            return false; //Someone probably called us again after we had already completed transmission
-        }
         const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-            return true; // Try again later
+            return WRITE_NOT_COMPLETE; // Try again later
         }
         blackboxHeaderBudget -= headerPrintf("H Field S %s:", blackboxFieldHeaderNames[xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         ++xmitState.fieldIndex;
@@ -417,8 +433,18 @@ bool Blackbox::writeFieldHeaderSlow() // NOLINT(readability-function-cognitive-c
         ++xmitState.headerIndex;
         xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
     }
+    // return WRITE_COMPLETE if we have nothing more to write
+    return xmitState.headerIndex < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+}
 
-    return xmitState.headerIndex < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT; // return true if we have more headers to write
+Blackbox::write_e Blackbox::writeFieldHeaderGPS_H() // NOLINT(readability-convert-member-functions-to-static)
+{
+    return WRITE_COMPLETE;
+}
+
+Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-convert-member-functions-to-static)
+{
+    return WRITE_COMPLETE;
 }
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-union-access,readability-magic-numbers)

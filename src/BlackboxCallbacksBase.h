@@ -72,7 +72,7 @@ struct blackboxMainState_t {
 #else
     enum { MAX_SUPPORTED_MOTOR_COUNT = 4 };
 #endif
-    enum { MAX_SUPPORTED_SERVO_COUNT = 2 };
+    enum { MAX_SUPPORTED_SERVO_COUNT = 4 };
     enum { DEBUG_VALUE_COUNT = 8 };
 
     uint32_t time;

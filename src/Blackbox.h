@@ -121,7 +121,6 @@ public:
         sample_rate_e sample_rate;
         device_e device;
         mode_e mode;
-        uint8_t high_resolution;
     };
     struct start_t {
         uint16_t debugMode;
@@ -174,19 +173,24 @@ public:
         uint8_t GPS_numSat;
     };
 public:
-    virtual bool writeSystemInformation() = 0;
+    enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
+    virtual write_e writeSystemInformation() = 0;
     virtual uint32_t update(uint32_t currentTimeUs); // main loop function
     virtual uint32_t update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc);
 
     bool headerReserveBufferSpace();
+    int printfv(const char* fmt, va_list va);
+    int printf(const char* fmt, ...);
     size_t headerPrintfHeaderLine(const char* name, const char* fmt, ...);
     size_t headerPrintf(const char* fmt, ...);
     void headerWrite(uint8_t value);
     size_t headerWriteString(const char* s);
 
-    bool writeHeader();
-    bool writeFieldHeaderMain();
-    bool writeFieldHeaderSlow();
+    write_e writeHeader();
+    write_e writeFieldHeaderMain();
+    write_e writeFieldHeaderSlow();
+    write_e writeFieldHeaderGPS_H();
+    write_e writeFieldHeaderGPS_G();
 
     static bool isFieldEnabled(uint32_t mask, FlightLogFieldSelect_e field);
     bool isFieldEnabled(FlightLogFieldSelect_e field) const;
@@ -257,7 +261,6 @@ protected:
         .sample_rate = BLACKBOX_RATE_ONE,
         .device = BLACKBOX_DEVICE_SDCARD,
         .mode = BLACKBOX_MODE_NORMAL,
-        .high_resolution = 0
     };
     int32_t blackboxHeaderBudget {};
     // targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptimeUs is rounded for short looptimes

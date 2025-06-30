@@ -57,22 +57,19 @@ class BlackboxEncoder {
 public:
     explicit BlackboxEncoder(BlackboxSerialDevice& serialDevice) :
         _serialDevice(serialDevice) {}
-private:
-    static void putc(void* p, char c);
 public:
-    int printfv(const char* fmt, va_list va);
-    int printf(const char* fmt, ...);
+    static void putc(void* handle, char c);
 
     void beginFrame(uint8_t value);
     void endFrame();
+
     void write(uint8_t value);
 
     // VB - variable byte
     void writeUnsignedVB(uint32_t value);
     static uint32_t zigzagEncode(int32_t value) { return static_cast<uint32_t>((value << 1U) ^ (value >> 31U)); }
     void writeSignedVB(int32_t value) { //!< Write a signed integer using ZigZig and variable byte encoding.
-        // ZigZag encode to make the value always positive
-        writeUnsignedVB(zigzagEncode(value));
+        writeUnsignedVB(zigzagEncode(value)); // ZigZag encode to make the value always positive
     }
     void writeSignedVBArray(const int32_t* array, int count);
     void writeSignedVBArray(const std::array<int32_t, 3>& array) { for (auto item : array) { writeSignedVB(item); } }
@@ -95,7 +92,7 @@ public:
         write(static_cast<uint8_t>(value >> 24U));
     }
     void writeFloat(float value) {
-        union { float f; uint32_t i; } u{.f=value}; writeU32(u.i); // NOLINT(cppcoreguidelines-pro-type-union-access)
+        writeU32(castFloatBytesToInt(value)); // NOLINT(cppcoreguidelines-pro-type-union-access)
     }
     static uint32_t castFloatBytesToInt(float value) {
         union { float f; uint32_t i; } u{.f=value};

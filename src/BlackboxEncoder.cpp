@@ -46,32 +46,13 @@
 
 #include "BlackboxEncoder.h"
 #include "BlackboxSerialDevice.h"
-#include "printf.h"
-#include <cstring>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-magic-numbers)
 
 // !!TODO move all the printf related into Blackbox
-void BlackboxEncoder::putc(void* p, char c)
+void BlackboxEncoder::putc(void* handle, char c)
 {
-    reinterpret_cast<BlackboxSerialDevice*>(p)->write(c); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-}
-
-int BlackboxEncoder::printfv(const char* fmt, va_list va)
-{
-    return tfp_format(&_serialDevice, BlackboxEncoder::putc, fmt, va);
-}
-
-
-//printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
-int BlackboxEncoder::printf(const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
-{
-    va_list va;
-    va_start(va, fmt);
-    const int written = printfv(fmt, va);
-    va_end(va);
-
-    return written;
+    reinterpret_cast<BlackboxSerialDevice*>(handle)->write(c); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 /*!
