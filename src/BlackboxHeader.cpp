@@ -50,7 +50,6 @@
 #include "printf.h"
 #include <cassert>
 #include <cstring>
-#include <cstring>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-union-access,readability-magic-numbers)
 const std::array<char, 79> blackboxHeader = {
@@ -102,8 +101,8 @@ static const std::array<blackboxSimpleFieldDefinition_t, SLOW_FIELD_COUNT> black
 
 #if defined(USE_GPS)
 // GPS position/velocity frame
-enum { GPS_POSITION_VELOCITY_FIELD_COUNT = 6 };
-static const std::array<blackboxConditionalFieldDefinition_t, GPS_HOME_FIELD_COUNT> blackboxGpsGFields = {{
+enum { GPS_G_FIELD_COUNT = 7 };
+static const std::array<blackboxConditionalFieldDefinition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields = {{
     {"time",              -1, UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
     {"GPS_numSat",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_coord",          0, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
@@ -114,8 +113,8 @@ static const std::array<blackboxConditionalFieldDefinition_t, GPS_HOME_FIELD_COU
 }};
 
 // GPS home frame
-enum { GPS_HOME_FIELD_COUNT = 3 };
-static const std::array<blackboxSimpleFieldDefinition_t, GPS_HOME_FIELD_COUNT> blackboxGpsHFields = {{
+enum { GPS_H_FIELD_COUNT = 3 };
+static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blackboxGpsHFields = {{
     {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
     {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
     {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
@@ -259,7 +258,6 @@ size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) 
     va_list va;
     va_start(va, fmt);
 
-    //const int ret = _blackboxEncoder.printfHeaderLine(name, fmt, va);
     const int written = printfv(fmt, va);
 
     va_end(va);
@@ -285,7 +283,7 @@ size_t Blackbox::headerPrintf(const char *fmt, ...) // NOLINT(cert-dcl50-cpp)
 
 void Blackbox::headerWrite(uint8_t value)
 {
-    _blackboxEncoder.write(value);
+    _encoder.write(value);
 }
 
 size_t Blackbox::headerWriteString(const char* s)
@@ -323,7 +321,7 @@ Blackbox::write_e Blackbox::writeHeader()
             //Write header, ie
             //"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
             //"H Data version:2\n"
-            _blackboxEncoder.write(blackboxHeader[xmitState.headerIndex]);
+            _encoder.write(blackboxHeader[xmitState.headerIndex]);
             blackboxHeaderBudget--;
             ++xmitState.headerIndex;
         }
@@ -446,8 +444,8 @@ Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-conver
 {
     return WRITE_COMPLETE;
 }
-
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-union-access,readability-magic-numbers)
+
 /*!
 Called from buildFieldConditionCache(), which is called from start() and init()
 */
@@ -562,7 +560,6 @@ void Blackbox::buildFieldConditionCache(const start_t& start) // NOLINT(readabil
     for (size_t ii = FLIGHT_LOG_FIELD_CONDITION_FIRST; ii <= FLIGHT_LOG_FIELD_CONDITION_LAST; ++ii) {
         const auto condition = static_cast<FlightLogFieldCondition_e>(ii);
         if (testFieldConditionUncached(condition, start)) {
-            //blackboxConditionCache |= 1ULL << condition;
             _conditionCache.set(condition);
         }
     }

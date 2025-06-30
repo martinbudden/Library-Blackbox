@@ -60,7 +60,7 @@ class Blackbox {
 public:
     Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) : 
         _serialDevice(serialDevice),
-        _blackboxEncoder(_serialDevice),
+        _encoder(_serialDevice),
         _callbacks(callbacks),
         targetPidLooptimeUs(pidLoopTimeUs)
         {}
@@ -74,49 +74,49 @@ public:
     enum { FORMATTED_DATE_TIME_BUFSIZE = 30 };
 
     enum device_e : uint8_t {
-        BLACKBOX_DEVICE_NONE = 0,
-        BLACKBOX_DEVICE_FLASH = 1,
-        BLACKBOX_DEVICE_SDCARD = 2,
-        BLACKBOX_DEVICE_SERIAL = 3
+        DEVICE_NONE = 0,
+        DEVICE_FLASH = 1,
+        DEVICE_SDCARD = 2,
+        DEVICE_SERIAL = 3
     };
 
     enum mode_e : uint8_t {
-        BLACKBOX_MODE_NORMAL = 0,
-        BLACKBOX_MODE_MOTOR_TEST,
-        BLACKBOX_MODE_ALWAYS_ON
+        MODE_NORMAL = 0,
+        MODE_MOTOR_TEST,
+        MODE_ALWAYS_ON
     };
 
     enum sample_rate_e : uint8_t { // Sample rate is 1/(2^BlackboxSampleRate)
-        BLACKBOX_RATE_ONE = 0,
-        BLACKBOX_RATE_HALF,
-        BLACKBOX_RATE_QUARTER,
-        BLACKBOX_RATE_8TH,
-        BLACKBOX_RATE_16TH
+        RATE_ONE = 0,
+        RATE_HALF,
+        RATE_QUARTER,
+        RATE_8TH,
+        RATE_16TH
     };
 
-    enum BlackboxState_e {
-        BLACKBOX_STATE_DISABLED = 0,
-        BLACKBOX_STATE_STOPPED,
-        BLACKBOX_STATE_PREPARE_LOG_FILE,
-        BLACKBOX_STATE_SEND_HEADER,
-        BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER,
-        BLACKBOX_STATE_SEND_GPS_H_HEADER,
-        BLACKBOX_STATE_SEND_GPS_G_HEADER,
-        BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER,
-        BLACKBOX_STATE_SEND_SYSINFO,
-        BLACKBOX_STATE_CACHE_FLUSH,
-        BLACKBOX_STATE_PAUSED,
-        BLACKBOX_STATE_RUNNING,
-        BLACKBOX_STATE_SHUTTING_DOWN,
-        BLACKBOX_STATE_START_ERASE,
-        BLACKBOX_STATE_ERASING,
-        BLACKBOX_STATE_ERASED
+    enum state_e {
+        STATE_DISABLED = 0,
+        STATE_STOPPED,
+        STATE_PREPARE_LOG_FILE,
+        STATE_SEND_HEADER,
+        STATE_SEND_MAIN_FIELD_HEADER,
+        STATE_SEND_GPS_H_HEADER,
+        STATE_SEND_GPS_G_HEADER,
+        STATE_SEND_SLOW_FIELD_HEADER,
+        STATE_SEND_SYSINFO,
+        STATE_CACHE_FLUSH,
+        STATE_PAUSED,
+        STATE_RUNNING,
+        STATE_SHUTTING_DOWN,
+        STATE_START_ERASE,
+        STATE_ERASING,
+        STATE_ERASED
     };
 public:
     typedef uint32_t timeUs_t;
     typedef uint32_t timeMs_t;
 
-    struct blackboxConfig_t {
+    struct config_t {
         uint32_t fields_disabled_mask;
         sample_rate_e sample_rate;
         device_e device;
@@ -133,44 +133,45 @@ public:
         uint8_t hasBarometer;
         uint8_t hasMagnetometer;
         uint8_t hasRangefinder;
+        uint8_t useGPS;
     };
     struct xmitState_t {
         uint32_t headerIndex;
         int32_t fieldIndex;
         uint32_t startTime;
     };
-    struct gpsLocation_t {
-        int32_t lat;                    // latitude * 1e+7
-        int32_t lon;                    // longitude * 1e+7
-        int32_t altCm;                  // altitude in 0.01m
+    struct gps_location_t {
+        int32_t latitude;                    // latitude * 1e+7
+        int32_t longitude;                    // longitude * 1e+7
+        int32_t altitudeCm;                  // altitude in 0.01m
     };
     // A value below 100 means great accuracy is possible with GPS satellite constellation
-    struct gpsDilution_t {
-        uint16_t pdop;                  // positional DOP - 3D (* 100)
-        uint16_t hdop;                  // horizontal DOP - 2D (* 100)
-        uint16_t vdop;                  // vertical DOP   - 1D (* 100)
+    struct gps_dilution_t {
+        uint16_t positionalDOP; // positional DOP - 3D (* 100)
+        uint16_t horizontalDOP; // horizontal DOP - 2D (* 100)
+        uint16_t verticalDOP;   // vertical DOP   - 1D (* 100)
     };
     // Only available on U-blox protocol
-    struct gpsAccuracy_t {
-        uint32_t hAcc;                  // horizontal accuracy in mm
-        uint32_t vAcc;                  // vertical accuracy in mm
-        uint32_t sAcc;                  // speed accuracy in mm/s
+    struct gps_accuracy_t {
+        uint32_t horizontalAccuracyMm;
+        uint32_t verticalAccuracyMm;
+        uint32_t speedAccuracyMmPS;
     };
-    struct gpsSolutionData_t {
+    struct gps_solution_data_t {
         uint32_t time;                  // GPS msToW
         uint32_t navIntervalMs;         // interval between nav solutions in ms
-        gpsLocation_t llh;
-        gpsDilution_t dop;
-        gpsAccuracy_t acc;
+        gps_location_t location;
+        gps_dilution_t dilution;
+        gps_accuracy_t accuracy;
         uint16_t speed3d;               // speed in 0.1m/s
         uint16_t groundSpeed;           // speed in 0.1m/s
         uint16_t groundCourse;          // degrees * 10
-        uint8_t numSat;
+        uint8_t satelliteCount;
     };
-    struct gpsState_t {
-        gpsLocation_t GPS_home;
-        gpsLocation_t GPS_coord;
-        uint8_t GPS_numSat;
+    struct gps_state_t {
+        gps_location_t home;
+        gps_location_t GPS_coord;
+        uint8_t satelliteCount;
     };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
@@ -217,10 +218,10 @@ public:
     void logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc);
     void advanceIterationTimers();
     void resetIterationTimers();
-    void setState(BlackboxState_e newState);
+    void setState(state_e newState);
 
     // !!TODO move following into BlackboxInterface??
-    void init(const blackboxConfig_t& config);
+    void init(const config_t& config);
     void start(const start_t& start); // should pass in parameters to be used in buildFieldConditionCache
     void finish();
     void endLog();
@@ -244,13 +245,13 @@ public:
 
 protected:
     BlackboxSerialDevice& _serialDevice;
-    BlackboxEncoder _blackboxEncoder;
+    BlackboxEncoder _encoder;
     BlackboxCallbacksBase& _callbacks;
     size_t _motorCount { 4 };
     size_t _servoCount { 0 };
     float _motorOutputLow { 0.0F }; //!!TODO allow this to be set
     uint32_t _resetTime = 0;
-    blackboxConfig_t _blackboxConfig {
+    config_t _config {
         .fields_disabled_mask = FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER
             | FLIGHT_LOG_FIELD_CONDITION_BAROMETER
             | FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE
@@ -258,14 +259,14 @@ protected:
             | FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER
             | FLIGHT_LOG_FIELD_CONDITION_RSSI
             | FLIGHT_LOG_FIELD_CONDITION_DEBUG,
-        .sample_rate = BLACKBOX_RATE_ONE,
-        .device = BLACKBOX_DEVICE_SDCARD,
-        .mode = BLACKBOX_MODE_NORMAL,
+        .sample_rate = RATE_ONE,
+        .device = DEVICE_SDCARD,
+        .mode = MODE_NORMAL,
     };
     int32_t blackboxHeaderBudget {};
     // targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptimeUs is rounded for short looptimes
     uint32_t targetPidLooptimeUs; // time in microseconds
-    BlackboxState_e blackboxState = BLACKBOX_STATE_DISABLED;
+    state_e _state = STATE_DISABLED;
 
     bool startedLoggingInTestMode = false;
     uint32_t blackboxLastArmingBeep = 0;
@@ -287,19 +288,19 @@ protected:
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.
     uint16_t vbatReference {};
     xmitState_t  xmitState {};
-    BlackboxState_e _cacheFlushNextState {};
-//#if defined(USE_GPS)
-    gpsSolutionData_t gpsSol {}; // this is a copy of the data received from the GPS
-    gpsLocation_t GPS_home_llh {};
-    gpsState_t gpsHistory {};
-//#endif
-    blackboxSlowState_t slowHistory {};
+    state_e _cacheFlushNextState {};
+#if defined(USE_GPS)
+    gps_solution_data_t _gpsSolutionData {}; // this is a copy of the data received from the GPS
+    gps_location_t _gpsHomeLocation {};
+    gps_state_t _gpsState {};
+#endif
+    blackboxSlowState_t _slowState {};
     // Keep a history of length 2, plus a buffer to store the new values into
-    std::array<blackboxMainState_t, 3> _mainHistoryRing {};
-    // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-    std::array<blackboxMainState_t*, 3> blackboxHistory {
-        &_mainHistoryRing[0],
-        &_mainHistoryRing[1],
-        &_mainHistoryRing[2]
+    std::array<blackboxMainState_t, 3> _mainStateHistoryRing {};
+    // These point into _mainStateHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
+    std::array<blackboxMainState_t*, 3> _mainStateHistory {
+        &_mainStateHistoryRing[0],
+        &_mainStateHistoryRing[1],
+        &_mainStateHistoryRing[2]
     };
 };

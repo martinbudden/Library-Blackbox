@@ -29,7 +29,7 @@ public:
     uint16_t getBlackboxLoopIndex() const { return blackboxLoopIndex; }
     uint16_t getBlackboxPFrameIndex() const { return blackboxPFrameIndex; }
 
-    BlackboxState_e getBlackboxState() const { return blackboxState; }
+    state_e getBlackboxState() const { return _state; }
     xmitState_t getXmitState() const { return xmitState; }
     int32_t getHeaderBudget() const { return blackboxHeaderBudget; }
 };
@@ -42,7 +42,7 @@ void test_blackbox_init()
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_DISABLED, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
     TEST_ASSERT_EQUAL(0, blackbox.getBlackboxPFrameIndex());
 
@@ -58,9 +58,9 @@ void test_blackbox_init()
             | FLIGHT_LOG_FIELD_SELECT_GPS
             | FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
             | FLIGHT_LOG_FIELD_SELECT_SERVO,
-        .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
-        .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
-        .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .sample_rate = Blackbox::RATE_ONE,
+        .device = Blackbox::DEVICE_SDCARD,
+        .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
     });
 
     TEST_ASSERT_EQUAL(32, blackbox.getIInterval());
@@ -75,7 +75,7 @@ void test_blackbox_init2()
     enum { PID_LOOP_TIME = 5000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_DISABLED, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
     TEST_ASSERT_EQUAL(0, blackbox.getBlackboxPFrameIndex());
 
@@ -91,9 +91,9 @@ void test_blackbox_init2()
             | FLIGHT_LOG_FIELD_SELECT_GPS
             | FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
             | FLIGHT_LOG_FIELD_SELECT_SERVO,
-        .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
-        .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
-        .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .sample_rate = Blackbox::RATE_ONE,
+        .device = Blackbox::DEVICE_SDCARD,
+        .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
     });
 
     TEST_ASSERT_EQUAL(6, blackbox.getIInterval()); // every 6*5000uS = every 30ms
@@ -141,15 +141,15 @@ void test_blackbox_initial_updates()
             | FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER
             | FLIGHT_LOG_FIELD_CONDITION_RSSI
             | FLIGHT_LOG_FIELD_CONDITION_DEBUG,
-        .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
-        .device = Blackbox::BLACKBOX_DEVICE_SDCARD,
-        .mode = Blackbox::BLACKBOX_MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .sample_rate = Blackbox::RATE_ONE,
+        .device = Blackbox::DEVICE_SDCARD,
+        .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
     });
 
 
     const Blackbox::start_t start{};
     blackbox.start(start);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(0, xmitState.fieldIndex);
@@ -158,7 +158,7 @@ void test_blackbox_initial_updates()
 
 
     blackbox.update(timeUs);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(0, xmitState.fieldIndex);
@@ -167,7 +167,7 @@ void test_blackbox_initial_updates()
 
     serialDevice.fill(0xa5);
     blackbox.update(timeUs); // write first 64 bytes of header (header length = 79)
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(64, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(0, xmitState.startTime);
@@ -202,12 +202,12 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL('\n', serialDevice[77]);
     TEST_ASSERT_EQUAL(0xa5, serialDevice[78]);
     TEST_ASSERT_EQUAL(0xa5, serialDevice[79]);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
 
     serialDevice.resetIndex();
     serialDevice.fill(0xa5);
     blackbox.update(timeUs);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
     //TEST_ASSERT_EQUAL(1, xmitState.startTime);
@@ -232,26 +232,26 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL('o', serialDevice[16]);
 
     blackbox.update(timeUs);
-    while (Blackbox::BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER == blackbox.getBlackboxState()) {
+    while (Blackbox::STATE_SEND_MAIN_FIELD_HEADER == blackbox.getBlackboxState()) {
         blackbox.update(timeUs);
     }
 
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
-    while (Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER == blackbox.getBlackboxState()) {
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    while (Blackbox::STATE_SEND_SLOW_FIELD_HEADER == blackbox.getBlackboxState()) {
         blackbox.update(timeUs);
     }
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_CACHE_FLUSH, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
     blackbox.update(timeUs);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SYSINFO, blackbox.getBlackboxState());
-    while (Blackbox::BLACKBOX_STATE_SEND_SYSINFO == blackbox.getBlackboxState()) {
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SYSINFO, blackbox.getBlackboxState());
+    while (Blackbox::STATE_SEND_SYSINFO == blackbox.getBlackboxState()) {
         blackbox.update(timeUs);
     }
 
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_CACHE_FLUSH, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
     blackbox.update(timeUs);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_RUNNING, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_RUNNING, blackbox.getBlackboxState());
 
     const uint32_t iteration  = blackbox.getBlackboxIteration();
     blackbox.update(timeUs);
@@ -267,7 +267,7 @@ void test_blackbox_frames()
 
     const Blackbox::start_t start{};
     blackbox.start(start);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
     
     serialDevice.resetIndex();
     blackbox.logSFrame();
@@ -286,7 +286,7 @@ void test_blackbox_frames()
     TEST_ASSERT_EQUAL('P', serialDevice[0]);
 
     serialDevice.resetIndex();
-    blackbox.setState(Blackbox::BLACKBOX_STATE_RUNNING); // for the state to running, so logEvent will write
+    blackbox.setState(Blackbox::STATE_RUNNING); // for the state to running, so logEvent will write
     const FlightLogEvent_e event = FLIGHT_LOG_EVENT_DISARM;
     const flightLogEventData_u flightLogEventData { .disarm = { .reason = 2 } };
     const bool ret = blackbox.logEvent(event, &flightLogEventData);
@@ -307,23 +307,23 @@ void test_blackbox_slow_header()
 
     const Blackbox::start_t start{};
     blackbox.start(start);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
-    blackbox.setState(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    blackbox.setState(Blackbox::STATE_SEND_SLOW_FIELD_HEADER);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
     blackbox.update(currentTimeUs); // 1
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
     blackbox.update(currentTimeUs); // 2
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
     blackbox.update(currentTimeUs); // 3
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
     blackbox.update(currentTimeUs); // 4
-    // after 4 (BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) updates, state changes to BLACKBOX_STATE_CACHE_FLUSH
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_CACHE_FLUSH, blackbox.getBlackboxState());
+    // after 4 (BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) updates, state changes to STATE_CACHE_FLUSH
+    TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 }
 
 void test_blackbox_write_sys_info()
@@ -337,8 +337,8 @@ void test_blackbox_write_sys_info()
 
     TEST_ASSERT_EQUAL(BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS, serialDevice.reserveBufferSpace(64));
 
-    blackbox.setState(Blackbox::BLACKBOX_STATE_SEND_SYSINFO);
-    TEST_ASSERT_EQUAL(Blackbox::BLACKBOX_STATE_SEND_SYSINFO, blackbox.getBlackboxState());
+    blackbox.setState(Blackbox::STATE_SEND_SYSINFO);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SYSINFO, blackbox.getBlackboxState());
     TEST_ASSERT_EQUAL(0, blackbox.getXmitState().headerIndex);
 
 
@@ -518,9 +518,9 @@ void test_blackbox_conditions()
             | FLIGHT_LOG_FIELD_SELECT_GPS
             //| FLIGHT_LOG_FIELD_SELECT_MOTOR_RPM
             | FLIGHT_LOG_FIELD_SELECT_SERVO,
-        .sample_rate = Blackbox::BLACKBOX_RATE_ONE,
-        .device = Blackbox::BLACKBOX_DEVICE_NONE,
-        .mode = Blackbox::BLACKBOX_MODE_NORMAL,
+        .sample_rate = Blackbox::RATE_ONE,
+        .device = Blackbox::DEVICE_NONE,
+        .mode = Blackbox::MODE_NORMAL,
     });
 
     blackbox.start({
