@@ -285,10 +285,6 @@ public:
 
     uint8_t calculateSampleRate(uint16_t pRatio) const;
 
-    int calculatePDenom(int rateNum, int rateDenom) { return blackboxIInterval * rateNum / rateDenom; }
-    uint8_t getRateDenom() { return blackboxPInterval; }
-    uint16_t getPRatio() { return blackboxIInterval / blackboxPInterval; }
-
     bool inMotorTestMode();
 
 // test functions

@@ -48,28 +48,9 @@
 #include "BlackboxCallbacksBase.h"
 #include "BlackboxFieldDefinitions.h"
 #include "BlackboxSerialDevice.h"
+#include <TimeMicroSeconds.h>
 #include <cassert>
 #include <cstring>
-
-#if defined(FRAMEWORK_RPI_PICO)
-
-#include <pico/time.h>
-inline uint32_t timeMs() { return time_ms_32(); }
-
-#elif defined(FRAMEWORK_ESPIDF)
-
-#include <esp_timer.h>
-inline uint32_t timeMs() { return static_cast<uint32_t>(esp_timer_get_time() / 1000); }
-
-#elif defined(FRAMEWORK_TEST)
-
-inline uint32_t timeMs() { return 1000; }
-
-#else // defaults to FRAMEWORK_ARDUINO
-
-#include <Arduino.h>
-inline uint32_t timeMs() { return millis(); }
-#endif // FRAMEWORK
 
 #ifdef USE_FLASH_TEST_PRBS
 void checkFlashStart();
@@ -620,7 +601,7 @@ static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }  
 
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
-    return llog2(32000 / (targetPidLooptimeUs * pRatio));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    return static_cast<uint8_t>(llog2(32000 / (targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
 void Blackbox::logIFrame()

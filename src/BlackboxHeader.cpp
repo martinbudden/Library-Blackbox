@@ -340,14 +340,14 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
     // On our first call we need to print the name of the header and a colon
     const int32_t fieldCount = sizeof(blackboxMainFields) / sizeof(blackboxDeltaFieldDefinition_t);
     if (_xmitState.fieldIndex == -1) {
-        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
+        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
         if (_xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
-            blackboxHeaderBudget -= headerPrintf("H Field P %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field P %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         } else {
-            blackboxHeaderBudget -= headerPrintf("H Field I %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field I %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
         ++_xmitState.fieldIndex;
     }
@@ -400,11 +400,11 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
     const int32_t fieldCount = SLOW_FIELD_COUNT;
     // On our first call we need to print the name of the header and a colon
     if (_xmitState.fieldIndex == -1) {
-        const uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
+        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        blackboxHeaderBudget -= headerPrintf("H Field S %s:", blackboxFieldHeaderNames[_xmitState.headerIndex]); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field S %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         ++_xmitState.fieldIndex;
     }
     if (_xmitState.headerIndex == 0) {

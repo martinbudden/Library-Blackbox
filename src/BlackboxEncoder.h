@@ -77,8 +77,8 @@ public:
     void writeSigned16VBArray(const std::array<int16_t, 4>& array);
     void writeSigned16VBArray(const int16_t* array, int count);
     void writeS16(int16_t value) {
-        write(value & 0xFFU);
-        write((value >> 8U) & 0xFFU);
+        write(static_cast<uint8_t>(value & 0xFFU));
+        write(static_cast<uint8_t>((value >> 8U) & 0xFFU));
     }
     void writeTag2_3S32(const int32_t* values);
     int writeTag2_3SVariable(const int32_t* values);

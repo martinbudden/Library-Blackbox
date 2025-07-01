@@ -106,7 +106,7 @@ void BlackboxEncoder::writeUnsignedVB(uint32_t value)
         write(static_cast<uint8_t>(value | 0x80)); // Set the high bit to mean "more bytes follow"
         value >>= 7;
     }
-    write(value);
+    write(static_cast<uint8_t>(value));
 }
 
 
@@ -188,14 +188,14 @@ void BlackboxEncoder::writeTag2_3S32(const int32_t *values) // NOLINT(readabilit
     int selector2 = 0;
     switch (selector) {
     case BITS_2:
-        write((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
+        write(static_cast<uint8_t>((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03)));
         break;
     case BITS_4:
-        write((selector << 6) | (values[0] & 0x0F));
-        write((values[1] << 4) | (values[2] & 0x0F));
+        write(static_cast<uint8_t>((selector << 6) | (values[0] & 0x0F)));
+        write(static_cast<uint8_t>((values[1] << 4) | (values[2] & 0x0F)));
         break;
     case BITS_6:
-        write((selector << 6) | (values[0] & 0x3F));
+        write(static_cast<uint8_t>((selector << 6) | (values[0] & 0x3F)));
         write(static_cast<uint8_t>(values[1]));
         write(static_cast<uint8_t>(values[2]));
         break;
@@ -227,28 +227,28 @@ void BlackboxEncoder::writeTag2_3S32(const int32_t *values) // NOLINT(readabilit
         }
 
         //Write the selectors
-        write((selector << 6) | selector2);
+        write(static_cast<uint8_t>((selector << 6) | selector2));
 
         //And now the values according to the selectors we picked for them
         for (int x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
-                write(values[x]);
+                write(static_cast<uint8_t>(values[x]));
                 break;
             case BYTES_2:
-                write(values[x]);
-                write(values[x] >> 8);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
                 break;
             case BYTES_3:
-                write(values[x]);
-                write(values[x] >> 8);
-                write(values[x] >> 16);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
+                write(static_cast<uint8_t>(values[x] >> 16));
                 break;
             case BYTES_4:
-                write(values[x]);
-                write(values[x] >> 8);
-                write(values[x] >> 16);
-                write(values[x] >> 24);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
+                write(static_cast<uint8_t>(values[x] >> 16));
+                write(static_cast<uint8_t>(values[x] >> 24));
                 break;
             }
         }
@@ -311,18 +311,18 @@ int BlackboxEncoder::writeTag2_3SVariable(const int32_t *values)
 
     switch (selector) {
     case BITS_2:
-        write((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
+        write(static_cast<uint8_t>((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03)));
         break;
     case BITS_554:
         // 554 bits per field  ss11 1112 2222 3333
-        write((selector << 6) | ((values[0] & 0x1F) << 1) | ((values[1] & 0x1F) >> 4));
-        write(((values[1] & 0x0F) << 4) | (values[2] & 0x0F));
+        write(static_cast<uint8_t>((selector << 6) | ((values[0] & 0x1F) << 1) | ((values[1] & 0x1F) >> 4)));
+        write(static_cast<uint8_t>(((values[1] & 0x0F) << 4) | (values[2] & 0x0F)));
         break;
     case BITS_877:
         // 877 bits per field  ss11 1111 1122 2222 2333 3333
-        write((selector << 6) | ((values[0] & 0xFF) >> 2));
-        write(((values[0] & 0x03) << 6) | ((values[1] & 0x7F) >> 1));
-        write(((values[1] & 0x01) << 7) | (values[2] & 0x7F));
+        write(static_cast<uint8_t>((selector << 6) | ((values[0] & 0xFF) >> 2)));
+        write(static_cast<uint8_t>(((values[0] & 0x03) << 6) | ((values[1] & 0x7F) >> 1)));
+        write(static_cast<uint8_t>(((values[1] & 0x01) << 7) | (values[2] & 0x7F)));
         break;
     case BITS_32:
         /*
@@ -351,28 +351,28 @@ int BlackboxEncoder::writeTag2_3SVariable(const int32_t *values)
         }
 
         //Write the selectors
-        write((selector << 6) | selector2);
+        write(static_cast<uint8_t>((selector << 6) | selector2));
 
         //And now the values according to the selectors we picked for them
         for (int x = 0; x < FIELD_COUNT; x++, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
-                write(values[x]);
+                write(static_cast<uint8_t>(values[x]));
                 break;
             case BYTES_2:
-                write(values[x]);
-                write(values[x] >> 8);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
                 break;
             case BYTES_3:
-                write(values[x]);
-                write(values[x] >> 8);
-                write(values[x] >> 16);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
+                write(static_cast<uint8_t>(values[x] >> 16));
                 break;
             case BYTES_4:
-                write(values[x]);
-                write(values[x] >> 8);
-                write(values[x] >> 16);
-                write(values[x] >> 24);
+                write(static_cast<uint8_t>(values[x]));
+                write(static_cast<uint8_t>(values[x] >> 8));
+                write(static_cast<uint8_t>(values[x] >> 16));
+                write(static_cast<uint8_t>(values[x] >> 24));
                 break;
             }
         }
@@ -425,35 +425,35 @@ void BlackboxEncoder::writeTag8_4S16(const int32_t *values)
         case FIELD_4BIT:
             if (nibbleIndex == 0) {
                 //We fill high-bits first
-                buffer = values[x] << 4;
+                buffer = static_cast<uint8_t>(values[x] << 4);
                 nibbleIndex = 1;
             } else {
-                write(buffer | (values[x] & 0x0F));
+                write(static_cast<uint8_t>(buffer | (values[x] & 0x0F)));
                 nibbleIndex = 0;
             }
             break;
         case FIELD_8BIT:
             if (nibbleIndex == 0) {
-                write(values[x]);
+                write(static_cast<uint8_t>(values[x]));
             } else {
                 //Write the high bits of the value first (mask to avoid sign extension)
-                write(buffer | ((values[x] >> 4) & 0x0F));
+                write(static_cast<uint8_t>(buffer | ((values[x] >> 4) & 0x0F)));
                 //Now put the leftover low bits into the top of the next buffer entry
-                buffer = values[x] << 4;
+                buffer = static_cast<uint8_t>(values[x] << 4);
             }
             break;
         case FIELD_16BIT:
             if (nibbleIndex == 0) {
                 //Write high byte first
-                write(values[x] >> 8);
-                write(values[x]);
+                write(static_cast<uint8_t>(values[x] >> 8));
+                write(static_cast<uint8_t>(values[x]));
             } else {
                 //First write the highest 4 bits
-                write(buffer | ((values[x] >> 12) & 0x0F));
+                write(static_cast<uint8_t>(buffer | ((values[x] >> 12) & 0x0F)));
                 // Then the middle 8
-                write(values[x] >> 4);
+                write(static_cast<uint8_t>(values[x] >> 4));
                 //Only the smallest 4 bits are still left to write
-                buffer = values[x] << 4;
+                buffer = static_cast<uint8_t>(values[x] << 4);
             }
             break;
         }
