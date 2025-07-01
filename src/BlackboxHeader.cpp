@@ -447,9 +447,9 @@ Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-conver
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-union-access,readability-magic-numbers)
 
 /*!
-Called from buildFieldConditionCache(), which is called from start() and init()
+Called from buildFieldConditionCache(), which is called from start()
 */
-bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition, const start_t& start) const
+bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition) const
 {
     switch (condition) {
     case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
@@ -469,7 +469,7 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
     case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
         [[fallthrough]];
     case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
-        return isFieldEnabled(LOG_SELECT_MOTOR) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1);
+        return isFieldEnabled(LOG_SELECT_MOTOR) && (static_cast<int32_t>(_motorCount) > condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1);
 
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM:
         [[fallthrough]];
@@ -486,10 +486,10 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_7_HAS_RPM:
         [[fallthrough]];
     case FLIGHT_LOG_FIELD_CONDITION_MOTOR_8_HAS_RPM:
-        return isFieldEnabled(LOG_SELECT_MOTOR_RPM) && (start.motorCount > condition - FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM) && start.useDshotTelemetry;
+        return isFieldEnabled(LOG_SELECT_MOTOR_RPM) && (static_cast<int32_t>(_motorCount) > condition - FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM);
 
     case FLIGHT_LOG_FIELD_CONDITION_SERVOS:
-        return isFieldEnabled(LOG_SELECT_SERVO) && (start.servoCount > 0);
+        return isFieldEnabled(LOG_SELECT_SERVO) && (_servoCount > 0);
 
     case FLIGHT_LOG_FIELD_CONDITION_PID:
         return isFieldEnabled(LOG_SELECT_PID);
@@ -511,22 +511,22 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
         return isFieldEnabled(LOG_SELECT_SETPOINT);
 
     case FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER:
-        return isFieldEnabled(LOG_SELECT_MAGNETOMETER) && start.hasMagnetometer;
+        return isFieldEnabled(LOG_SELECT_MAGNETOMETER);
 
     case FLIGHT_LOG_FIELD_CONDITION_BAROMETER:
-        return isFieldEnabled(LOG_SELECT_ALTITUDE) && start.hasBarometer;
+        return isFieldEnabled(LOG_SELECT_BAROMETER);
 
     case FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE:
-        return isFieldEnabled(LOG_SELECT_BATTERY)  && start.hasVoltageMeter;
+        return isFieldEnabled(LOG_SELECT_BATTERY_VOLTMETER);
 
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-        return isFieldEnabled(LOG_SELECT_BATTERY) && start.hasCurrentMeter;
+        return isFieldEnabled(LOG_SELECT_CURRENT_METER);
 
     case FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER:
-        return isFieldEnabled(LOG_SELECT_ALTITUDE) && start.hasRangefinder;
+        return isFieldEnabled(LOG_SELECT_RANGEFINDER);
 
     case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-        return isFieldEnabled(LOG_SELECT_RSSI) && start.isRSSI_configured;
+        return isFieldEnabled(LOG_SELECT_RSSI);
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
@@ -538,10 +538,10 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
         return isFieldEnabled(LOG_SELECT_GYRO_UNFILTERED);
 
     case FLIGHT_LOG_FIELD_CONDITION_ACC:
-        return isFieldEnabled(LOG_SELECT_ACC);
+        return isFieldEnabled(LOG_SELECT_ACCELEROMETER);
 
     case FLIGHT_LOG_FIELD_CONDITION_DEBUG:
-        return isFieldEnabled(LOG_SELECT_DEBUG_LOG) && (start.debugMode != 0);
+        return isFieldEnabled(LOG_SELECT_DEBUG) && (_debugMode != 0);
 
     case FLIGHT_LOG_FIELD_CONDITION_NEVER:
         return false;
@@ -554,12 +554,12 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
 /*!
 Build condition cache, called from start()
 */
-void Blackbox::buildFieldConditionCache(const start_t& start) // NOLINT(readability-make-member-function-const) false positive
+void Blackbox::buildFieldConditionCache() // NOLINT(readability-make-member-function-const) false positive
 {
     _conditionCache.reset();
     for (size_t ii = FLIGHT_LOG_FIELD_CONDITION_FIRST; ii <= FLIGHT_LOG_FIELD_CONDITION_LAST; ++ii) {
         const auto condition = static_cast<flight_log_field_condition_e>(ii);
-        if (testFieldConditionUncached(condition, start)) {
+        if (testFieldConditionUncached(condition)) {
             _conditionCache.set(condition);
         }
     }

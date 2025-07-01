@@ -51,13 +51,6 @@ void test_blackbox_init()
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
 
     blackbox.init({
-        .logSelectEnabled = Blackbox::LOG_SELECT_PID
-            | Blackbox::LOG_SELECT_RC_COMMANDS
-            | Blackbox::LOG_SELECT_SETPOINT
-            | Blackbox::LOG_SELECT_GYRO
-            | Blackbox::LOG_SELECT_ACC
-            | Blackbox::LOG_SELECT_MOTOR
-            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -83,13 +76,6 @@ void test_blackbox_init2()
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
 
     blackbox.init({
-        .logSelectEnabled = Blackbox::LOG_SELECT_PID
-            | Blackbox::LOG_SELECT_RC_COMMANDS
-            | Blackbox::LOG_SELECT_SETPOINT
-            | Blackbox::LOG_SELECT_GYRO
-            | Blackbox::LOG_SELECT_ACC
-            | Blackbox::LOG_SELECT_MOTOR
-            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -133,13 +119,6 @@ void test_blackbox_initial_updates()
 
 
     blackbox.init({
-        .logSelectEnabled = Blackbox::LOG_SELECT_PID
-            | Blackbox::LOG_SELECT_RC_COMMANDS
-            | Blackbox::LOG_SELECT_SETPOINT
-            | Blackbox::LOG_SELECT_GYRO
-            | Blackbox::LOG_SELECT_ACC
-            | Blackbox::LOG_SELECT_MOTOR
-            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
@@ -471,25 +450,24 @@ void test_blackbox_header_printf()
 
 void test_blackbox_fields()
 {
-    const uint32_t enabledMask = 0
-        | Blackbox::LOG_SELECT_PID
+    const uint32_t enabledMask = Blackbox::LOG_SELECT_PID
         | Blackbox::LOG_SELECT_RC_COMMANDS
         | Blackbox::LOG_SELECT_SETPOINT
         | Blackbox::LOG_SELECT_GYRO
-        | Blackbox::LOG_SELECT_ACC
+        | Blackbox::LOG_SELECT_ACCELEROMETER
         | Blackbox::LOG_SELECT_MOTOR
         | Blackbox::LOG_SELECT_GYRO_UNFILTERED;
 
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_PID));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RC_COMMANDS));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_SETPOINT));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BATTERY));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BATTERY_VOLTMETER));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MAGNETOMETER));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_ALTITUDE));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BAROMETER));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RSSI));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_GYRO));
-    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_ACC));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_DEBUG_LOG));
+    TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_ACCELEROMETER));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_DEBUG));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MOTOR));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_GPS));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MOTOR_RPM));
@@ -506,14 +484,6 @@ void test_blackbox_conditions()
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     blackbox.init({
-        .logSelectEnabled = Blackbox::LOG_SELECT_PID
-            | Blackbox::LOG_SELECT_RC_COMMANDS
-            | Blackbox::LOG_SELECT_SETPOINT
-            | Blackbox::LOG_SELECT_GYRO
-            | Blackbox::LOG_SELECT_ACC
-            | Blackbox::LOG_SELECT_MOTOR
-            | Blackbox::LOG_SELECT_MOTOR_RPM
-            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_NONE,
         .mode = Blackbox::MODE_NORMAL,
@@ -523,14 +493,6 @@ void test_blackbox_conditions()
         .debugMode = 0,
         .motorCount = 4,
         .servoCount = 0,
-        .hasVoltageMeter = false,
-        .hasCurrentMeter = false,
-        .isRSSI_configured = false,
-        .useDshotTelemetry = true,
-        .hasBarometer = false,
-        .hasMagnetometer = false,
-        .hasRangefinder = false,
-        .useGPS = false
     });
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ALWAYS));

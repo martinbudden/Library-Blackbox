@@ -87,7 +87,15 @@ void Blackbox::init(const config_t& config)
     _serialDevice.init();
 
     _config = config;
-    buildFieldConditionCache(_start);
+
+    _logSelectEnabled = Blackbox::LOG_SELECT_PID
+        | Blackbox::LOG_SELECT_SETPOINT
+        | Blackbox::LOG_SELECT_RC_COMMANDS
+        | Blackbox::LOG_SELECT_GYRO
+        | Blackbox::LOG_SELECT_GYRO_UNFILTERED
+        | Blackbox::LOG_SELECT_ACCELEROMETER
+        | Blackbox::LOG_SELECT_MOTOR
+        | Blackbox::LOG_SELECT_MOTOR_RPM;
 
     resetIterationTimers();
 
@@ -107,28 +115,39 @@ void Blackbox::init(const config_t& config)
     if (_config.device == DEVICE_NONE) {
         setState(STATE_DISABLED);
     } else if (_config.mode == MODE_ALWAYS_ON) {
-        start(_start);
+        start();
     } else {
         setState(STATE_STOPPED);
     }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
+void Blackbox::start()
+{
+    start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)});
+}
+
+void Blackbox::start(const start_t& startParameters)
+{
+    start(startParameters, _logSelectEnabled);
+}
+
 /*!
 Start Blackbox logging if it is not already running. Intended to be called upon arming.
 */
-//!! TODO pass in DTerm constants and 
-void Blackbox::start(const start_t& start)
+void Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 {
-    assert(start.motorCount <= blackboxMainState_t::MAX_SUPPORTED_MOTOR_COUNT);
-    assert(start.servoCount <= blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
-    _motorCount = start.motorCount;
-    _servoCount = start.servoCount;
+    assert(startParameters.motorCount <= blackboxMainState_t::MAX_SUPPORTED_MOTOR_COUNT);
+    assert(startParameters.servoCount <= blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
+    _motorCount = startParameters.motorCount;
+    _servoCount = startParameters.servoCount;
+    _debugMode = startParameters.debugMode;
+    _logSelectEnabled = logSelectEnabled;
+    buildFieldConditionCache();
     if (!_serialDevice.open()) {
         setState(STATE_DISABLED);
         return;
     }
-    _start = start;
 
 #if defined(USE_GPS)
     memset(&_gpsState, 0, sizeof(_gpsState));
@@ -145,7 +164,7 @@ void Blackbox::start(const start_t& start)
      * must always agree with the logged data, the results of these tests must not change during logging. So
      * cache those now.
      */
-    buildFieldConditionCache(start);
+    buildFieldConditionCache();
 
     //!!blackboxModeActivationConditionPresent = _callbacks.isBlackboxModeActivationConditionPresent();
 
@@ -204,7 +223,7 @@ void Blackbox::startInTestMode()
             }
         }
 #endif
-        start(_start);
+        start();
         startedLoggingInTestMode = true;
     }
 }
@@ -379,7 +398,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const 
             logPFrame();
         }
 #if defined(USE_GPS)
-        if (_start.useGPS && isFieldEnabled(LOG_SELECT_GPS)) {
+        if (isFieldEnabled(LOG_SELECT_GPS)) {
             if (shouldLogHFrame()) {
                 logHFrame();
                 logGFrame(currentTimeUs);
@@ -411,7 +430,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
     case STATE_STOPPED:
         if (_callbacks.isArmed()) {
             _serialDevice.open();
-            start(_start);
+            start();
         }
 #ifdef USE_FLASHFS
         if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
@@ -440,7 +459,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderMain() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
 #if defined(USE_GPS)
-            setState(_start.useGPS && isFieldEnabled(LOG_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
+            setState(isFieldEnabled(LOG_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
 #else
             setState(STATE_SEND_SLOW_FIELD_HEADER);
 #endif
@@ -717,7 +736,7 @@ void Blackbox::logIFrame()
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM)) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeUnsignedVB(mainState->erpm[ii]);
         }
@@ -903,7 +922,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM) && _start.useDshotTelemetry) {
+    if (isFieldEnabled(LOG_SELECT_MOTOR_RPM)) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeSignedVB(mainState->erpm[ii] - previousMainState->erpm[ii]);
         }

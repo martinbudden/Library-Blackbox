@@ -93,21 +93,23 @@ public:
     };
 
     enum log_field_select_e { // no more than 32
-        LOG_SELECT_PID         = 0x01,
-        LOG_SELECT_RC_COMMANDS = 0x02,
-        LOG_SELECT_SETPOINT    = 0x04,
-        LOG_SELECT_BATTERY     = 0x08,
-        LOG_SELECT_MAGNETOMETER = 0x10,
-        LOG_SELECT_ALTITUDE    = 0x20,
-        LOG_SELECT_RSSI        = 0x40,
-        LOG_SELECT_GYRO        = 0x80,
-        LOG_SELECT_ACC         = 0x100,
-        LOG_SELECT_DEBUG_LOG   = 0x200,
-        LOG_SELECT_MOTOR       = 0x400,
-        LOG_SELECT_GPS         = 0x800,
-        LOG_SELECT_MOTOR_RPM   = 0x1000,
-        LOG_SELECT_GYRO_UNFILTERED = 0x2000,
-        LOG_SELECT_SERVO       = 0x4000
+        LOG_SELECT_PID              = 0x0001,
+        LOG_SELECT_SETPOINT         = 0x0002,
+        LOG_SELECT_RC_COMMANDS      = 0x0004,
+        LOG_SELECT_RSSI             = 0x0008,
+        LOG_SELECT_GYRO             = 0x0010,
+        LOG_SELECT_GYRO_UNFILTERED  = 0x0020,
+        LOG_SELECT_ACCELEROMETER    = 0x0040,
+        LOG_SELECT_MAGNETOMETER     = 0x0080,
+        LOG_SELECT_MOTOR            = 0x0100,
+        LOG_SELECT_MOTOR_RPM        = 0x0200,
+        LOG_SELECT_SERVO            = 0x0400,
+        LOG_SELECT_BATTERY_VOLTMETER= 0x0800,
+        LOG_SELECT_CURRENT_METER    = 0x1000,
+        LOG_SELECT_BAROMETER        = 0x2000,
+        LOG_SELECT_RANGEFINDER      = 0x4000,
+        LOG_SELECT_DEBUG            = 0x8000,
+        LOG_SELECT_GPS             = 0x10000,
     };
 
     enum state_e {
@@ -133,7 +135,6 @@ public:
     typedef uint32_t timeMs_t;
 
     struct config_t {
-        uint32_t logSelectEnabled;
         sample_rate_e sample_rate;
         device_e device;
         mode_e mode;
@@ -142,14 +143,6 @@ public:
         uint16_t debugMode;
         uint8_t motorCount;
         uint8_t servoCount;
-        uint8_t hasVoltageMeter;
-        uint8_t hasCurrentMeter;
-        uint8_t isRSSI_configured;
-        uint8_t useDshotTelemetry;
-        uint8_t hasBarometer;
-        uint8_t hasMagnetometer;
-        uint8_t hasRangefinder;
-        uint8_t useGPS;
     };
     struct xmit_state_t {
         uint32_t headerIndex;
@@ -252,10 +245,10 @@ public:
     write_e writeFieldHeaderGPS_G();
 
     static inline bool isFieldEnabled(uint32_t enabledMask, log_field_select_e field) { return (enabledMask & field) != 0; }
-    inline bool isFieldEnabled(log_field_select_e field) const { return isFieldEnabled(_config.logSelectEnabled, field); }
+    inline bool isFieldEnabled(log_field_select_e field) const { return isFieldEnabled(_logSelectEnabled, field); }
 
-    void buildFieldConditionCache(const start_t& start);
-    bool testFieldConditionUncached(flight_log_field_condition_e condition, const start_t& start) const;
+    void buildFieldConditionCache();
+    bool testFieldConditionUncached(flight_log_field_condition_e condition) const;
     inline bool testFieldCondition(flight_log_field_condition_e condition) const { return _conditionCache.test(condition); }
 
     bool isOnlyLoggingIFrames() const { return blackboxPInterval == 0; }
@@ -280,13 +273,15 @@ public:
 
     // !!TODO move following into BlackboxInterface??
     void init(const config_t& config);
-    void start(const start_t& start); // should pass in parameters to be used in buildFieldConditionCache
+    void start(const start_t& startParameters, uint32_t logSelectEnabled);
+    void start(const start_t& startParameters);
+    void start();
     void finish();
     void endLog();
     void startInTestMode();
     void stopInTestMode();
 
-    uint16_t getDebugMode() const { return _start.debugMode; };
+    uint16_t getDebugMode() const { return _debugMode; };
 
     uint8_t calculateSampleRate(uint16_t pRatio) const;
 
@@ -300,23 +295,18 @@ public:
     int32_t getIInterval() const { return blackboxIInterval; }
     int32_t getPInterval() const { return blackboxPInterval; }
     int32_t getSInterval() const { return blackboxSInterval; }
-    friend void test_blackbox_conditions();
 protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
     BlackboxCallbacksBase& _callbacks;
-    size_t _motorCount { 4 };
-    size_t _servoCount { 0 };
+    size_t _motorCount;
+    size_t _servoCount;
+    uint32_t _logSelectEnabled {};
     float _motorOutputLow { 0.0F }; //!!TODO allow this to be set
     uint32_t _resetTime = 0;
+    uint16_t _debugMode;
+
     config_t _config {
-        .logSelectEnabled = Blackbox::LOG_SELECT_PID
-            | Blackbox::LOG_SELECT_RC_COMMANDS
-            | Blackbox::LOG_SELECT_SETPOINT
-            | Blackbox::LOG_SELECT_GYRO
-            | Blackbox::LOG_SELECT_ACC
-            | Blackbox::LOG_SELECT_MOTOR
-            | Blackbox::LOG_SELECT_GYRO_UNFILTERED,
         .sample_rate = RATE_ONE,
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
@@ -331,7 +321,6 @@ protected:
     uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
 // Cache for FLIGHT_LOG_FIELD_CONDITION_* test results:
     std::bitset<64> _conditionCache {};
-    start_t _start {};
 
     uint32_t blackboxIteration {};
     int32_t blackboxLoopIndex {};
