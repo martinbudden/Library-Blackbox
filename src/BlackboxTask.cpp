@@ -99,4 +99,3 @@ Wrapper function for BlackboxTask::Task with the correct signature to be used in
 
     static_cast<BlackboxTask*>(parameters->task)->task(); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
 }
-
