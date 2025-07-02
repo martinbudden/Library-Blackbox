@@ -1,14 +1,14 @@
 {
-    "name": "BlackBox",
+    "name": "Blackbox",
     "description": "Blackbox flight recorder",
-    "keywords": "BlackBox",
+    "keywords": "Blackbox",
     "authors": {
         "name": "Martin Budden",
         "url": "https://github.com/martinbudden"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/martinbudden/Library-BlackBox.git"
+        "url": "https://github.com/martinbudden/Library-Blackbox.git"
     },
     "dependencies": [
         {
@@ -20,9 +20,9 @@
             "version": "^0.0.2"
         }
     ],
-    "license": "GNU GPL v3.0",
+    "license": "GPL-3.0-or-later",
     "version": "0.0.1",
     "frameworks": "*",
     "platforms": "*",
-    "headers": [ "BlackBox.h" ]
+    "headers": [ "Blackbox.h", "BlackboxCallbacksBase.h", "BlackboxSerialDevice.h", "BlackboxTask.h" ]
 }

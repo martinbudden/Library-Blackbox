@@ -1,4 +1,4 @@
-# BlackBox Library [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
+# Blackbox Library [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
 
 This library is a port of the Betaflight Blackbox library to C++. (Betaflight is written in C).
 It also contains Kustaa Nyholm's `printf` implementation.

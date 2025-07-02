@@ -1,3 +1,3 @@
 # Test
 
-Tests for the BlackBox library.
+Tests for the Blackbox library.
