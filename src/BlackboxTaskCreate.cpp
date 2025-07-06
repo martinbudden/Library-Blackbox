@@ -46,9 +46,15 @@
 
 #include "BlackboxTask.h"
 
+#if defined(USE_DEBUG_PRINTF_TASK_INFORMATION)
 #if defined(USE_ESPNOW)
 #include <HardwareSerial.h>
 #endif
+#endif
+
+#include <array>
+#include <cstring>
+
 #if defined(USE_FREERTOS)
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -65,15 +71,15 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
     static TaskBase::parameters_t taskParameters { // NOLINT(misc-const-correctness) false positive
         .task = &blackboxTask
     };
-#if !defined(BLACKBOX_TASK_STACK_DEPTH)
-    enum { BLACKBOX_TASK_STACK_DEPTH = 4096 };
+#if !defined(BLACKBOX_TASK_STACK_DEPTH_BYTES)
+    enum { BLACKBOX_TASK_STACK_DEPTH_BYTES = 4096 };
 #endif
-    static std::array <StackType_t, BLACKBOX_TASK_STACK_DEPTH> stack;
+    static std::array <StackType_t, BLACKBOX_TASK_STACK_DEPTH_BYTES> stack;
     static StaticTask_t taskBuffer;
     taskInfo = {
         .taskHandle = nullptr,
         .name = "BlackboxTask",
-        .stackDepth = BLACKBOX_TASK_STACK_DEPTH,
+        .stackDepth = BLACKBOX_TASK_STACK_DEPTH_BYTES,
         .stackBuffer = &stack[0],
         .priority = priority,
         .coreID = coreID,
@@ -94,10 +100,12 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
     taskInfo.taskHandle = taskHandle;
     assert(taskHandle != nullptr && "Unable to create Blackbox task.");
 
+#if defined(USE_DEBUG_PRINTF_TASK_INFORMATION)
 #if !defined(FRAMEWORK_ESPIDF)
     std::array<char, 128> buf;
     sprintf(&buf[0], "**** BlackboxTask,      core:%u, priority:%u, task interval:%ums\r\n", coreID, priority, taskIntervalMicroSeconds / 1000);
     Serial.print(&buf[0]);
+#endif
 #endif
 #else
     (void)taskInfo;

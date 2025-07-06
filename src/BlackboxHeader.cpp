@@ -495,14 +495,15 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
         return isFieldEnabled(LOG_SELECT_PID);
 
     case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
-        [[fallthrough]];
+        return  isFieldEnabled(LOG_SELECT_PID);
     case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
-        [[fallthrough]];
+        return  isFieldEnabled(LOG_SELECT_PID);
     case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2: {
         // always log the dterm, even if it is zero
         // not logging dterm saves little space and means if it is tuned during flight, the value won't be logged.
         //const uint8_t currentPidProfileDTerm = _callbacks.getCurrentPidProfileDTermConstant(condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0);
-        return  isFieldEnabled(LOG_SELECT_PID); // && (currentPidProfileDTerm != 0);
+        //return  isFieldEnabled(LOG_SELECT_PID); // && (currentPidProfileDTerm != 0);
+        return false; // never log the YAW_RATE DTerm
     }
     case FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS:
         return isFieldEnabled(LOG_SELECT_RC_COMMANDS);
