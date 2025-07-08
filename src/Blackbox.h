@@ -110,6 +110,7 @@ public:
         LOG_SELECT_RANGEFINDER      = 0x4000,
         LOG_SELECT_DEBUG            = 0x8000,
         LOG_SELECT_GPS             = 0x10000,
+        LOG_SELECT_PID_DTERM_YAW   = 0x20000,
     };
 
     enum state_e {
