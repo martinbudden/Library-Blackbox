@@ -135,7 +135,7 @@ void Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 #endif
 
     blackboxMainState_t mainState {};
-    _callbacks.loadMainStateFromFlightController(mainState);
+    _callbacks.loadMainState(mainState, 0);
     vbatReference = mainState.vbatLatest;
 
     //No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
@@ -302,10 +302,10 @@ bool Blackbox::logSFrameIfNeeded()
     bool shouldWrite = blackboxSlowFrameIterationTimer >= blackboxSInterval;
 
     if (shouldWrite) {
-        _callbacks.loadSlowStateFromFlightController(_slowState);
+        _callbacks.loadSlowState(_slowState);
     } else {
         blackboxSlowState_t newSlowState {};
-        _callbacks.loadSlowStateFromFlightController(newSlowState);
+        _callbacks.loadSlowState(newSlowState);
 
         // Only write a slow frame if it was different from the previous state
         if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
@@ -348,22 +348,17 @@ void Blackbox::advanceIterationTimers()
 /*!
 Called once every FC loop in order to log the current state
 */
-void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc)
+void Blackbox::logIteration(timeUs_t currentTimeUs)
 {
-    (void)gyroRPS;
-    (void)gyroRPS_unfiltered;
-    (void)acc;
-
     // Write a keyframe every blackboxIInterval frames so we can resynchronise upon missing frames
     if (shouldLogIFrame()) { // ie blackboxLoopIndex == 0
-        // Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
-        // an additional item to write at the same time). Unless we're *only* logging "I" frames, then we have no choice.
+        // Don't log a slow frame if the slow data didn't change (IFrames are already large enough without adding
+        // an additional item to write at the same time). Unless we're *only* logging IFrames, then we have no choice.
         if (isOnlyLoggingIFrames()) {
             logSFrameIfNeeded();
         }
 
-        _callbacks.loadMainStateFromFlightController(*_mainStateHistory[0]);
-        _mainStateHistory[0]->time = currentTimeUs;
+        _callbacks.loadMainState(*_mainStateHistory[0], currentTimeUs);
         logIFrame();
     } else {
         logEventArmingBeepIfNeeded();
@@ -374,8 +369,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const 
             // So only log slow frames during loop iterations where we log a main frame.
             logSFrameIfNeeded();
 
-            _callbacks.loadMainStateFromFlightController(*_mainStateHistory[0]);
-            _mainStateHistory[0]->time = currentTimeUs;
+            _callbacks.loadMainState(*_mainStateHistory[0], currentTimeUs);
             logPFrame();
         }
 #if defined(USE_GPS)
@@ -397,15 +391,10 @@ void Blackbox::logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const 
     _serialDevice.flush();
 }
 
-uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
-{
-    return update(currentTimeUs, nullptr, nullptr, nullptr);
-}
-
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
-uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc) // NOLINT(readability-function-cognitive-complexity)
+uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
 {
     switch (_state) {
     case STATE_STOPPED:
@@ -506,7 +495,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
             logEvent(LOG_EVENT_LOGGING_RESUME, &resume);
             setState(STATE_RUNNING);
 
-            logIteration(currentTimeUs, gyroRPS, gyroRPS_unfiltered, acc);
+            logIteration(currentTimeUs);
         }
         // Keep the logging timers ticking so our log iteration continues to advance
         advanceIterationTimers();
@@ -517,7 +506,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xy
         if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxRcModeActive() && !startedLoggingInTestMode) {
             setState(STATE_PAUSED);
         } else {
-            logIteration(currentTimeUs, gyroRPS, gyroRPS_unfiltered, acc);
+            logIteration(currentTimeUs);
         }
         advanceIterationTimers();
         break;

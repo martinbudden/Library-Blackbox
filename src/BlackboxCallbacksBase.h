@@ -46,11 +46,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "BlackboxMessageQueue.h"
+
 #include <array>
 #include <cstdint>
-
-struct xyz_t;
-
 
 #pragma pack(push, 1)
 // We pack this struct so that padding doesn't interfere with memcmp()
@@ -86,6 +85,7 @@ struct blackboxMainState_t {
     std::array<int32_t, XYZ_AXIS_COUNT> axisPID_I;
     std::array<int32_t, XYZ_AXIS_COUNT> axisPID_D;
     std::array<int32_t, XYZ_AXIS_COUNT> axisPID_F;
+    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_S;
 
     std::array<int16_t, 4> rcCommand;
     std::array<int16_t, 4> setpoint;
@@ -104,12 +104,11 @@ struct blackboxMainState_t {
 
 class BlackboxCallbacksBase {
 public:
-    //! Load rarely-changing values from the FC into the given structure, used for slow frames
-    virtual void loadSlowStateFromFlightController(blackboxSlowState_t& slowState) = 0;
+    //! Load the rarely-changing values, used for slow frames
+    virtual void loadSlowState(blackboxSlowState_t& slowState) = 0;
 
-    //! Fill the current state of the blackbox using values read from the flight controller, used for I-frames and P-frames
-    virtual void loadMainStateFromFlightController(blackboxMainState_t& mainState) = 0;
-    virtual void loadMainStateFromFlightController(blackboxMainState_t& mainState, const xyz_t& gyroRPS, const xyz_t& gyroRPS_unfiltered, const xyz_t& acc) = 0;
+    //! Load the main state of the blackbox, used for I-frames and P-frames
+    virtual void loadMainState(blackboxMainState_t& mainState, uint32_t currentTimeUs) = 0;
 
     virtual bool isArmed() const = 0;
     virtual bool isBlackboxRcModeActive() const = 0;
@@ -117,4 +116,8 @@ public:
     virtual uint32_t getArmingBeepTimeMicroSeconds() const = 0;
     virtual bool areMotorsRunning() const = 0;
     virtual uint32_t rcModeActivationMask() const = 0; // lower 32 bits of BOX_COUNT bits
+
+    void setQueueItem(const BlackboxMessageQueue::queue_item_t& queueItem) { _queueItem = queueItem; }
+protected:
+    BlackboxMessageQueue::queue_item_t _queueItem {};
 };

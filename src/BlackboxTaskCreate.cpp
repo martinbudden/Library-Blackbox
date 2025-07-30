@@ -90,7 +90,7 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
     const TaskHandle_t taskHandle = xTaskCreateStaticPinnedToCore(
         BlackboxTask::Task,
         taskInfo.name,
-        taskInfo.stackDepth,
+        taskInfo.stackDepth / sizeof(StackType_t),
         &taskParameters,
         taskInfo.priority,
         taskInfo.stackBuffer,

@@ -45,6 +45,7 @@
  */
 
 #include "Blackbox.h"
+#include "BlackboxCallbacksBase.h"
 #include "BlackboxTask.h"
 #include <TimeMicroSeconds.h>
 
@@ -73,6 +74,14 @@ Task function for the MSP. Sets up and runs the task loop() function.
 [[noreturn]] void BlackboxTask::task() // NOLINT(readability-convert-member-functions-to-static)
 {
 #if defined(USE_FREERTOS)
+#if defined(BLACKBOX_IS_EVENT_DRIVEN)
+    BlackboxMessageQueue::queue_item_t queueItem;
+    while (true) {
+        _messageQueue.RECEIVE(queueItem); // wait until there is IMU data.
+        _blackbox.getCallbacks().setQueueItem(queueItem); // set the callbacks queueItem so it can be read in update()
+        _blackbox.update(queueItem.timeMicroSeconds);
+    }
+#else
     // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
     const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroSeconds / 1000);
     assert(taskIntervalTicks > 0 && "Blackbox taskIntervalTicks is zero.");
@@ -85,6 +94,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
         const uint32_t timeMicroSeconds = timeUs();
         _blackbox.update(timeMicroSeconds);
     }
+#endif
 #else
     while (true) {}
 #endif // USE_FREERTOS

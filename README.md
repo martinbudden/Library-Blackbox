@@ -32,6 +32,9 @@ This means the code is a curious mix of both my style and Betaflight style. It i
 This library is a port (modification) of the Blackbox implementation
 in Betaflight (which itself was a port of the Cleanflight implementation).
 
+I believe the original implementation was done by [Nicholas Sherlock (aka thenickdude)](https://www.nicksherlock.com/),
+[source code](https://github.com/thenickdude/blackbox). This was licensed under the GNU GPL v3.
+
 Both Betaflight and Cleanflight are licensed under the GNU GPL
 
 This library also contains Kustaa Nyholm's `printf` implementation, which is included under
@@ -39,3 +42,47 @@ the terms of its license and includes that implementation's copyright notice, co
 
 The original Betaflight copyright notice is included in License.txt and the program files,
 as per the GNU GPL "keep intact all notices” requirement.
+
+## Simplified Class Diagram
+
+All writing to the serial device is done via the `BlackboxEncoder`
+
+```mermaid
+classDiagram
+    class BlackboxEncoder {
+        write(uint8_t value)
+    }
+    class Blackbox {
+        <<abstract>>
+        writeSystemInformation() write_e *
+        virtual update() uint32_t
+    }
+    class BlackboxCallbacksBase {
+        <<abstract>>
+        loadSlowState() *
+        loadMainState() *
+    }
+    class BlackboxSerialDevice {
+        <<abstract>>
+    }
+    class BlackboxFIFO_Base {
+        <<abstract>>
+        update(timeUs gyro, gyroUnfiltered, acc) uint32_t *
+    }
+    class BlackboxSerialDeviceSDCard["BlackboxSerialDeviceSDCard(eg)"]
+
+    Blackbox *-- BlackboxEncoder : calls write
+    BlackboxEncoder o-- BlackboxSerialDevice : calls write
+    Blackbox o-- BlackboxSerialDevice : calls open close
+    %%BlackboxSerialDevice --o BlackboxEncoder : calls write
+    BlackboxSerialDevice <|-- BlackboxSerialDeviceSDCard
+    Blackbox o-- BlackboxCallbacksBase
+    BlackboxCallbacksBase o-- BlackboxFIFO_Base
+
+    TaskBase <|-- BlackboxTask
+    class BlackboxTask {
+        +loop()
+        -task() [[noreturn]]
+    }
+    BlackboxTask o-- Blackbox : calls update
+```

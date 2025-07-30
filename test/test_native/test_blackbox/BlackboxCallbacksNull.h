@@ -60,6 +60,7 @@ struct pidProfile_t {
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
     uint8_t landing_disarm_threshold;            // Accelerometer vector delta (jerk) threshold with disarms if exceeded
 };
+
 struct rates_t {
     enum { ROLL = 0, PITCH = 1, YAW = 2, AXIS_COUNT = 3 };
     std::array<uint16_t, AXIS_COUNT> rate_limits;
@@ -76,10 +77,8 @@ struct rates_t {
 
 class BlackboxCallbacksNull : public BlackboxCallbacksBase {
 public:
-    virtual void loadSlowStateFromFlightController(blackboxSlowState_t& slowState) override;
-    //! Fill the current state of the blackbox using values read from the flight controller
-    virtual void loadMainStateFromFlightController(blackboxMainState_t& blackboxCurrent) override;
-    virtual void loadMainStateFromFlightController(blackboxMainState_t& blackboxCurrent, const xyz_t& gyroRPS, const xyz_t& gyroRPS_unfiltered, const xyz_t& acc) override;
+    virtual void loadSlowState(blackboxSlowState_t& slowState) override;
+    virtual void loadMainState(blackboxMainState_t& blackboxCurrent, uint32_t currentTimeUs) override;
 
     virtual bool isArmed() const override;
     virtual bool isBlackboxRcModeActive() const override;

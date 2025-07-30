@@ -525,7 +525,7 @@ void test_blackbox_conditions()
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1));
-    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2));
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SETPOINT));

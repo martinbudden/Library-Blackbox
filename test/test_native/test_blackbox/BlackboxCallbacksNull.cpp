@@ -26,7 +26,7 @@ uint32_t BlackboxCallbacksNull::getArmingBeepTimeMicroSeconds() const
     return 0;
 }
 
-void BlackboxCallbacksNull::loadSlowStateFromFlightController(blackboxSlowState_t& slow)
+void BlackboxCallbacksNull::loadSlowState(blackboxSlowState_t& slow)
 {
     slow.flightModeFlags = 0;
     slow.stateFlags = 0;
@@ -35,17 +35,10 @@ void BlackboxCallbacksNull::loadSlowStateFromFlightController(blackboxSlowState_
     slow.rxFlightChannelsValid = false;
 }
 
-void BlackboxCallbacksNull::loadMainStateFromFlightController(blackboxMainState_t& blackboxCurrent)
+void BlackboxCallbacksNull::loadMainState(blackboxMainState_t& blackboxCurrent, uint32_t currentTimeUs)
 {
     (void)blackboxCurrent;
-}
-
-void BlackboxCallbacksNull::loadMainStateFromFlightController(blackboxMainState_t& blackboxCurrent, const xyz_t& gyroRPS, const xyz_t& gyroRPS_unfiltered, const xyz_t& acc)
-{
-    (void)blackboxCurrent;
-    (void)gyroRPS;
-    (void)gyroRPS_unfiltered;
-    (void)acc;
+    (void)currentTimeUs;
 }
 
 uint32_t BlackboxCallbacksNull::rcModeActivationMask() const

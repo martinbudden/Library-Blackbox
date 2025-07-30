@@ -229,7 +229,7 @@ public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e writeSystemInformation() = 0;
     virtual uint32_t update(uint32_t currentTimeUs); // main loop function
-    virtual uint32_t update(uint32_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc);
+    BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
 
     bool headerReserveBufferSpace();
     int printfv(const char* fmt, va_list va);
@@ -267,7 +267,7 @@ public:
     void logEventArmingBeepIfNeeded(); // E-frame
     void logEventFlightModeIfNeeded(); // E-frame
 
-    void logIteration(timeUs_t currentTimeUs, const xyz_t* gyroRPS, const xyz_t* gyroRPS_unfiltered, const xyz_t* acc);
+    void logIteration(timeUs_t currentTimeUs);
     void advanceIterationTimers();
     void resetIterationTimers();
     void setState(state_e newState);
