@@ -48,20 +48,22 @@
 
 #include "BlackboxCallbacksBase.h"
 #include "BlackboxEncoder.h"
-#include "BlackboxInterface.h"
 
 #include <bitset>
 
+class BlackboxCallbacksBase;
+class BlackboxMessageQueueBase;
 class BlackboxSerialDevice;
 enum flight_log_field_condition_e : uint8_t;
 
 
 class Blackbox {
 public:
-    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) : 
+    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) : 
         _serialDevice(serialDevice),
         _encoder(_serialDevice),
         _callbacks(callbacks),
+        _messageQueue(messageQueue),
         targetPidLooptimeUs(pidLoopTimeUs)
         {}
 public:
@@ -228,8 +230,10 @@ public:
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e writeSystemInformation() = 0;
-    virtual uint32_t update(uint32_t currentTimeUs); // main loop function
+
+    uint32_t update(uint32_t currentTimeUs); // main loop function
     BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
+    BlackboxMessageQueueBase& getMessageQueue() const { return _messageQueue; }
 
     bool headerReserveBufferSpace();
     int printfv(const char* fmt, va_list va);
@@ -296,6 +300,7 @@ protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
     BlackboxCallbacksBase& _callbacks;
+    BlackboxMessageQueueBase& _messageQueue;
     size_t _motorCount;
     size_t _servoCount;
     uint32_t _logSelectEnabled {};

@@ -46,23 +46,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "BlackboxMessageQueue.h"
 #include <TaskBase.h>
-
 class Blackbox;
 class BlackboxCallbacksBase;
+class BlackboxMessageQueueBase;
 
 
 class BlackboxTask : public TaskBase {
 public:
-    BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox) : 
-        TaskBase(taskIntervalMicroSeconds),
-        _blackbox(blackbox)
-        {}
+    BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox);
 public:
     static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, uint8_t priority, uint8_t coreID, uint32_t taskIntervalMicroSeconds);
     static BlackboxTask* createTask(Blackbox& blackbox, uint8_t priority, uint8_t coreID, uint32_t taskIntervalMicroSeconds);
-    BlackboxMessageQueue& getMessageQueue() { return _messageQueue; }
+    BlackboxMessageQueueBase& getMessageQueue() { return _messageQueue; }
 private:
     // class is not copyable or moveable
     BlackboxTask(const BlackboxTask&) = delete;
@@ -76,5 +72,5 @@ private:
     [[noreturn]] void task();
 private:
     Blackbox& _blackbox;
-    BlackboxMessageQueue _messageQueue {};
+    BlackboxMessageQueueBase& _messageQueue;
 };

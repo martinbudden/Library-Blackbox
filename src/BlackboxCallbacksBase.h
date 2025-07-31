@@ -46,8 +46,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "BlackboxMessageQueue.h"
-
 #include <array>
 #include <cstdint>
 
@@ -116,8 +114,4 @@ public:
     virtual uint32_t getArmingBeepTimeMicroSeconds() const = 0;
     virtual bool areMotorsRunning() const = 0;
     virtual uint32_t rcModeActivationMask() const = 0; // lower 32 bits of BOX_COUNT bits
-
-    void setQueueItem(const BlackboxMessageQueue::queue_item_t& queueItem) { _queueItem = queueItem; }
-protected:
-    BlackboxMessageQueue::queue_item_t _queueItem {};
 };

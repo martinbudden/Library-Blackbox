@@ -45,14 +45,22 @@
  */
 
 #include "Blackbox.h"
-#include "BlackboxCallbacksBase.h"
+#include "BlackboxMessageQueueBase.h"
 #include "BlackboxTask.h"
+
 #include <TimeMicroSeconds.h>
 
 #if defined(USE_FREERTOS)
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #endif
+
+BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox) :
+    TaskBase(taskIntervalMicroSeconds),
+    _blackbox(blackbox),
+    _messageQueue(blackbox.getMessageQueue())
+{
+}
 
 /*!
 loop() function for when not using FREERTOS
@@ -75,11 +83,10 @@ Task function for the MSP. Sets up and runs the task loop() function.
 {
 #if defined(USE_FREERTOS)
 #if defined(BLACKBOX_IS_EVENT_DRIVEN)
-    BlackboxMessageQueue::queue_item_t queueItem;
+    uint32_t timeMicroSeconds {};
     while (true) {
-        _messageQueue.RECEIVE(queueItem); // wait until there is IMU data.
-        _blackbox.getCallbacks().setQueueItem(queueItem); // set the callbacks queueItem so it can be read in update()
-        _blackbox.update(queueItem.timeMicroSeconds);
+        _messageQueue.WAIT_IF_EMPTY(timeMicroSeconds); // wait until there is IMU data.
+        _blackbox.update(timeMicroSeconds);
     }
 #else
     // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.

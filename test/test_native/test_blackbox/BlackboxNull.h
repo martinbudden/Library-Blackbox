@@ -5,8 +5,8 @@
 
 class BlackboxNull : public Blackbox {
 public:
-    BlackboxNull(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) :
-        Blackbox(pidLoopTimeUs, callbacks, serialDevice) {}
+    BlackboxNull(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
+        Blackbox(pidLoopTimeUs, callbacks, messageQueue, serialDevice) {}
 public:
     virtual write_e writeSystemInformation() override;
 };

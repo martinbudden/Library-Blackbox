@@ -62,27 +62,28 @@ classDiagram
         loadSlowState() *
         loadMainState() *
     }
+    class BlackboxMessageQueueBase {
+        <<abstract>>
+        WAIT_IF_EMPTY() const int32_t *
+    }
     class BlackboxSerialDevice {
         <<abstract>>
     }
-    class BlackboxFIFO_Base {
-        <<abstract>>
-        update(timeUs gyro, gyroUnfiltered, acc) uint32_t *
-    }
     class BlackboxSerialDeviceSDCard["BlackboxSerialDeviceSDCard(eg)"]
 
+    Blackbox o-- BlackboxMessageQueueBase
+    Blackbox o-- BlackboxCallbacksBase : calls loadState
     Blackbox *-- BlackboxEncoder : calls write
     BlackboxEncoder o-- BlackboxSerialDevice : calls write
     Blackbox o-- BlackboxSerialDevice : calls open close
     %%BlackboxSerialDevice --o BlackboxEncoder : calls write
     BlackboxSerialDevice <|-- BlackboxSerialDeviceSDCard
-    Blackbox o-- BlackboxCallbacksBase
-    BlackboxCallbacksBase o-- BlackboxFIFO_Base
 
     TaskBase <|-- BlackboxTask
     class BlackboxTask {
         +loop()
         -task() [[noreturn]]
     }
+    BlackboxTask o-- BlackboxMessageQueueBase : calls WAIT_IF_EMPTY
     BlackboxTask o-- Blackbox : calls update
 ```
