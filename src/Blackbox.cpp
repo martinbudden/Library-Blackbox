@@ -486,8 +486,8 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
             //    .logIteration = blackboxIteration,
             //    .currentTime = currentTimeUs
             //};
-            const log_event_data_u resume {
-                .loggingResume {
+            const log_event_data_u resume = {
+                .loggingResume = {
                     .logIteration = blackboxIteration,
                     .currentTime = currentTimeUs
                 }
@@ -1069,7 +1069,7 @@ void Blackbox::logEventArmingBeepIfNeeded()
     if (armingBeepTimeMicroSeconds != blackboxLastArmingBeep) {
         blackboxLastArmingBeep = armingBeepTimeMicroSeconds;
         const log_event_data_u eventData {
-            .syncBeep {
+            .syncBeep = {
                 .time  = blackboxLastArmingBeep
             }
         };
@@ -1092,8 +1092,8 @@ void Blackbox::logEventFlightModeIfNeeded()
 #endif
     const uint32_t rcModeActivationMask = _callbacks.rcModeActivationMask();
     if (rcModeActivationMask != blackboxLastFlightModeFlags) {
-        const log_event_data_u eventData {
-            .flightMode {
+        const log_event_data_u eventData = {
+            .flightMode = {
                 .flags = rcModeActivationMask,
                 .lastFlags = blackboxLastFlightModeFlags
             }
