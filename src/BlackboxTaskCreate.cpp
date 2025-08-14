@@ -103,7 +103,7 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
 #if defined(USE_DEBUG_PRINTF_TASK_INFORMATION)
 #if !defined(FRAMEWORK_ESPIDF)
     std::array<char, 128> buf;
-    sprintf(&buf[0], "**** BlackboxTask,      core:%u, priority:%u, task interval:%ums\r\n", coreID, priority, taskIntervalMicroSeconds / 1000);
+    sprintf(&buf[0], "**** BlackboxTask,           core:%u, priority:%u, task interval:%ums\r\n", coreID, priority, taskIntervalMicroSeconds / 1000);
     Serial.print(&buf[0]);
 #endif
 #endif
