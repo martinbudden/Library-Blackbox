@@ -47,7 +47,7 @@
 #include "BlackboxTask.h"
 
 #if defined(USE_DEBUG_PRINTF_TASK_INFORMATION)
-#if defined(USE_ESPNOW)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
 #include <HardwareSerial.h>
 #endif
 #endif
@@ -55,7 +55,7 @@
 #include <array>
 #include <cstring>
 
-#if defined(USE_FREERTOS)
+#if defined(FRAMEWORK_USE_FREERTOS)
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #endif
@@ -66,7 +66,7 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
     static BlackboxTask blackboxTask(taskIntervalMicroSeconds, blackbox);
 
-#if defined(USE_FREERTOS)
+#if defined(FRAMEWORK_USE_FREERTOS)
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
     static TaskBase::parameters_t taskParameters { // NOLINT(misc-const-correctness) false positive
         .task = &blackboxTask
@@ -111,7 +111,7 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
     (void)taskInfo;
     (void)priority;
     (void)coreID;
-#endif // USE_FREERTOS
+#endif // FRAMEWORK_USE_FREERTOS
     return &blackboxTask;
 }
 

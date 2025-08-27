@@ -256,8 +256,8 @@ public:
     bool testFieldConditionUncached(flight_log_field_condition_e condition) const;
     inline bool testFieldCondition(flight_log_field_condition_e condition) const { return _conditionCache.test(condition); }
 
-    bool isOnlyLoggingIFrames() const { return blackboxPInterval == 0; }
-    bool shouldLogPFrame() const { return blackboxPFrameIndex == 0 && blackboxPInterval != 0; }
+    bool isOnlyLoggingIFrames() const { return _PInterval == 0; }
+    bool shouldLogPFrame() const { return _PFrameIndex == 0 && _PInterval != 0; }
     bool shouldLogIFrame() const { return blackboxLoopIndex == 0; }
     bool shouldLogHFrame() const;
 
@@ -278,9 +278,9 @@ public:
 
     // !!TODO move following into BlackboxInterface??
     void init(const config_t& config);
-    void start(const start_t& startParameters, uint32_t logSelectEnabled);
-    void start(const start_t& startParameters);
-    void start();
+    state_e start(const start_t& startParameters, uint32_t logSelectEnabled);
+    state_e start(const start_t& startParameters);
+    state_e start();
     void finish();
     void endLog();
     void startInTestMode();
@@ -293,9 +293,9 @@ public:
     bool inMotorTestMode();
 
 // test functions
-    int32_t getIInterval() const { return blackboxIInterval; }
-    int32_t getPInterval() const { return blackboxPInterval; }
-    int32_t getSInterval() const { return blackboxSInterval; }
+    int32_t getIInterval() const { return _IInterval; }
+    int32_t getPInterval() const { return _PInterval; }
+    int32_t getSInterval() const { return _SInterval; }
 protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
@@ -326,12 +326,12 @@ protected:
 
     uint32_t blackboxIteration {};
     int32_t blackboxLoopIndex {};
-    int32_t blackboxPFrameIndex {};
-    int32_t blackboxIFrameIndex {};
-    int32_t blackboxIInterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
-    int32_t blackboxPInterval = 0; //!< number of flight loop iterations before logging P-frame
-    int32_t blackboxSInterval = 0;
-    int32_t blackboxSlowFrameIterationTimer {};
+    int32_t _PFrameIndex {};
+    int32_t _IFrameIndex {};
+    int32_t _IInterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
+    int32_t _PInterval = 0; //!< number of flight loop iterations before logging P-frame
+    int32_t _SInterval = 0;
+    int32_t _slowFrameIterationTimer {};
     bool blackboxLoggedAnyFrames {};
     // We store voltages in I-frames relative to vbatReference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.

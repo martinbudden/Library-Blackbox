@@ -50,7 +50,7 @@
 
 #include <TimeMicroSeconds.h>
 
-#if defined(USE_FREERTOS)
+#if defined(FRAMEWORK_USE_FREERTOS)
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #endif
@@ -81,30 +81,30 @@ Task function for the MSP. Sets up and runs the task loop() function.
 */
 [[noreturn]] void BlackboxTask::task() // NOLINT(readability-convert-member-functions-to-static)
 {
-#if defined(USE_FREERTOS)
-#if defined(BLACKBOX_IS_EVENT_DRIVEN)
-    uint32_t timeMicroSeconds {};
-    while (true) {
-        _messageQueue.WAIT_IF_EMPTY(timeMicroSeconds); // wait until there is IMU data.
-        _blackbox.update(timeMicroSeconds);
-    }
-#else
-    // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
-    const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroSeconds / 1000);
-    assert(taskIntervalTicks > 0 && "Blackbox taskIntervalTicks is zero.");
+#if defined(FRAMEWORK_USE_FREERTOS)
+    if (_taskIntervalMicroSeconds == 0) {
+        uint32_t timeMicroSeconds {};
+        while (true) {
+            _messageQueue.WAIT_IF_EMPTY(timeMicroSeconds); // wait until there is IMU data.
+            _blackbox.update(timeMicroSeconds);
+        }
+    } else {
+        // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
+        const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroSeconds / 1000);
+        assert(taskIntervalTicks > 0 && "Blackbox taskIntervalTicks is zero.");
 
-    _previousWakeTimeTicks = xTaskGetTickCount();
-    while (true) {
-        // delay until the end of the next taskIntervalTicks
-        vTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
+        _previousWakeTimeTicks = xTaskGetTickCount();
+        while (true) {
+            // delay until the end of the next taskIntervalTicks
+            vTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
 
-        const uint32_t timeMicroSeconds = timeUs();
-        _blackbox.update(timeMicroSeconds);
+            const uint32_t timeMicroSeconds = timeUs();
+            _blackbox.update(timeMicroSeconds);
+        }
     }
-#endif
 #else
     while (true) {}
-#endif // USE_FREERTOS
+#endif // FRAMEWORK_USE_FREERTOS
 }
 
 /*!

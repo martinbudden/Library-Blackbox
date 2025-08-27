@@ -46,7 +46,8 @@
 
 #include "BlackboxSerialDeviceSDCard.h"
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
+//#define USE_PRINTF
 #include <HardwareSerial.h>
 #include <SD.h>
 #include <SPI.h>
@@ -54,30 +55,23 @@
 
 //#define USE_BLACKBOX_SBUF
 
+BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(port_pins_t pins) :
+    _pins(pins)
+{
+}
+
+BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(pins_t pins) :
+    _pins(port_pins_t{{0,pins.cs},{0,pins.sck},{0,pins.cipo},{0,pins.copi},{0,pins.irq}})
+{
+}
+
 int32_t BlackboxSerialDeviceSDCard::init()
 {
     _state = INITIAL;
-#if defined(USE_ARDUINO_ESP32)
-    struct pins_t {
-        uint8_t cs;
-        uint8_t sck;
-        uint8_t cipo; // RX, CIPO, MISO, POCI
-        uint8_t copi; // TX, COPI, MOSI, PICO
-        uint8_t irq; // interrupt pin
-        uint8_t irqLevel; // interrupt level, ie low, high, edge rise, edge fall, edge change
-    };
-    //const pins_t pins = SDCARD_SPI_PINS;
-#define SD_SPI_CS_PIN   4
-#define SD_SPI_SCK_PIN  18
-#define SD_SPI_MISO_PIN 38
-#define SD_SPI_MOSI_PIN 23
-    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-    
-    const pins_t spiPins = {.cs=4,.sck=18,.cipo=38,.copi=24,.irq=0xFF,.irqLevel=0};
-    SPI.begin(spiPins.sck, spiPins.cipo, spiPins.copi, spiPins.cs);
+#if defined(FRAMEWORK_ARDUINO_ESP32)
+    SPI.begin(_pins.sck.pin, _pins.cipo.pin, _pins.copi.pin, _pins.cs.pin);
 
-    if (!SD.begin(spiPins.cs, SPI, 25000000)) {
-    //if (!SD.begin(SD_SPI_CS_PIN, SPI, 25000000)) {
+    if (!SD.begin(_pins.cs.pin, SPI, 25000000)) {
         Serial.println("SD Card MOUNT FAIL");
         return -1;
     }
@@ -104,14 +98,14 @@ bool BlackboxSerialDeviceSDCard::open()
 
 void BlackboxSerialDeviceSDCard::close() 
 {
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     _file.close();
 #endif
 }
 
 bool BlackboxSerialDeviceSDCard::isDeviceFull()
 {
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     //return (_file.available() > 0) ? false : true;
     return false;
 #else
@@ -124,7 +118,7 @@ size_t BlackboxSerialDeviceSDCard::write(uint8_t value)
 #if defined(USE_BLACKBOX_SBUF)
     if (_sbuf.bytesRemaining() <= 1) {
         _sbuf.switchToReader();
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
         _file.write(_sbuf.ptr(), _sbuf.bytesWritten());
 #endif
         _sbuf.reset();
@@ -134,7 +128,7 @@ size_t BlackboxSerialDeviceSDCard::write(uint8_t value)
 
 #else
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     return _file.write(value);
 #else
     (void)value;
@@ -149,7 +143,7 @@ size_t BlackboxSerialDeviceSDCard::write(const uint8_t* buf, size_t length)
 #if defined(USE_BLACKBOX_SBUF)
     if (_sbuf.bytesRemaining() <= length) {
         _sbuf.switchToReader();
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
         _file.write(_sbuf.ptr(), _sbuf.bytesWritten());
 #endif
         _sbuf.reset();
@@ -158,7 +152,7 @@ size_t BlackboxSerialDeviceSDCard::write(const uint8_t* buf, size_t length)
     return length;
 #else
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     return _file.write(buf, length);
 #else
     (void)buf;
@@ -175,7 +169,7 @@ static auto constexpr LOGFILE_SUFFIX = "BFL";
 
 void BlackboxSerialDeviceSDCard::enumerateFiles()
 {
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     File dir = SD.open("/logs");
     File entry = dir.openNextFile();
     while (entry) {
@@ -200,21 +194,20 @@ void BlackboxSerialDeviceSDCard::createLogFile()
 {
     ++_largestLogFileNumber;
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     // filename is of form LOGnnnnn.BFL
+    std::array<char, 20> filename;
+    strcpy(&filename[0], "/logs/LOGnnnnn.BFL");
+    const int offset = 9;
     size_t remainder = _largestLogFileNumber;
-    std::array<char, 8> number;
     for (int ii = 4; ii >= 0; --ii) {
-        number[ii] = (remainder % 10) + '0';
+        filename[ii + offset] = (remainder % 10) + '0';
         remainder /= 10;
     }
-    std::array<char, 20> filename;
-    strcpy(&filename[0], "/logs/");
-    strcat(&filename[0], "LOG");
-    strcat(&filename[0], &number[0]);
-    strcat(&filename[0], ".BFL");
 
-    //Serial.printf("SD:Blackbox opening file:%s\r\n", &filename[0]);
+#if defined(USE_PRINTF)
+    Serial.printf("SD:Blackbox opening file:%s\r\n", &filename[0]);
+#endif
     _file = SD.open(&filename[0], FILE_WRITE, true);
 #endif
 }
@@ -266,7 +259,7 @@ bool BlackboxSerialDeviceSDCard::endLog(bool retainLog)
 #endif
     (void)retainLog;
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     _file.close();
 #endif
 
@@ -277,7 +270,7 @@ bool BlackboxSerialDeviceSDCard::endLog(bool retainLog)
 
 bool BlackboxSerialDeviceSDCard::flush()
 {
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     _file.flush();
 #endif
     return true;

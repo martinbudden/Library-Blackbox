@@ -48,6 +48,7 @@
 #include "BlackboxCallbacksBase.h"
 #include "BlackboxFieldDefinitions.h"
 #include "BlackboxSerialDevice.h"
+
 #include <TimeMicroSeconds.h>
 #include <cassert>
 #include <cstring>
@@ -83,15 +84,15 @@ void Blackbox::init(const config_t& config)
     // an I-frame is written every 32ms
     // blackboxUpdate() is run in synchronisation with the PID loop
     // targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptimeUs is rounded for short looptimes
-    blackboxIInterval = static_cast<int32_t>(32 * 1000 / targetPidLooptimeUs);
+    _IInterval = static_cast<int32_t>(32 * 1000 / targetPidLooptimeUs);
 
-    blackboxPInterval = static_cast<int32_t>(1U << _config.sample_rate);
-    if (blackboxPInterval > blackboxIInterval) {
-        blackboxPInterval = 0; // log only I frames if logging frequency is too low
+    _PInterval = static_cast<int32_t>(1U << _config.sample_rate);
+    if (_PInterval > _IInterval) {
+        _PInterval = 0; // log only I frames if logging frequency is too low
     }
 
     // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
-    blackboxSInterval = blackboxIInterval * 256; 
+    _SInterval = _IInterval * 256; 
 
     if (_config.device == DEVICE_NONE) {
         setState(STATE_DISABLED);
@@ -103,20 +104,20 @@ void Blackbox::init(const config_t& config)
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
-void Blackbox::start()
+Blackbox::state_e Blackbox::start()
 {
-    start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)});
+    return start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)});
 }
 
-void Blackbox::start(const start_t& startParameters)
+Blackbox::state_e Blackbox::start(const start_t& startParameters)
 {
-    start(startParameters, _logSelectEnabled);
+    return start(startParameters, _logSelectEnabled);
 }
 
 /*!
 Start Blackbox logging if it is not already running. Intended to be called upon arming.
 */
-void Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
+Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 {
     assert(startParameters.motorCount <= blackboxMainState_t::MAX_SUPPORTED_MOTOR_COUNT);
     assert(startParameters.servoCount <= blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
@@ -127,7 +128,7 @@ void Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
     buildFieldConditionCache();
     if (!_serialDevice.open()) {
         setState(STATE_DISABLED);
-        return;
+        return _state;
     }
 
 #if defined(USE_GPS)
@@ -140,30 +141,27 @@ void Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 
     //No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
 
-    /*
-     * We use conditional tests to decide whether or not certain fields should be logged. Since our headers
-     * must always agree with the logged data, the results of these tests must not change during logging. So
-     * cache those now.
-     */
+    // We use conditional tests to decide whether or not certain fields should be logged. Since our headers
+    // must always agree with the logged data, the results of these tests must not change during logging. So
+    // cache those now.
     buildFieldConditionCache();
 
     //!!blackboxModeActivationConditionPresent = _callbacks.isBlackboxModeActivationConditionPresent();
 
     resetIterationTimers();
 
-    /*
-     * Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
-     * it finally plays the beep for this arming event.
-     */
+    // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
+    // it finally plays the beep for this arming event.
     blackboxLastArmingBeep = _callbacks.getArmingBeepTimeMicroSeconds();
     blackboxLastFlightModeFlags = _callbacks.rcModeActivationMask(); // record startup status
 
     setState(STATE_PREPARE_LOG_FILE);
+    return _state;
 }
 
-/**
- * Begin Blackbox shutdown.
- */
+/*!
+Begin Blackbox shutdown.
+*/
 void Blackbox::finish()
 {
     switch (_state) {
@@ -268,7 +266,7 @@ void Blackbox::setState(state_e newState)
         _xmitState.headerIndex = 0;
         break;
     case STATE_RUNNING:
-        blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
+        _slowFrameIterationTimer = _SInterval; //Force a slow frame to be written on the first iteration
 #ifdef USE_FLASH_TEST_PRBS
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
@@ -293,13 +291,13 @@ void Blackbox::setState(state_e newState)
 /**
  * If the data in the slow frame has changed, log a slow frame.
  *
- * If allowPeriodicWrite is true, the frame is also logged if it has been more than blackboxSInterval logging iterations
+ * If allowPeriodicWrite is true, the frame is also logged if it has been more than _SInterval logging iterations
  * since the field was last logged.
  */
 bool Blackbox::logSFrameIfNeeded()
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
-    bool shouldWrite = blackboxSlowFrameIterationTimer >= blackboxSInterval;
+    bool shouldWrite = _slowFrameIterationTimer >= _SInterval;
 
     if (shouldWrite) {
         _callbacks.loadSlowState(_slowState);
@@ -325,23 +323,23 @@ void Blackbox::resetIterationTimers()
 {
     blackboxIteration = 0;
     blackboxLoopIndex = 0;
-    blackboxIFrameIndex = 0;
-    blackboxPFrameIndex = 0;
-    blackboxSlowFrameIterationTimer = 0;
+    _IFrameIndex = 0;
+    _PFrameIndex = 0;
+    _slowFrameIterationTimer = 0;
 }
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 void Blackbox::advanceIterationTimers()
 {
-    ++blackboxSlowFrameIterationTimer;
+    ++_slowFrameIterationTimer;
     ++blackboxIteration;
 
-    if (++blackboxLoopIndex >= blackboxIInterval) {
+    if (++blackboxLoopIndex >= _IInterval) {
         blackboxLoopIndex = 0; // value of zero means IFrame will be written on next update
-        ++blackboxIFrameIndex; //!! This does not seem to be used anywhere
-        blackboxPFrameIndex = 0;
-    } else if (++blackboxPFrameIndex >= blackboxPInterval) {
-        blackboxPFrameIndex = 0; // value of zero means PFrame will be written on next update, if IFrame not written
+        ++_IFrameIndex; //!! This does not seem to be used anywhere
+        _PFrameIndex = 0;
+    } else if (++_PFrameIndex >= _PInterval) {
+        _PFrameIndex = 0; // value of zero means PFrame will be written on next update, if IFrame not written
     }
 }
 
@@ -350,7 +348,7 @@ Called once every FC loop in order to log the current state
 */
 void Blackbox::logIteration(timeUs_t currentTimeUs)
 {
-    // Write a keyframe every blackboxIInterval frames so we can resynchronise upon missing frames
+    // Write a keyframe every _IInterval frames so we can resynchronise upon missing frames
     if (shouldLogIFrame()) { // ie blackboxLoopIndex == 0
         // Don't log a slow frame if the slow data didn't change (IFrames are already large enough without adding
         // an additional item to write at the same time). Unless we're *only* logging IFrames, then we have no choice.
@@ -364,7 +362,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
         logEventArmingBeepIfNeeded();
         logEventFlightModeIfNeeded(); // Check for FlightMode status change event
 
-        if (shouldLogPFrame()) { // ie blackboxPFrameIndex == 0 && blackboxPInterval != 0
+        if (shouldLogPFrame()) { // ie _PFrameIndex == 0 && _PInterval != 0
             // We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
             // So only log slow frames during loop iterations where we log a main frame.
             logSFrameIfNeeded();
@@ -501,7 +499,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         advanceIterationTimers();
         break;
     case STATE_RUNNING:
-        // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
+        // On entry to this state, blackboxIteration, _PFrameIndex and _IFrameIndex are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
         if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxRcModeActive() && !startedLoggingInTestMode) {
             setState(STATE_PAUSED);
@@ -930,7 +928,7 @@ void Blackbox::logSFrame()
 
     _encoder.writeTag2_3S32(&values[0]);
 
-    blackboxSlowFrameIterationTimer = 0;
+    _slowFrameIterationTimer = 0;
 
     _encoder.endFrame();
 }
@@ -947,7 +945,7 @@ bool Blackbox::shouldLogHFrame() const
 {
     if ((_gpsHomeLocation.latitude != _gpsState.home.latitude
          || _gpsHomeLocation.longitude != _gpsState.home.longitude
-         || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+         || (_PFrameIndex == _IInterval / 2 && _IFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
     }

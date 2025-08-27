@@ -47,7 +47,7 @@
  */
 
 #include "BlackboxSerialDevice.h"
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
 #include <FS.h>
 #endif
 #include <StreamBuf.h>
@@ -56,7 +56,27 @@
 
 class BlackboxSerialDeviceSDCard : public BlackboxSerialDevice {
 public:
-    BlackboxSerialDeviceSDCard() = default;
+    struct pins_t {
+        uint8_t cs;
+        uint8_t sck;
+        uint8_t cipo; // RX, CIPO, MISO, POCI
+        uint8_t copi; // TX, COPI, MOSI, PICO
+        uint8_t irq; // interrupt pin
+    };
+    struct port_pin_t {
+        uint8_t port;
+        uint8_t pin;
+    };
+    struct port_pins_t {
+        port_pin_t cs;
+        port_pin_t sck;
+        port_pin_t cipo; // RX, CIPO, MISO, POCI
+        port_pin_t copi; // TX, COPI, MOSI, PICO
+        port_pin_t irq; // interrupt pin
+    };
+public:
+    BlackboxSerialDeviceSDCard(pins_t pins);
+    BlackboxSerialDeviceSDCard(port_pins_t pins);
 public:
     virtual int32_t init() override;
 
@@ -89,11 +109,12 @@ private:
     };
     state_e _state {INITIAL};
     size_t _largestLogFileNumber {0};
+    port_pins_t _pins;
     enum { BUFFER_SIZE = 256 };
     std::array<uint8_t, BUFFER_SIZE> _buf {};
     StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);
 
-#if defined(USE_ARDUINO_ESP32)
+#if defined(FRAMEWORK_ARDUINO_ESP32)
     File _file {};
 #endif
 };

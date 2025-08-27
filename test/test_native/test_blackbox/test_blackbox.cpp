@@ -41,7 +41,7 @@ public:
 public:
     uint32_t getBlackboxIteration() const { return blackboxIteration; }
     uint16_t getBlackboxLoopIndex() const { return blackboxLoopIndex; }
-    uint16_t getBlackboxPFrameIndex() const { return blackboxPFrameIndex; }
+    uint16_t get_PFrameIndex() const { return _PFrameIndex; }
 
     state_e getBlackboxState() const { return _state; }
     xmit_state_t getXmitState() const { return _xmitState; }
@@ -59,7 +59,7 @@ void test_blackbox_init()
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
-    TEST_ASSERT_EQUAL(0, blackbox.getBlackboxPFrameIndex());
+    TEST_ASSERT_EQUAL(0, blackbox.get_PFrameIndex());
 
     TEST_ASSERT_EQUAL(true, blackbox.shouldLogIFrame()); // IFrames are keyframes
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
@@ -85,7 +85,7 @@ void test_blackbox_init2()
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
-    TEST_ASSERT_EQUAL(0, blackbox.getBlackboxPFrameIndex());
+    TEST_ASSERT_EQUAL(0, blackbox.get_PFrameIndex());
 
     TEST_ASSERT_EQUAL(true, blackbox.shouldLogIFrame()); // IFrames are keyframes
     TEST_ASSERT_EQUAL(false, blackbox.shouldLogPFrame()); // PFrames are delta frames
