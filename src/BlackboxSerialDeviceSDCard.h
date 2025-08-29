@@ -75,8 +75,8 @@ public:
         port_pin_t irq; // interrupt pin
     };
 public:
-    BlackboxSerialDeviceSDCard(pins_t pins);
-    BlackboxSerialDeviceSDCard(port_pins_t pins);
+    explicit BlackboxSerialDeviceSDCard(pins_t pins);
+    explicit BlackboxSerialDeviceSDCard(port_pins_t pins);
 public:
     virtual int32_t init() override;
 
