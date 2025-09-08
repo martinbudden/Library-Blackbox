@@ -17,11 +17,11 @@
         },
         {
             "name": "martinbudden/TaskBase",
-            "version": "^0.0.3"
+            "version": "^0.0.5"
         }
     ],
     "license": "GPL-3.0-or-later",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "frameworks": "*",
     "platforms": "*",
     "headers": [ "Blackbox.h", "BlackboxCallbacksBase.h", "BlackboxSerialDevice.h", "BlackboxSerialDeviceSDCard.h", "BlackboxTask.h" ]
