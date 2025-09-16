@@ -47,6 +47,7 @@
  */
 
 #include <TaskBase.h>
+
 class Blackbox;
 class BlackboxCallbacksBase;
 class BlackboxMessageQueueBase;
@@ -56,8 +57,8 @@ class BlackboxTask : public TaskBase {
 public:
     BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox);
 public:
-    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, uint8_t priority, uint8_t coreID, uint32_t taskIntervalMicroSeconds);
-    static BlackboxTask* createTask(Blackbox& blackbox, uint8_t priority, uint8_t coreID, uint32_t taskIntervalMicroSeconds);
+    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroSeconds);
+    static BlackboxTask* createTask(Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroSeconds);
     BlackboxMessageQueueBase& getMessageQueue() { return _messageQueue; }
 private:
     // class is not copyable or moveable

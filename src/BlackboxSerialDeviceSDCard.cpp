@@ -53,14 +53,16 @@
 #include <SPI.h>
 #endif
 
+// #defines for debugging
 //#define USE_BLACKBOX_SBUF
+//#define USE_PRINTF
 
-BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(port_pins_t pins) :
+BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(port_pins_t pins) : // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     _pins(pins)
 {
 }
 
-BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(pins_t pins) :
+BlackboxSerialDeviceSDCard::BlackboxSerialDeviceSDCard(pins_t pins) : // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     _pins(port_pins_t{{0,pins.cs},{0,pins.sck},{0,pins.cipo},{0,pins.copi},{0,pins.irq}})
 {
 }

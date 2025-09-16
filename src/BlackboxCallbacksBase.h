@@ -64,7 +64,7 @@ struct blackboxSlowState_t {
 
 struct blackboxMainState_t {
     enum { XYZ_AXIS_COUNT = 3 };
-#if defined(USE_EIGHT_MOTORS)
+#if defined(LIBRARY_BLACKBOX_USE_EIGHT_MOTORS)
     enum { MAX_SUPPORTED_MOTOR_COUNT = 8 };
 #else
     enum { MAX_SUPPORTED_MOTOR_COUNT = 4 };
@@ -95,7 +95,9 @@ struct blackboxMainState_t {
     
     std::array<int16_t, MAX_SUPPORTED_MOTOR_COUNT> motor;
     std::array<int16_t, MAX_SUPPORTED_MOTOR_COUNT> erpm;
+#if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     std::array<int16_t, MAX_SUPPORTED_SERVO_COUNT> servo;
+#endif
 
     std::array<int16_t, DEBUG_VALUE_COUNT> debug;
 };

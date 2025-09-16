@@ -61,8 +61,8 @@ static int putchw(void* handle, putcFnPtr putFn, int n, char z, char *bf)
     return written;
 }
 
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
-void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) // NOLINT(google-runtime-int)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
+static void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) // NOLINT(google-runtime-int)
 {
     unsigned int d = 1;
     while (num / d >= base) {
@@ -78,7 +78,7 @@ void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) // NOLINT
     *bf = 0;
 }
 
-void li2a(long num, char *bf) // NOLINT(google-runtime-int)
+static void li2a(long num, char *bf) // NOLINT(google-runtime-int)
 {
     if (num < 0) {
         num = -num;
@@ -88,7 +88,7 @@ void li2a(long num, char *bf) // NOLINT(google-runtime-int)
 }
 #endif
 
-void ui2a(unsigned int num, unsigned int base, int uc, char *bf)
+static void ui2a(unsigned int num, unsigned int base, int uc, char *bf)
 {
     unsigned int d = 1;
     while (num / d >= base) {
@@ -104,7 +104,7 @@ void ui2a(unsigned int num, unsigned int base, int uc, char *bf)
     *bf = 0;
 }
 
-void i2a(int num, char *bf)
+static void i2a(int num, char *bf)
 {
     if (num < 0) {
         num = -num;
@@ -113,7 +113,7 @@ void i2a(int num, char *bf)
     ui2a(num, 10, 0, bf);
 }
 
-int a2d(char ch)
+static int a2d(char ch)
 {
     if (ch >= '0' && ch <= '9') {
         return ch - '0';
@@ -127,7 +127,7 @@ int a2d(char ch)
     return -1;
 }
 
-char a2i(char ch, const char **src, int base, int *nump)
+static char a2i(char ch, const char **src, int base, int *nump)
 {
     const char *p = *src;
     int num = 0;
@@ -158,7 +158,7 @@ int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NO
             ++written;
         } else {
             char lz = 0;
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
             char lng = 0;
 #endif
             int w = 0;
@@ -170,14 +170,14 @@ int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NO
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
             }
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
             if (ch == 'l') { ch = *(fmt++); lng = 1; }
 #endif
             switch (ch) {
             case 0:
                 return written;
             case 'u':{
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
                 if (lng) { uli2a(va_arg(va, unsigned long int), 10, 0, &bf[0]); } else
 #endif
                 { ui2a(va_arg(va, unsigned int), 10, 0, &bf[0]); }
@@ -185,7 +185,7 @@ int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NO
                 break;
             }
             case 'd':{
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
                 if (lng) { li2a(va_arg(va, unsigned long int), &bf[0]); } else
 #endif
                 { i2a(va_arg(va, int), &bf[0]); }
@@ -194,7 +194,7 @@ int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NO
             }
             case 'x':
             case 'X':
-#if defined(REQUIRE_PRINTF_LONG_SUPPORT)
+#if defined(LIBRARY_BLACKBOX_PRINTF_LONG_SUPPORT)
                 if (lng) { uli2a(va_arg(va, unsigned long int), 16, (ch == 'X'), &bf[0]); } else
 #endif
                 { ui2a(va_arg(va, unsigned int), 16, (ch == 'X'), &bf[0]); }

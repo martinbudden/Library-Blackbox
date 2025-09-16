@@ -131,13 +131,13 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
         return _state;
     }
 
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
     memset(&_gpsState, 0, sizeof(_gpsState));
 #endif
 
     blackboxMainState_t mainState {};
     _callbacks.loadMainState(mainState, 0);
-    vbatReference = mainState.vbatLatest;
+    _vbatReference = mainState.vbatLatest;
 
     //No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
 
@@ -152,8 +152,8 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
 
     // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
     // it finally plays the beep for this arming event.
-    blackboxLastArmingBeep = _callbacks.getArmingBeepTimeMicroSeconds();
-    blackboxLastFlightModeFlags = _callbacks.rcModeActivationMask(); // record startup status
+    _lastArmingBeep = _callbacks.getArmingBeepTimeMicroSeconds();
+    _lastFlightModeFlags = _callbacks.rcModeActivationMask(); // record startup status
 
     setState(STATE_PREPARE_LOG_FILE);
     return _state;
@@ -241,7 +241,7 @@ void Blackbox::setState(state_e newState)
     //Perform initial setup required for the new state
     switch (newState) {
     case STATE_PREPARE_LOG_FILE:
-        blackboxLoggedAnyFrames = false;
+        _loggedAnyFrames = false;
         break;
     case STATE_SEND_HEADER:
         blackboxHeaderBudget = 0;
@@ -370,7 +370,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
             _callbacks.loadMainState(*_mainStateHistory[0], currentTimeUs);
             logPFrame();
         }
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
         if (isFieldEnabled(LOG_SELECT_GPS)) {
             if (shouldLogHFrame()) {
                 logHFrame();
@@ -426,14 +426,14 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderMain() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
             setState(isFieldEnabled(LOG_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
 #else
             setState(STATE_SEND_SLOW_FIELD_HEADER);
 #endif
         }
         break;
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
     case STATE_SEND_GPS_H_HEADER:
         blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         if (writeFieldHeaderGPS_H() == WRITE_COMPLETE) {
@@ -516,7 +516,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
          *
          * Don't wait longer than it could possibly take if something funky happens.
          */
-        if (_serialDevice.endLog(blackboxLoggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) {
+        if (_serialDevice.endLog(_loggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) {
             _serialDevice.close();
             setState(STATE_STOPPED);
         }
@@ -638,7 +638,7 @@ void Blackbox::logIFrame()
         //the reference:
         // Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
         enum { LEAST_SIGNIFICANT_14_BITS = 0x3FFF };
-        _encoder.writeUnsignedVB((vbatReference - mainState->vbatLatest) & LEAST_SIGNIFICANT_14_BITS);
+        _encoder.writeUnsignedVB((_vbatReference - mainState->vbatLatest) & LEAST_SIGNIFICANT_14_BITS);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
@@ -646,19 +646,19 @@ void Blackbox::logIFrame()
         _encoder.writeSignedVB(mainState->amperageLatest);
     }
 
-#if defined(USE_MAGNETOMETER)
+#if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER)) {
         _encoder.writeSigned16VBArray(&mainState->magADC[0], XYZ_AXIS_COUNT);
     }
 #endif
 
-#if defined(USE_BAROMETER)
+#if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BAROMETER)) {
         _encoder.writeSignedVB(mainState->baroAlt);
     }
 #endif
 
-#if defined(USE_RANGEFINDER)
+#if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
         _encoder.writeSignedVB(mainState->surfaceRaw);
     }
@@ -693,7 +693,7 @@ void Blackbox::logIFrame()
             _encoder.writeSignedVB(mainState->motor[ii] - mainState->motor[0]);
         }
     }
-#if defined(USE_SERVOS)
+#if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
         std::array <int32_t, blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT> out;
         for (size_t ii = 0; ii < blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
@@ -703,7 +703,7 @@ void Blackbox::logIFrame()
     }
 #endif
 
-#if defined(USE_DSHOT_TELEMETRY)
+#if defined(LIBRARY_BLACKBOX_USE_DSHOT_TELEMETRY)
     if (isFieldEnabled(LOG_SELECT_MOTOR_RPM)) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeUnsignedVB(mainState->erpm[ii]);
@@ -725,7 +725,7 @@ void Blackbox::logIFrame()
     //_mainStateHistory[0] = ((_mainStateHistory[0] - &_mainStateHistoryRing[1]) % 3) + &_mainStateHistoryRing[0];
     _mainStateHistory[0] = history2Save;
 
-    blackboxLoggedAnyFrames = true;
+    _loggedAnyFrames = true;
 }
 
 inline std::array<int32_t, 3> operator-(const std::array<int32_t, 3>& a, const std::array<int32_t, 3>& b) // NOLINT(fuchsia-overloaded-operator)
@@ -757,7 +757,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
     // Since the difference between the difference between successive times will be nearly zero (due to consistent
     // looptime spacing), use second-order differences.
-    _encoder.writeSignedVB((int32_t) (mainState->time - 2 * _mainStateHistory[1]->time + _mainStateHistory[2]->time));
+    _encoder.writeSignedVB(static_cast<int32_t>(mainState->time - 2 * _mainStateHistory[1]->time + _mainStateHistory[2]->time));
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
         //arraySubInt32(&deltas[0], &mainState->axisPID_P[0], &previousMainState->axisPID_P[0], XYZ_AXIS_COUNT);
@@ -815,7 +815,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
         deltas[optionalFieldCount++] = mainState->amperageLatest - previousMainState->amperageLatest;
     }
 
-#if defined(USE_MAGNETOMETER)
+#if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER)) {
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
             deltas[optionalFieldCount++] = mainState->magADC[ii] - previousMainState->magADC[ii];
@@ -823,13 +823,13 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 #endif
 
-#if defined(USE_BAROMETER)
+#if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BAROMETER)) {
         deltas[optionalFieldCount++] = mainState->baroAlt - previousMainState->baroAlt;
     }
 #endif
 
-#if defined(USE_RANGEFINDER)
+#if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
         deltas[optionalFieldCount++] = mainState->surfaceRaw - previousMainState->surfaceRaw;
     }
@@ -879,7 +879,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
         }
     }
 
-#if defined(USE_SERVOS)
+#if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
         std::array <int32_t, blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT> out;
         for (size_t ii = 0; ii < blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
@@ -889,7 +889,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 #endif
 
-#if defined(USE_DSHOT_TELEMETRY)
+#if defined(LIBRARY_BLACKBOX_USE_DSHOT_TELEMETRY)
     if (isFieldEnabled(LOG_SELECT_MOTOR_RPM)) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             _encoder.writeSignedVB(mainState->erpm[ii] - previousMainState->erpm[ii]);
@@ -906,7 +906,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     //_mainStateHistory[0] = &_mainStateHistoryRing[0] + ((_mainStateHistory[0] - &_mainStateHistoryRing[1]) % 3);
     _mainStateHistory[0] = history2Save;
 
-    blackboxLoggedAnyFrames = true;
+    _loggedAnyFrames = true;
     _encoder.endFrame();
 }
 
@@ -933,7 +933,7 @@ void Blackbox::logSFrame()
     _encoder.endFrame();
 }
 
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
 /*
  * If the GPS home point has been updated, or every 128 I-frames (~10 seconds), write the
  * GPS home position.
@@ -1064,11 +1064,11 @@ void Blackbox::logEventArmingBeepIfNeeded()
 {
     // Use != so that we can still detect a change if the counter wraps
     const uint32_t armingBeepTimeMicroSeconds = _callbacks.getArmingBeepTimeMicroSeconds();
-    if (armingBeepTimeMicroSeconds != blackboxLastArmingBeep) {
-        blackboxLastArmingBeep = armingBeepTimeMicroSeconds;
+    if (armingBeepTimeMicroSeconds != _lastArmingBeep) {
+        _lastArmingBeep = armingBeepTimeMicroSeconds;
         const log_event_data_u eventData {
             .syncBeep = {
-                .time  = blackboxLastArmingBeep
+                .time  = _lastArmingBeep
             }
         };
         logEvent(LOG_EVENT_SYNC_BEEP, &eventData);
@@ -1080,23 +1080,23 @@ void Blackbox::logEventFlightModeIfNeeded()
 {
     // Use != so that we can still detect a change if the counter wraps
 #if false
-    if (memcmp(&_callbacks._rcModeActivationMask, &blackboxLastFlightModeFlags, sizeof(blackboxLastFlightModeFlags))) {
+    if (memcmp(&_callbacks._rcModeActivationMask, &_lastFlightModeFlags, sizeof(_lastFlightModeFlags))) {
         static flightLogEvent_flightMode_t eventData {}; // Add new data for current flight mode flags
-        eventData.lastFlags = blackboxLastFlightModeFlags;
-        memcpy(&blackboxLastFlightModeFlags, &_callbacks._rcModeActivationMask, sizeof(blackboxLastFlightModeFlags));
+        eventData.lastFlags = _lastFlightModeFlags;
+        memcpy(&_lastFlightModeFlags, &_callbacks._rcModeActivationMask, sizeof(_lastFlightModeFlags));
         memcpy(&eventData.flags, &_callbacks._rcModeActivationMask, sizeof(eventData.flags));
         logEvent(LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     }
 #endif
     const uint32_t rcModeActivationMask = _callbacks.rcModeActivationMask();
-    if (rcModeActivationMask != blackboxLastFlightModeFlags) {
+    if (rcModeActivationMask != _lastFlightModeFlags) {
         const log_event_data_u eventData = {
             .flightMode = {
                 .flags = rcModeActivationMask,
-                .lastFlags = blackboxLastFlightModeFlags
+                .lastFlags = _lastFlightModeFlags
             }
         };
-        blackboxLastFlightModeFlags = rcModeActivationMask;
+        _lastFlightModeFlags = rcModeActivationMask;
         logEvent(LOG_EVENT_FLIGHTMODE, &eventData);
     }
 }

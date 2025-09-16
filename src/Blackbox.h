@@ -319,8 +319,8 @@ protected:
     state_e _state = STATE_DISABLED;
 
     bool startedLoggingInTestMode = false;
-    uint32_t blackboxLastArmingBeep = 0;
-    uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
+    uint32_t _lastArmingBeep = 0;
+    uint32_t _lastFlightModeFlags = 0; // New event tracking of flight modes
 // Cache for FLIGHT_LOG_FIELD_CONDITION_* test results:
     std::bitset<64> _conditionCache {};
 
@@ -332,13 +332,13 @@ protected:
     int32_t _PInterval = 0; //!< number of flight loop iterations before logging P-frame
     int32_t _SInterval = 0;
     int32_t _slowFrameIterationTimer {};
-    bool blackboxLoggedAnyFrames {};
-    // We store voltages in I-frames relative to vbatReference, which was the voltage when the blackbox was activated.
+    bool _loggedAnyFrames {};
+    // We store voltages in I-frames relative to _vbatReference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.
-    uint16_t vbatReference {};
+    uint16_t _vbatReference {};
     xmit_state_t  _xmitState {};
     state_e _cacheFlushNextState {};
-#if defined(USE_GPS)
+#if defined(LIBRARY_BLACKBOX_USE_GPS)
     gps_solution_data_t _gpsSolutionData {}; // this is a copy of the data received from the GPS
     gps_location_t _gpsHomeLocation {};
     gps_state_t _gpsState {};
