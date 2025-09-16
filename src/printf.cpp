@@ -117,7 +117,7 @@ static int a2d(char ch)
 {
     if (ch >= '0' && ch <= '9') {
         return ch - '0';
-    } 
+    }
     if (ch >= 'a' && ch <= 'f') {
         return ch - 'a' + 10;
     }
@@ -131,7 +131,7 @@ static char a2i(char ch, const char **src, int base, int *nump)
 {
     const char *p = *src;
     int num = 0;
-    int digit = a2d(ch); 
+    int digit = a2d(ch);
     while (digit >= 0) {
         if (digit > base) {
             break;

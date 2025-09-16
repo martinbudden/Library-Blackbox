@@ -59,12 +59,12 @@ enum flight_log_field_condition_e : uint8_t;
 
 class Blackbox {
 public:
-    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) : 
+    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
         _serialDevice(serialDevice),
         _encoder(_serialDevice),
         _callbacks(callbacks),
         _messageQueue(messageQueue),
-        targetPidLooptimeUs(pidLoopTimeUs)
+        _targetPidLooptimeUs(pidLoopTimeUs)
         {}
 public:
     // Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
@@ -258,7 +258,7 @@ public:
 
     bool isOnlyLoggingIFrames() const { return _PInterval == 0; }
     bool shouldLogPFrame() const { return _PFrameIndex == 0 && _PInterval != 0; }
-    bool shouldLogIFrame() const { return blackboxLoopIndex == 0; }
+    bool shouldLogIFrame() const { return _loopIndex == 0; }
     bool shouldLogHFrame() const;
 
     void logIFrame(); // Intraframe, keyframe
@@ -313,19 +313,19 @@ protected:
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
     };
-    int32_t blackboxHeaderBudget {};
-    // targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptimeUs is rounded for short looptimes
-    uint32_t targetPidLooptimeUs; // time in microseconds
+    int32_t _headerBudget {};
+    // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
+    uint32_t _targetPidLooptimeUs; // time in microseconds
     state_e _state = STATE_DISABLED;
 
-    bool startedLoggingInTestMode = false;
+    bool _startedLoggingInTestMode = false;
     uint32_t _lastArmingBeep = 0;
     uint32_t _lastFlightModeFlags = 0; // New event tracking of flight modes
 // Cache for FLIGHT_LOG_FIELD_CONDITION_* test results:
     std::bitset<64> _conditionCache {};
 
-    uint32_t blackboxIteration {};
-    int32_t blackboxLoopIndex {};
+    uint32_t _iteration {};
+    int32_t _loopIndex {};
     int32_t _PFrameIndex {};
     int32_t _IFrameIndex {};
     int32_t _IInterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc

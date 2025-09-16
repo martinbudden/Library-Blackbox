@@ -39,20 +39,20 @@ public:
     BlackboxTest(BlackboxTest&&) = delete;
     BlackboxTest& operator=(BlackboxTest&&) = delete;
 public:
-    uint32_t getBlackboxIteration() const { return blackboxIteration; }
-    uint16_t getBlackboxLoopIndex() const { return blackboxLoopIndex; }
+    uint32_t getBlackboxIteration() const { return _iteration; }
+    uint16_t getBlackboxLoopIndex() const { return _loopIndex; }
     uint16_t get_PFrameIndex() const { return _PFrameIndex; }
 
     state_e getBlackboxState() const { return _state; }
     xmit_state_t getXmitState() const { return _xmitState; }
-    int32_t getHeaderBudget() const { return blackboxHeaderBudget; }
+    int32_t getHeaderBudget() const { return _headerBudget; }
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,misc-const-correctness,readability-magic-numbers)
 void test_blackbox_init()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -78,7 +78,7 @@ void test_blackbox_init()
 void test_blackbox_init2()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 5000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -119,7 +119,7 @@ H Firmware type:Cleanflight
 void test_blackbox_initial_updates()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -254,7 +254,7 @@ void test_blackbox_initial_updates()
 void test_blackbox_frames()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -262,7 +262,7 @@ void test_blackbox_frames()
     const Blackbox::start_t start{};
     blackbox.start(start);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
-    
+
     serialDevice.resetIndex();
     blackbox.logSFrame();
     TEST_ASSERT_EQUAL('S', serialDevice[0]);
@@ -293,7 +293,7 @@ void test_blackbox_frames()
 void test_blackbox_slow_header()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -324,7 +324,7 @@ void test_blackbox_slow_header()
 void test_blackbox_write_sys_info()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -375,7 +375,7 @@ void test_blackbox_print_header_line()
 {
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -404,7 +404,7 @@ void test_blackbox_print_header_line()
 void test_blackbox_printf()
 {
     static BlackboxSerialDeviceNull serialDevice;
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -451,7 +451,7 @@ void test_blackbox_header_printf()
 {
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
@@ -501,7 +501,7 @@ void test_blackbox_conditions()
 {
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
-    static  BlackboxCallbacksNull callbacks {};
+    static BlackboxCallbacksNull callbacks {};
     static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);

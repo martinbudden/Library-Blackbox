@@ -98,7 +98,7 @@ bool BlackboxSerialDeviceSDCard::open()
     return true;
 }
 
-void BlackboxSerialDeviceSDCard::close() 
+void BlackboxSerialDeviceSDCard::close()
 {
 #if defined(FRAMEWORK_ARDUINO_ESP32)
     _file.close();
@@ -296,7 +296,7 @@ size_t BlackboxSerialDeviceSDCard::replenishHeaderBudget()
 {
     //enum { BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET = 256 };
     //const int freeSpace = _file.available();
-    //blackboxHeaderBudget = MIN(MIN(freeSpace, blackboxHeaderBudget + blackboxMaxHeaderBytesPerIteration), BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET);
+    //_headerBudget = MIN(MIN(freeSpace, _headerBudget + blackboxMaxHeaderBytesPerIteration), BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET);
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
 #if defined(USE_BLACKBOX_SBUF)
     if (_sbuf.bytesRemaining() <= BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) {

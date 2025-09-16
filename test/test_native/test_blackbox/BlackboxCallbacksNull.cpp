@@ -3,7 +3,7 @@
 
 
 bool BlackboxCallbacksNull::isArmed() const
-{ 
+{
     return true;
 }
 
@@ -13,11 +13,11 @@ bool BlackboxCallbacksNull::areMotorsRunning() const {
 
 bool BlackboxCallbacksNull::isBlackboxRcModeActive() const
 {
-    return true; 
+    return true;
 };
 
 bool BlackboxCallbacksNull::isBlackboxModeActivationConditionPresent() const
-{ 
+{
     return true;
 }
 

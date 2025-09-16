@@ -79,7 +79,7 @@ bool BlackboxSerialDeviceNull::flush()
 }
 
 bool BlackboxSerialDeviceNull::flushForce()
-{ 
+{
     return true;
 }
 
@@ -89,7 +89,7 @@ bool BlackboxSerialDeviceNull::flushForceComplete()
 }
 
 bool BlackboxSerialDeviceNull::isDeviceFull()
-{ 
+{
     return false;
 }
 

@@ -61,7 +61,7 @@ void checkFlashStop();
 enum { BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS = 200 };
 
 /*!
-Call during system startup to initialize the 
+Call during system startup to initialize the
 */
 void Blackbox::init(const config_t& config)
 {
@@ -83,8 +83,8 @@ void Blackbox::init(const config_t& config)
 
     // an I-frame is written every 32ms
     // blackboxUpdate() is run in synchronisation with the PID loop
-    // targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptimeUs is rounded for short looptimes
-    _IInterval = static_cast<int32_t>(32 * 1000 / targetPidLooptimeUs);
+    // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
+    _IInterval = static_cast<int32_t>(32 * 1000 / _targetPidLooptimeUs);
 
     _PInterval = static_cast<int32_t>(1U << _config.sample_rate);
     if (_PInterval > _IInterval) {
@@ -92,7 +92,7 @@ void Blackbox::init(const config_t& config)
     }
 
     // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
-    _SInterval = _IInterval * 256; 
+    _SInterval = _IInterval * 256;
 
     if (_config.device == DEVICE_NONE) {
         setState(STATE_DISABLED);
@@ -193,7 +193,7 @@ void Blackbox::endLog()
 
 void Blackbox::startInTestMode()
 {
-    if (!startedLoggingInTestMode) {
+    if (!_startedLoggingInTestMode) {
 #if false
         if (_config.device == DEVICE_SERIAL) {
             serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
@@ -203,15 +203,15 @@ void Blackbox::startInTestMode()
         }
 #endif
         start();
-        startedLoggingInTestMode = true;
+        _startedLoggingInTestMode = true;
     }
 }
 
 void Blackbox::stopInTestMode()
 {
-    if (startedLoggingInTestMode) {
+    if (_startedLoggingInTestMode) {
         finish();
-        startedLoggingInTestMode = false;
+        _startedLoggingInTestMode = false;
     }
 }
 
@@ -244,7 +244,7 @@ void Blackbox::setState(state_e newState)
         _loggedAnyFrames = false;
         break;
     case STATE_SEND_HEADER:
-        blackboxHeaderBudget = 0;
+        _headerBudget = 0;
         _xmitState.headerIndex = 0;
 #if defined(FRAMEWORK_TEST)
         _xmitState.startTime = 0;
@@ -321,8 +321,8 @@ bool Blackbox::logSFrameIfNeeded()
 
 void Blackbox::resetIterationTimers()
 {
-    blackboxIteration = 0;
-    blackboxLoopIndex = 0;
+    _iteration = 0;
+    _loopIndex = 0;
     _IFrameIndex = 0;
     _PFrameIndex = 0;
     _slowFrameIterationTimer = 0;
@@ -332,10 +332,10 @@ void Blackbox::resetIterationTimers()
 void Blackbox::advanceIterationTimers()
 {
     ++_slowFrameIterationTimer;
-    ++blackboxIteration;
+    ++_iteration;
 
-    if (++blackboxLoopIndex >= _IInterval) {
-        blackboxLoopIndex = 0; // value of zero means IFrame will be written on next update
+    if (++_loopIndex >= _IInterval) {
+        _loopIndex = 0; // value of zero means IFrame will be written on next update
         ++_IFrameIndex; //!! This does not seem to be used anywhere
         _PFrameIndex = 0;
     } else if (++_PFrameIndex >= _PInterval) {
@@ -349,7 +349,7 @@ Called once every FC loop in order to log the current state
 void Blackbox::logIteration(timeUs_t currentTimeUs)
 {
     // Write a keyframe every _IInterval frames so we can resynchronise upon missing frames
-    if (shouldLogIFrame()) { // ie blackboxLoopIndex == 0
+    if (shouldLogIFrame()) { // ie _loopIndex == 0
         // Don't log a slow frame if the slow data didn't change (IFrames are already large enough without adding
         // an additional item to write at the same time). Unless we're *only* logging IFrames, then we have no choice.
         if (isOnlyLoggingIFrames()) {
@@ -375,8 +375,8 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
             if (shouldLogHFrame()) {
                 logHFrame();
                 logGFrame(currentTimeUs);
-            } else if (_gpsSolutionData.satelliteCount != _gpsState.satelliteCount 
-                || _gpsSolutionData.location.latitude != _gpsState.GPS_coord.latitude 
+            } else if (_gpsSolutionData.satelliteCount != _gpsState.satelliteCount
+                || _gpsSolutionData.location.latitude != _gpsState.GPS_coord.latitude
                 || _gpsSolutionData.location.longitude != _gpsState.GPS_coord.longitude) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 logGFrame(currentTimeUs);
@@ -412,7 +412,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         }
         break;
     case STATE_SEND_HEADER:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         //On entry of this state, _xmitState.headerIndex is 0 and startTime is initialized
         // Give the UART time to initialize
         //if (timeMs() < _xmitState.startTime + 100) {
@@ -423,7 +423,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         }
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderMain() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
@@ -435,20 +435,20 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         break;
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
     case STATE_SEND_GPS_H_HEADER:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         if (writeFieldHeaderGPS_H() == WRITE_COMPLETE) {
             setState(STATE_SEND_GPS_G_HEADER);
         }
         break;
     case STATE_SEND_GPS_G_HEADER:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         if (writeFieldHeaderGPS_G() == WRITE_COMPLETE) {
             setState(STATE_SEND_SLOW_FIELD_HEADER);
         }
         break;
 #endif
     case STATE_SEND_SLOW_FIELD_HEADER:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         // On entry of this state, _xmitState.headerIndex is 0 and _xmitState.fieldIndex is -1
         if (writeFieldHeaderSlow() == WRITE_COMPLETE) { // keep on writing chunks of the slow field header until it returns false, signalling completion
             _cacheFlushNextState = STATE_SEND_SYSINFO;
@@ -456,7 +456,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         }
         break;
     case STATE_SEND_SYSINFO:
-        blackboxHeaderBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+        _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         //On entry of this state, _xmitState.headerIndex is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
@@ -481,12 +481,12 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         if (_callbacks.isBlackboxRcModeActive() && shouldLogIFrame()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
             //flightLogEvent_loggingResume_t resume {
-            //    .logIteration = blackboxIteration,
+            //    .logIteration = _iteration,
             //    .currentTime = currentTimeUs
             //};
             const log_event_data_u resume = {
                 .loggingResume = {
-                    .logIteration = blackboxIteration,
+                    .logIteration = _iteration,
                     .currentTime = currentTimeUs
                 }
             };
@@ -499,9 +499,9 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         advanceIterationTimers();
         break;
     case STATE_RUNNING:
-        // On entry to this state, blackboxIteration, _PFrameIndex and _IFrameIndex are reset to 0
+        // On entry to this state, _iteration, _PFrameIndex and _IFrameIndex are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-        if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxRcModeActive() && !startedLoggingInTestMode) {
+        if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxRcModeActive() && !_startedLoggingInTestMode) {
             setState(STATE_PAUSED);
         } else {
             logIteration(currentTimeUs);
@@ -554,7 +554,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
         {
             setState(STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
-            startedLoggingInTestMode = false;
+            _startedLoggingInTestMode = false;
         }
     } else { // Only log in test mode if there is room!
         switch (_config.mode) {
@@ -588,14 +588,14 @@ static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }  
 
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
-    return static_cast<uint8_t>(llog2(32000 / (targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    return static_cast<uint8_t>(llog2(32000 / (_targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
 void Blackbox::logIFrame()
 {
     _encoder.beginFrame('I');
 
-    _encoder.writeUnsignedVB(blackboxIteration);
+    _encoder.writeUnsignedVB(_iteration);
 
     const blackboxMainState_t* mainState = _mainStateHistory[0];
 
@@ -985,7 +985,7 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
     _encoder.writeUnsignedVB(_gpsSolutionData.satelliteCount);
     _encoder.writeSignedVB(_gpsSolutionData.location.latitude - _gpsState.home.latitude);
     _encoder.writeSignedVB(_gpsSolutionData.location.longitude - _gpsState.home.longitude);
-    // log altitude in increments of 0.1m 
+    // log altitude in increments of 0.1m
     _encoder.writeSignedVB(_gpsSolutionData.location.altitudeCm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     //if (gpsConfig()->gps_use_3d_speed) {

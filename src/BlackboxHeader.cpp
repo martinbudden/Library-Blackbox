@@ -122,7 +122,7 @@ static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blac
 #endif
 
 /**
- * Description of the blackbox fields we are writing in our main I (intra) and P (inter) frames. 
+ * Description of the blackbox fields we are writing in our main I (intra) and P (inter) frames.
  * This description is written into the flight log header so the log can be properly interpreted.
  * These definitions don't actually cause the encoding to happen,
  * we have to encode the flight log ourselves in logPFrame and logIFrame in a way that matches the encoding we've promised here).
@@ -246,7 +246,7 @@ int Blackbox::printf(const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
 
 /*!
 `printf` a Blackbox header line with a leading "H " and trailing "\n" added automatically.
-`blackboxHeaderBudget` is decreased to account for the number of bytes written.
+`_headerBudget` is decreased to account for the number of bytes written.
  */
 size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
 {
@@ -264,7 +264,7 @@ size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) 
 
     headerWrite('\n');
 
-    blackboxHeaderBudget -= written + 3;
+    _headerBudget -= written + 3;
 
     return written + 3;
 }
@@ -322,7 +322,7 @@ Blackbox::write_e Blackbox::writeHeader()
             //"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
             //"H Data version:2\n"
             _encoder.write(blackboxHeader[_xmitState.headerIndex]);
-            blackboxHeaderBudget--;
+            _headerBudget--;
             ++_xmitState.headerIndex;
         }
         if (blackboxHeader[_xmitState.headerIndex] == 0) {
@@ -345,9 +345,9 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
             return WRITE_NOT_COMPLETE; // Try again later
         }
         if (_xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
-            blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field P %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            _headerBudget -= static_cast<int32_t>(headerPrintf("H Field P %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         } else {
-            blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field I %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            _headerBudget -= static_cast<int32_t>(headerPrintf("H Field I %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
         ++_xmitState.fieldIndex;
     }
@@ -371,10 +371,10 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
         //5: H Field P encoding: 9,0,0,0,0,7,7,7,0,0,0,8,8,8,8,6,6,0,0,0, 0,0,0,0
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
             const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[_xmitState.fieldIndex];
-            const uint8_t value = 
-                _xmitState.headerIndex == 1 ? def.isSigned : 
-                _xmitState.headerIndex == 2 ? def.Ipredict : 
-                _xmitState.headerIndex == 3 ? def.Iencode : 
+            const uint8_t value =
+                _xmitState.headerIndex == 1 ? def.isSigned :
+                _xmitState.headerIndex == 2 ? def.Ipredict :
+                _xmitState.headerIndex == 3 ? def.Iencode :
                 _xmitState.headerIndex == 4 ? def.Ppredict : def.Pencode;
             if (testFieldCondition(def.condition)) {
                 headerPrintf(_xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
@@ -382,7 +382,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
         }
     }
     if (_xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-        --blackboxHeaderBudget;
+        --_headerBudget;
         headerWrite('\n');
         ++_xmitState.headerIndex;
         _xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
@@ -404,7 +404,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        blackboxHeaderBudget -= static_cast<int32_t>(headerPrintf("H Field S %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        _headerBudget -= static_cast<int32_t>(headerPrintf("H Field S %s:", blackboxFieldHeaderNames[_xmitState.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         ++_xmitState.fieldIndex;
     }
     if (_xmitState.headerIndex == 0) {
@@ -419,14 +419,14 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
         //3:H Field S encoding: 1,1,7,7,7
         for (; _xmitState.fieldIndex < SLOW_FIELD_COUNT; ++_xmitState.fieldIndex) {
             const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[_xmitState.fieldIndex];
-            const uint8_t value = 
+            const uint8_t value =
                 _xmitState.headerIndex == 1 ? def.isSigned :
                 _xmitState.headerIndex == 2 ? def.predict : def.encode;
             headerPrintf(_xmitState.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     }
     if (_xmitState.fieldIndex == fieldCount && _serialDevice.reserveBufferSpace(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-        --blackboxHeaderBudget;
+        --_headerBudget;
         headerWrite('\n');
         ++_xmitState.headerIndex;
         _xmitState.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
