@@ -55,10 +55,10 @@ class BlackboxMessageQueueBase;
 
 class BlackboxTask : public TaskBase {
 public:
-    BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox);
+    BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox);
 public:
-    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroSeconds);
-    static BlackboxTask* createTask(Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroSeconds);
+    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
+    static BlackboxTask* createTask(Blackbox& blackbox, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
     BlackboxMessageQueueBase& getMessageQueue() { return _messageQueue; }
 private:
     // class is not copyable or moveable
@@ -72,6 +72,7 @@ public:
 private:
     [[noreturn]] void task();
 private:
+    uint32_t _taskIntervalMilliseconds;
     Blackbox& _blackbox;
     BlackboxMessageQueueBase& _messageQueue;
 };

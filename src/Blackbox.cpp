@@ -49,7 +49,7 @@
 #include "BlackboxFieldDefinitions.h"
 #include "BlackboxSerialDevice.h"
 
-#include <TimeMicroSeconds.h>
+#include <TimeMicroseconds.h>
 #include <cassert>
 #include <cstring>
 
@@ -152,7 +152,7 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
 
     // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
     // it finally plays the beep for this arming event.
-    _lastArmingBeep = _callbacks.getArmingBeepTimeMicroSeconds();
+    _lastArmingBeep = _callbacks.getArmingBeepTimeMicroseconds();
     _lastFlightModeFlags = _callbacks.rcModeActivationMask(); // record startup status
 
     setState(STATE_PREPARE_LOG_FILE);
@@ -1063,9 +1063,9 @@ bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
 void Blackbox::logEventArmingBeepIfNeeded()
 {
     // Use != so that we can still detect a change if the counter wraps
-    const uint32_t armingBeepTimeMicroSeconds = _callbacks.getArmingBeepTimeMicroSeconds();
-    if (armingBeepTimeMicroSeconds != _lastArmingBeep) {
-        _lastArmingBeep = armingBeepTimeMicroSeconds;
+    const uint32_t armingBeepTimeMicroseconds = _callbacks.getArmingBeepTimeMicroseconds();
+    if (armingBeepTimeMicroseconds != _lastArmingBeep) {
+        _lastArmingBeep = armingBeepTimeMicroseconds;
         const log_event_data_u eventData {
             .syncBeep = {
                 .time  = _lastArmingBeep

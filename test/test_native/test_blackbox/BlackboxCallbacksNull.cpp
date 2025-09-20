@@ -21,7 +21,7 @@ bool BlackboxCallbacksNull::isBlackboxModeActivationConditionPresent() const
     return true;
 }
 
-uint32_t BlackboxCallbacksNull::getArmingBeepTimeMicroSeconds() const
+uint32_t BlackboxCallbacksNull::getArmingBeepTimeMicroseconds() const
 {
     return 0;
 }

@@ -4,5 +4,5 @@
 
 class BlackboxMessageQueueBase {
 public:
-    virtual int32_t WAIT_IF_EMPTY(uint32_t& timeMicroSeconds) const = 0;
+    virtual int32_t WAIT_IF_EMPTY(uint32_t& timeMicroseconds) const = 0;
 };

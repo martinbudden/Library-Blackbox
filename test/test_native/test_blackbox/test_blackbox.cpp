@@ -19,7 +19,7 @@ class BlackboxMessageQueueNull : public BlackboxMessageQueueBase {
 public:
     virtual ~BlackboxMessageQueueNull() = default;
     BlackboxMessageQueueNull() = default;
-    int32_t WAIT_IF_EMPTY(uint32_t& timeMicroSeconds) const override { (void)timeMicroSeconds; return 0; }
+    int32_t WAIT_IF_EMPTY(uint32_t& timeMicroseconds) const override { (void)timeMicroseconds; return 0; }
     // BlackboxMessageQueueNull is not copyable or moveable
     BlackboxMessageQueueNull(const BlackboxMessageQueueNull&) = delete;
     BlackboxMessageQueueNull& operator=(const BlackboxMessageQueueNull&) = delete;

@@ -48,7 +48,7 @@
 #include "BlackboxMessageQueueBase.h"
 #include "BlackboxTask.h"
 
-#include <TimeMicroSeconds.h>
+#include <TimeMicroseconds.h>
 #include <cassert>
 
 #if defined(FRAMEWORK_USE_FREERTOS)
@@ -65,8 +65,9 @@
 #endif
 
 
-BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroSeconds, Blackbox& blackbox) :
-    TaskBase(taskIntervalMicroSeconds),
+BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox) :
+    TaskBase(taskIntervalMicroseconds),
+    _taskIntervalMilliseconds(taskIntervalMicroseconds/1000),
     _blackbox(blackbox),
     _messageQueue(blackbox.getMessageQueue())
 {
@@ -77,12 +78,12 @@ loop() function for when not using FREERTOS
 */
 void BlackboxTask::loop()
 {
-    const uint32_t timeMicroSeconds = timeUs();
-    _timeMicroSecondsDelta = timeMicroSeconds - _timeMicroSecondsPrevious;
+    const uint32_t timeMicroseconds = timeUs();
+    _timeMicrosecondsDelta = timeMicroseconds - _timeMicrosecondsPrevious;
 
-    if (_timeMicroSecondsDelta >= _taskIntervalMicroSeconds) { // if _taskIntervalMicroSeconds has passed, then run the update
-        _timeMicroSecondsPrevious = timeMicroSeconds;
-        _blackbox.update(timeMicroSeconds);
+    if (_timeMicrosecondsDelta >= _taskIntervalMicroseconds) { // if _taskIntervalMicroSeconds has passed, then run the update
+        _timeMicrosecondsPrevious = timeMicroseconds;
+        _blackbox.update(timeMicroseconds);
     }
 }
 
@@ -92,15 +93,15 @@ Task function for the MSP. Sets up and runs the task loop() function.
 [[noreturn]] void BlackboxTask::task() // NOLINT(readability-convert-member-functions-to-static)
 {
 #if defined(FRAMEWORK_USE_FREERTOS)
-    if (_taskIntervalMicroSeconds == 0) {
-        uint32_t timeMicroSeconds {};
+    if (_taskIntervalMicroseconds == 0) {
+        uint32_t timeMicroseconds {};
         while (true) {
-            _messageQueue.WAIT_IF_EMPTY(timeMicroSeconds); // wait until there is IMU data.
-            _blackbox.update(timeMicroSeconds);
+            _messageQueue.WAIT_IF_EMPTY(timeMicroseconds); // wait until there is IMU data.
+            _blackbox.update(timeMicroseconds);
         }
     } else {
         // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
-        const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroSeconds / 1000);
+        const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroseconds / 1000);
         assert(taskIntervalTicks > 0 && "Blackbox taskIntervalTicks is zero.");
 
         _previousWakeTimeTicks = xTaskGetTickCount();
@@ -108,8 +109,8 @@ Task function for the MSP. Sets up and runs the task loop() function.
             // delay until the end of the next taskIntervalTicks
             vTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
 
-            const uint32_t timeMicroSeconds = timeUs();
-            _blackbox.update(timeMicroSeconds);
+            const uint32_t timeMicroseconds = timeUs();
+            _blackbox.update(timeMicroseconds);
         }
     }
 #else

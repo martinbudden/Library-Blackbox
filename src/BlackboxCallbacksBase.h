@@ -113,7 +113,7 @@ public:
     virtual bool isArmed() const = 0;
     virtual bool isBlackboxRcModeActive() const = 0;
     virtual bool isBlackboxModeActivationConditionPresent() const = 0;
-    virtual uint32_t getArmingBeepTimeMicroSeconds() const = 0;
+    virtual uint32_t getArmingBeepTimeMicroseconds() const = 0;
     virtual bool areMotorsRunning() const = 0;
     virtual uint32_t rcModeActivationMask() const = 0; // lower 32 bits of BOX_COUNT bits
 };
