@@ -56,7 +56,7 @@
 
 class BlackboxSerialDeviceSDCard : public BlackboxSerialDevice {
 public:
-    struct pins_t {
+    struct spi_pins_t {
         uint8_t cs;
         uint8_t sck;
         uint8_t cipo; // RX, CIPO, MISO, POCI
@@ -67,7 +67,7 @@ public:
         uint8_t port;
         uint8_t pin;
     };
-    struct port_pins_t {
+    struct stm32_spi_pins_t {
         port_pin_t cs;
         port_pin_t sck;
         port_pin_t cipo; // RX, CIPO, MISO, POCI
@@ -75,8 +75,8 @@ public:
         port_pin_t irq; // interrupt pin
     };
 public:
-    explicit BlackboxSerialDeviceSDCard(pins_t pins);
-    explicit BlackboxSerialDeviceSDCard(port_pins_t pins);
+    explicit BlackboxSerialDeviceSDCard(spi_pins_t pins);
+    explicit BlackboxSerialDeviceSDCard(stm32_spi_pins_t pins);
 public:
     virtual int32_t init() override;
 
@@ -109,7 +109,7 @@ private:
     };
     state_e _state {INITIAL};
     size_t _largestLogFileNumber {0};
-    port_pins_t _pins;
+    stm32_spi_pins_t _pins;
     enum { BUFFER_SIZE = 256 };
     std::array<uint8_t, BUFFER_SIZE> _buf {};
     StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);
