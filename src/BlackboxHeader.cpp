@@ -146,6 +146,11 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"axisF",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+#if defined(LIBRARY_BLACKBOX_USE_STERM)
+    {"axisS",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_0)},
+    {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_1)},
+    {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_2)},
+#endif
     // rcCommands are encoded together as a group in P-frames:
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
@@ -181,6 +186,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(c
     {"accSmooth",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
     {"accSmooth",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
     {"accSmooth",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
+    {"imuQuaternion",0,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
+    {"imuQuaternion",1,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
+    {"imuQuaternion",2,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
     {"debug",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
     {"debug",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
     {"debug",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
@@ -500,9 +508,16 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
     case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         // always log DTERM_1
         return isFieldEnabled(LOG_SELECT_PID);
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2: {
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
         return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_DTERM_YAW);
-    }
+
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_0:
+        return false; //isFieldEnabled(LOG_SELECT_PID);
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_1:
+        return false;//isFieldEnabled(LOG_SELECT_PID);
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_2:
+        return false;//isFieldEnabled(LOG_SELECT_PID);
+
     case FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS:
         return isFieldEnabled(LOG_SELECT_RC_COMMANDS);
 

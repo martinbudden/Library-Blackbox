@@ -91,6 +91,7 @@ struct blackboxMainState_t {
     std::array<int16_t, XYZ_AXIS_COUNT> gyroADC;
     std::array<int16_t, XYZ_AXIS_COUNT> gyroUnfiltered;
     std::array<int16_t, XYZ_AXIS_COUNT> accADC;
+    std::array<int16_t, XYZ_AXIS_COUNT> orientation; // only x,y,z are stored; w is always positive
     std::array<int16_t, XYZ_AXIS_COUNT> magADC;
 
     std::array<int16_t, MAX_SUPPORTED_MOTOR_COUNT> motor;

@@ -327,11 +327,11 @@ protected:
     uint32_t _iteration {};
     int32_t _loopIndex {};
     int32_t _PFrameIndex {};
-    int32_t _IFrameIndex {};
+    int32_t _IFrameIndex {}; // use to determine if HFrames should be logged
+    int32_t _SFrameIndex {};
     int32_t _IInterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
     int32_t _PInterval = 0; //!< number of flight loop iterations before logging P-frame
     int32_t _SInterval = 0;
-    int32_t _slowFrameIterationTimer {};
     bool _loggedAnyFrames {};
     // We store voltages in I-frames relative to _vbatReference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.

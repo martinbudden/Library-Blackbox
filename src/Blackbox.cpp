@@ -266,7 +266,7 @@ void Blackbox::setState(state_e newState)
         _xmitState.headerIndex = 0;
         break;
     case STATE_RUNNING:
-        _slowFrameIterationTimer = _SInterval; //Force a slow frame to be written on the first iteration
+        _SFrameIndex = _SInterval; //Force a slow frame to be written on the first iteration
 #ifdef USE_FLASH_TEST_PRBS
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
@@ -297,26 +297,22 @@ void Blackbox::setState(state_e newState)
 bool Blackbox::logSFrameIfNeeded()
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
-    bool shouldWrite = _slowFrameIterationTimer >= _SInterval;
-
-    if (shouldWrite) {
+    if (_SFrameIndex >= _SInterval) {
         _callbacks.loadSlowState(_slowState);
-    } else {
-        blackboxSlowState_t newSlowState {};
-        _callbacks.loadSlowState(newSlowState);
-
-        // Only write a slow frame if it was different from the previous state
-        if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
-            // Use the new state as our new history
-            memcpy(&_slowState, &newSlowState, sizeof(_slowState));
-            shouldWrite = true;
-        }
-    }
-
-    if (shouldWrite) {
         logSFrame();
+        return true;
     }
-    return shouldWrite;
+
+    // Only write a slow frame if it was different from the previous state
+    blackboxSlowState_t newSlowState {};
+    _callbacks.loadSlowState(newSlowState);
+    if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
+        // Use the new state as our new history
+        memcpy(&_slowState, &newSlowState, sizeof(_slowState));
+        logSFrame();
+        return true;
+    }
+    return false;
 }
 
 void Blackbox::resetIterationTimers()
@@ -325,18 +321,18 @@ void Blackbox::resetIterationTimers()
     _loopIndex = 0;
     _IFrameIndex = 0;
     _PFrameIndex = 0;
-    _slowFrameIterationTimer = 0;
+    _SFrameIndex = 0;
 }
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 void Blackbox::advanceIterationTimers()
 {
-    ++_slowFrameIterationTimer;
+    ++_SFrameIndex;
     ++_iteration;
 
     if (++_loopIndex >= _IInterval) {
         _loopIndex = 0; // value of zero means IFrame will be written on next update
-        ++_IFrameIndex; //!! This does not seem to be used anywhere
+        ++_IFrameIndex;
         _PFrameIndex = 0;
     } else if (++_PFrameIndex >= _PInterval) {
         _PFrameIndex = 0; // value of zero means PFrame will be written on next update, if IFrame not written
@@ -615,6 +611,16 @@ void Blackbox::logIFrame()
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2)) {
             _encoder.writeSignedVB(mainState->axisPID_D[2]);
         }
+        // optional S term recording
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_0)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[0]);
+        }
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_1)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[1]);
+        }
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_2)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[2]);
+        }
         _encoder.writeSignedVBArray(&mainState->axisPID_F[0], XYZ_AXIS_COUNT);
     }
 
@@ -678,6 +684,10 @@ void Blackbox::logIFrame()
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ACC)) {
         _encoder.writeSigned16VBArray(&mainState->accADC[0], XYZ_AXIS_COUNT);
+    }
+
+    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ATTITUDE)) {
+        _encoder.writeSigned16VBArray(&mainState->orientation[0], XYZ_AXIS_COUNT);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG)) {
@@ -928,7 +938,7 @@ void Blackbox::logSFrame()
 
     _encoder.writeTag2_3S32(&values[0]);
 
-    _slowFrameIterationTimer = 0;
+    _SFrameIndex = 0;
 
     _encoder.endFrame();
 }
