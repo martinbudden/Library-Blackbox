@@ -67,7 +67,7 @@
 
 BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox) :
     TaskBase(taskIntervalMicroseconds),
-    _taskIntervalMilliseconds(taskIntervalMicroseconds/1000),
+    _taskIntervalMilliseconds(taskIntervalMicroseconds/1000), // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _blackbox(blackbox),
     _messageQueue(blackbox.getMessageQueue())
 {
