@@ -90,34 +90,34 @@ const std::array<const char* const, BLACKBOX_FIELD_HEADER_NAMES_COUNT> blackboxF
 
 // Rarely-updated fields
 enum { SLOW_FIELD_COUNT = 5 };
-static const std::array<blackboxSimpleFieldDefinition_t, SLOW_FIELD_COUNT> blackboxSlowFields = {{
-    {"flightModeFlags",       -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
-    {"stateFlags",            -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
+static const std::array<blackboxSimpleFieldDefinition_t, SLOW_FIELD_COUNT> blackboxSlowFields={{
+    {.name="flightModeFlags",       .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
+    {.name="stateFlags",            .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
 
-    {"failsafePhase",         -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
-    {"rxSignalReceived",      -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
-    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)}
+    {.name="failsafePhase",         .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
+    {.name="rxSignalReceived",      .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
+    {.name="rxFlightChannelsValid", .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)}
 }};
 
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
 // GPS position/velocity frame
 enum { GPS_G_FIELD_COUNT = 7 };
-static const std::array<blackboxConditionalFieldDefinition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields = {{
-    {"time",              -1, UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
-    {"GPS_numSat",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
-    {"GPS_coord",          0, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
-    {"GPS_coord",          1, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
-    {"GPS_altitude",      -1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
-    {"GPS_speed",         -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
-    {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
+static const std::array<blackboxConditionalFieldDefinition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields={{
+    {.name="time",          .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(LAST_MAIN_FRAME_TIME), .encode=ENCODING(UNSIGNED_VB),.condition=CONDITION(NOT_LOGGING_EVERY_FRAME)},
+    {.name="GPS_numSat",    .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
+    {.name="GPS_coord",     .fieldNameIndex=0,  .isSigned=SIGNED,    .predict=PREDICT(HOME_COORD),.encode=ENCODING(SIGNED_VB),  .condition=CONDITION(ALWAYS)},
+    {.name="GPS_coord",     .fieldNameIndex=1,  .isSigned=SIGNED,    .predict=PREDICT(HOME_COORD),.encode=ENCODING(SIGNED_VB),  .condition=CONDITION(ALWAYS)},
+    {.name="GPS_altitude",  .fieldNameIndex=-1, .isSigned=SIGNED,    .predict=PREDICT(0),       .encode=ENCODING(SIGNED_VB),    .condition=CONDITION(ALWAYS)},
+    {.name="GPS_speed",     .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
+    {.name="GPS_ground_course",.fieldNameIndex=-1,.isSigned=UNSIGNED,.predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)}
 }};
 
 // GPS home frame
 enum { GPS_H_FIELD_COUNT = 3 };
-static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blackboxGpsHFields = {{
-    {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blackboxGpsHFields={{
+    {.name="GPS_home",      .fieldNameIndex=0,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)},
+    {.name="GPS_home",      .fieldNameIndex=1,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)},
+    {.name="GPS_home",      .fieldNameIndex=2,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)}
 }};
 #endif
 
@@ -127,109 +127,108 @@ static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blac
  * These definitions don't actually cause the encoding to happen,
  * we have to encode the flight log ourselves in logPFrame and logIFrame in a way that matches the encoding we've promised here).
  */
-//static const std::array<Blackbox::blackboxDeltaFieldDefinition_t, MAIN_FIELD_COUNT> blackboxMainFields = {{
-static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+//static const std::array<Blackbox::blackboxDeltaFieldDefinition_t, MAIN_FIELD_COUNT> blackboxMainFields={{
+static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     /* loopIteration doesn't appear in P frames since it always increments */
-    {"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
+    {.name="loopIteration", .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(INC),         .Pencode=FLIGHT_LOG_FIELD_ENCODING_NULL,.condition=CONDITION(ALWAYS)},
     // Time advances pretty steadily so the P-frame prediction is a straight line
-    {"time",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(STRAIGHT_LINE), .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"axisP",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisP",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisP",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+    {.name="time",          .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(STRAIGHT_LINE),.Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ALWAYS)},
+    {.name="axisP",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
+    {.name="axisP",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
+    {.name="axisP",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
     // I terms get special packed encoding in P frames:
-    {"axisI",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
-    {"axisI",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
-    {"axisI",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(PID)},
-    {"axisD",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_0)},
-    {"axisD",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_1)},
-    {"axisD",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_2)},
-    {"axisF",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+    {.name="axisI",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
+    {.name="axisI",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
+    {.name="axisI",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
+    {.name="axisD",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_0)},
+    {.name="axisD",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_1)},
+    {.name="axisD",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_2)},
+    {.name="axisF",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
+    {.name="axisF",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
+    {.name="axisF",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
 #if defined(LIBRARY_BLACKBOX_USE_STERM)
-    {"axisS",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_0)},
-    {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_1)},
-    {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_S_2)},
+    {.name="axisS",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_0)},
+    {.name="axisS",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_1)},
+    {.name="axisS",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_2)},
 #endif
     // rcCommands are encoded together as a group in P-frames:
-    {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
-    {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
-    {"rcCommand",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
-    {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
+    {.name="rcCommand",     .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rcCommand",     .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rcCommand",     .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rcCommand",     .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
     // setpoint - define 4 fields like rcCommand to use the same encoding. setpoint[4] contains the mixer throttle
-    {"setpoint",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(SETPOINT)},
-    {"setpoint",    1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(SETPOINT)},
-    {"setpoint",    2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(SETPOINT)},
-    {"setpoint",    3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(SETPOINT)},
-
-    {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), CONDITION(BATTERY_VOLTAGE)},
-    {"amperageLatest",-1, SIGNED,   .Ipredict = PREDICT(0),        .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), CONDITION(AMPERAGE_ADC)},
+    {.name="setpoint",      .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
+    {.name="setpoint",      .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
+    {.name="setpoint",      .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
+    {.name="setpoint",      .fieldNameIndex=3,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
+    {.name="vbatLatest",    .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(VBATREF),.Iencode=ENCODING(NEG_14BIT),.Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
+    {.name="amperageLatest",.fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(AMPERAGE_ADC)},
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
-    {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(MAGNETOMETER)},
-    {"magADC",      1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(MAGNETOMETER)},
-    {"magADC",      2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(MAGNETOMETER)},
+    {.name="magADC",        .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="magADC",        .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="magADC",        .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
-    {"baroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(BAROMETER)},
+    {.name="baroAlt",       .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BAROMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
-    {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
+    {.name="surfaceRaw",    .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(RANGEFINDER)},
 #endif
-    {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RSSI)},
+    {.name="rssi",          .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(RSSI)},
     // Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact
-    {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
-    {"gyroADC",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
-    {"gyroADC",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO)},
-    {"gyroUnfilt",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO_UNFILTERED)},
-    {"gyroUnfilt",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO_UNFILTERED)},
-    {"gyroUnfilt",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYRO_UNFILTERED)},
-    {"accSmooth",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
-    {"accSmooth",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
-    {"accSmooth",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
-    {"imuQuaternion",0,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
-    {"imuQuaternion",1,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
-    {"imuQuaternion",2,SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
-    {"debug",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       4, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       5, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       6, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
-    {"debug",       7, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG)},
+    {.name="gyroADC",       .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyroADC",       .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyroADC",       .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyroUnfilt",    .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
+    {.name="gyroUnfilt",    .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
+    {.name="gyroUnfilt",    .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
+    {.name="accSmooth",     .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ACC)},
+    {.name="accSmooth",     .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ACC)},
+    {.name="accSmooth",     .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ACC)},
+    {.name="imuQuaternion", .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ATTITUDE)},
+    {.name="imuQuaternion", .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ATTITUDE)},
+    {.name="imuQuaternion", .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(ATTITUDE)},
+    {.name="debug",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=3,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=4,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=5,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=6,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
+    {.name="debug",         .fieldNameIndex=7,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(DEBUG)},
     // Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones):
-    // must match with enum { MAX_SUPPORTED_MOTORS = 4 };
-    {"motor",       0, UNSIGNED, .Ipredict = PREDICT(MINMOTOR), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
+    // must match with enum { MAX_SUPPORTED_MOTORS=4 };
+    {.name="motor",         .fieldNameIndex=0,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MINMOTOR), .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(AVERAGE_2),.Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_1)},
     /* Subsequent motors base their I-frame values on the first one, P-frame values on the average of last two frames: */
-    {"motor",       1, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_2)},
-    {"motor",       2, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_3)},
-    {"motor",       3, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_4)},
+    {.name="motor",         .fieldNameIndex=1,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_2)},
+    {.name="motor",         .fieldNameIndex=2,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_3)},
+    {.name="motor",         .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_4)},
 #if defined(LIBRARY_BLACKBOX_USE_EIGHT_MOTORS)
-    {"motor",       4, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_5)},
-    {"motor",       5, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_6)},
-    {"motor",       6, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_7)},
-    {"motor",       7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
+    {.name="motor",         .fieldNameIndex=4,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_5)},
+    {.name="motor",         .fieldNameIndex=5,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_6)},
+    {.name="motor",         .fieldNameIndex=6,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_7)},
+    {.name="motor",         .fieldNameIndex=7,  .isSigned=UNSIGNED, .Ipredict=PREDICT(MOTOR_0), .Iencode=ENCODING(SIGNED_VB),.Ppredict=PREDICT(AVERAGE_2),  .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(AT_LEAST_MOTORS_8)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     // must match with MAX_SUPPORTED_SERVO_COUNT
     // NOTE (ledvinap, hwarhurst): Decoding would fail if previous encoding is also TAG8_8SVB and does not have exactly 8 values. To fix it, inserting ENCODING_NULL dummy value should force end of previous group.
-    {"servo",       0, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
-    {"servo",       1, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
-    {"servo",       2, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
-    {"servo",       3, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {.name="servo",         .fieldNameIndex=0,  .isSigned=UNSIGNED, .Ipredict=PREDICT(1500),.Iencode=ENCODING(TAG8_8SVB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(SERVOS)},
+    {.name="servo",         .fieldNameIndex=1,  .isSigned=UNSIGNED, .Ipredict=PREDICT(1500),.Iencode=ENCODING(TAG8_8SVB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(SERVOS)},
+    {.name="servo",         .fieldNameIndex=2,  .isSigned=UNSIGNED, .Ipredict=PREDICT(1500),.Iencode=ENCODING(TAG8_8SVB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(SERVOS)},
+    {.name="servo",         .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(1500),.Iencode=ENCODING(TAG8_8SVB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(SERVOS)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_DSHOT_TELEMETRY)
     // must match with MAX_SUPPORTED_MOTOR_COUNT
     // eRPM / 100
-    {"eRPM",        0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
-    {"eRPM",        1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
-    {"eRPM",        2, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
-    {"eRPM",        3, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=0,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_1_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=1,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_2_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=2,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_3_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_4_HAS_RPM)},
 #if defined(LIBRARY_BLACKBOX_USE_EIGHT_MOTORS)
-    {"eRPM",        4, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
-    {"eRPM",        5, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
-    {"eRPM",        6, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
-    {"eRPM",        7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=4,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_5_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=5,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_6_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=6,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_7_HAS_RPM)},
+    {.name="eRPM",          .fieldNameIndex=7,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(MOTOR_8_HAS_RPM)},
 #endif
 #endif // USE_DSHOT_TELEMETRY
 #undef CONDITION

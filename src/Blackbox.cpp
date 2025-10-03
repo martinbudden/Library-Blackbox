@@ -587,7 +587,7 @@ uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
     return static_cast<uint8_t>(llog2(32000 / (_targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
-void Blackbox::logIFrame()
+void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 {
     _encoder.beginFrame('I');
 
