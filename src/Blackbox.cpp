@@ -70,12 +70,20 @@ void Blackbox::init(const config_t& config)
 
     _config = config;
 
-    _logSelectEnabled = Blackbox::LOG_SELECT_PID
+    _logSelectEnabled = 
+        Blackbox::LOG_SELECT_PID
+        | Blackbox::LOG_SELECT_PID_KTERM
+        | Blackbox::LOG_SELECT_PID_DTERM_ROLL
+        | Blackbox::LOG_SELECT_PID_DTERM_PITCH
+        //| Blackbox::LOG_SELECT_PID_STERM_ROLL
+        //| Blackbox::LOG_SELECT_PID_STERM_PITCH
+        //| Blackbox::LOG_SELECT_PID_STERM_YAW
         | Blackbox::LOG_SELECT_SETPOINT
         | Blackbox::LOG_SELECT_RC_COMMANDS
         | Blackbox::LOG_SELECT_GYRO
         | Blackbox::LOG_SELECT_GYRO_UNFILTERED
         | Blackbox::LOG_SELECT_ACCELEROMETER
+        //| Blackbox::LOG_SELECT_ATTITUDE
         | Blackbox::LOG_SELECT_MOTOR
         | Blackbox::LOG_SELECT_MOTOR_RPM;
 
@@ -125,6 +133,10 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
     _servoCount = startParameters.servoCount;
     _debugMode = startParameters.debugMode;
     _logSelectEnabled = logSelectEnabled;
+
+    // We use conditional tests to decide whether or not certain fields should be logged. Since our headers
+    // must always agree with the logged data, the results of these tests must not change during logging.
+    // So cache those now.
     buildFieldConditionCache();
     if (!_serialDevice.open()) {
         setState(STATE_DISABLED);
@@ -135,16 +147,14 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
     memset(&_gpsState, 0, sizeof(_gpsState));
 #endif
 
-    blackboxMainState_t mainState {};
-    _callbacks.loadMainState(mainState, 0);
-    _vbatReference = mainState.vbatLatest;
+    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
+        // If we are logging battery voltage, then loadMainState to get the reference battery voltage.
+        blackboxMainState_t mainState {};
+        _callbacks.loadMainState(mainState, 0);
+        _vbatReference = mainState.vbatLatest;
+    }
 
-    //No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
-
-    // We use conditional tests to decide whether or not certain fields should be logged. Since our headers
-    // must always agree with the logged data, the results of these tests must not change during logging. So
-    // cache those now.
-    buildFieldConditionCache();
+    // No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
 
     //!!blackboxModeActivationConditionPresent = _callbacks.isBlackboxModeActivationConditionPresent();
 
@@ -598,39 +608,41 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
     _encoder.writeUnsignedVB(mainState->time);
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
-        _encoder.writeSignedVBArray(&mainState->axisPID_P[0], XYZ_AXIS_COUNT);
-        _encoder.writeSignedVBArray(&mainState->axisPID_I[0], XYZ_AXIS_COUNT);
+        _encoder.writeSignedVBArray(&mainState->axisPID_P[0], RPY_AXIS_COUNT);
+        _encoder.writeSignedVBArray(&mainState->axisPID_I[0], RPY_AXIS_COUNT);
 
-        // Don't bother writing the current D term if the corresponding PID setting is zero
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL)) {
             _encoder.writeSignedVB(mainState->axisPID_D[0]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH)) {
             _encoder.writeSignedVB(mainState->axisPID_D[1]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW)) {
             _encoder.writeSignedVB(mainState->axisPID_D[2]);
         }
-        // optional S term recording
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_0)) {
+
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_K)) {
+            _encoder.writeSignedVBArray(&mainState->axisPID_K[0], RPY_AXIS_COUNT);
+        }
+
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL)) {
             _encoder.writeSignedVB(mainState->axisPID_S[0]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_1)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH)) {
             _encoder.writeSignedVB(mainState->axisPID_S[1]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_2)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW)) {
             _encoder.writeSignedVB(mainState->axisPID_S[2]);
         }
-        _encoder.writeSignedVBArray(&mainState->axisPID_F[0], XYZ_AXIS_COUNT);
     }
 
-    enum { ROLL = 0, PITCH, YAW, THROTTLE };
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS)) {
         // Write roll, pitch and yaw first, these are signed values in the range [-500,500]
         _encoder.writeSigned16VBArray(&mainState->rcCommand[0], 3);
 
         // Write the throttle separately from the rest of the RC data as it's unsigned.
         // Throttle lies in range [PWM_RANGE_MIN,PWM_RANGE_MAX], ie [1000,2000]
+        enum { ROLL = 0, PITCH, YAW, THROTTLE };
         _encoder.writeUnsignedVB(mainState->rcCommand[THROTTLE]);
     }
 
@@ -647,7 +659,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
         _encoder.writeUnsignedVB((_vbatReference - mainState->vbatLatest) & LEAST_SIGNIFICANT_14_BITS);
     }
 
-    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
+    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT)) {
         // 12bit value directly from ADC
         _encoder.writeSignedVB(mainState->amperageLatest);
     }
@@ -727,12 +739,12 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 // 0=2
     blackboxMainState_t* const history2Save = _mainStateHistory[2];
 
-    //The current state becomes the new "before" state
+    // The current state becomes the new "before" state
     _mainStateHistory[1] = _mainStateHistory[0];
-    //And since we have no other history, we also use it for the "before, before" state
+    // And since we have no other history, we also use it for the "before, before" state
     _mainStateHistory[2] = _mainStateHistory[0];
-    //And advance the current state over to a blank space ready to be filled
-    //_mainStateHistory[0] = ((_mainStateHistory[0] - &_mainStateHistoryRing[1]) % 3) + &_mainStateHistoryRing[0];
+    // And advance the current state over to a blank space ready to be filled
+    // _mainStateHistory[0] = ((_mainStateHistory[0] - &_mainStateHistoryRing[1]) % 3) + &_mainStateHistoryRing[0];
     _mainStateHistory[0] = history2Save;
 
     _loggedAnyFrames = true;
@@ -770,9 +782,9 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     _encoder.writeSignedVB(static_cast<int32_t>(mainState->time - 2 * _mainStateHistory[1]->time + _mainStateHistory[2]->time));
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
-        //arraySubInt32(&deltas[0], &mainState->axisPID_P[0], &previousMainState->axisPID_P[0], XYZ_AXIS_COUNT);
-        std::array<int32_t, XYZ_AXIS_COUNT> deltas = mainState->axisPID_P - previousMainState->axisPID_P;
-        _encoder.writeSignedVBArray(&deltas[0], XYZ_AXIS_COUNT);
+        //arraySubInt32(&deltas[0], &mainState->axisPID_P[0], &previousMainState->axisPID_P[0], RPY_AXIS_COUNT);
+        std::array<int32_t, RPY_AXIS_COUNT> deltas = mainState->axisPID_P - previousMainState->axisPID_P;
+        _encoder.writeSignedVBArray(&deltas[0], RPY_AXIS_COUNT);
 
         // The PID I field changes very slowly, most of the time +-2, so use an encoding
         // that can pack all three fields into one byte in that situation.
@@ -781,28 +793,33 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
         // The PID D term is frequently set to zero for yaw, which makes the result from the calculation
         // always zero. So don't bother recording D results when PID D terms are zero.
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL)) {
             _encoder.writeSignedVB(mainState->axisPID_D[0] - previousMainState->axisPID_D[0]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH)) {
             _encoder.writeSignedVB(mainState->axisPID_D[1] - previousMainState->axisPID_D[1]);
         }
-        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2)) {
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW)) {
             _encoder.writeSignedVB(mainState->axisPID_D[2] - previousMainState->axisPID_D[2]);
         }
 
-        deltas = mainState->axisPID_F - previousMainState->axisPID_F;
-        _encoder.writeSignedVBArray(&deltas[0], XYZ_AXIS_COUNT);
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_K)) {
+            deltas = mainState->axisPID_K - previousMainState->axisPID_K;
+            _encoder.writeSignedVBArray(&deltas[0], RPY_AXIS_COUNT);
+        }
+
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[0] - previousMainState->axisPID_S[0]);
+        }
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[1] - previousMainState->axisPID_S[1]);
+        }
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW)) {
+            _encoder.writeSignedVB(mainState->axisPID_S[2] - previousMainState->axisPID_S[2]);
+        }
     }
 
-    //std::array<int32_t, 4> setpointDeltas;
     // RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
-    // can pack multiple values per byte:
-    //for (size_t ii = 0; ii < 4; ++ii) {
-    //    deltas[ii] = mainState->rcCommand[ii] - previousMainState->rcCommand[ii];
-    //    setpointDeltas[ii] = mainState->setpoint[ii] - previousMainState->setpoint[ii];
-    //}
-
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS)) {
         const std::array<int32_t, 4> deltas = mainState->rcCommand - previousMainState->rcCommand;
         _encoder.writeTag8_4S16(&deltas[0]);
@@ -821,7 +838,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
         deltas[optionalFieldCount++] = mainState->vbatLatest - previousMainState->vbatLatest;
     }
 
-    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
+    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT)) {
         deltas[optionalFieldCount++] = mainState->amperageLatest - previousMainState->amperageLatest;
     }
 
@@ -853,28 +870,31 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
     //Since gyros, accelerometers and motors are noisy, base their predictions on the average of the history:
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO)) {
-        //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroADC), XYZ_AXIS_COUNT);
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->gyroADC[ii] + _mainStateHistory[2]->gyroADC[ii]) / 2;
             _encoder.writeSignedVB(mainState->gyroADC[ii] - predictor);
         }
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO_UNFILTERED)) {
-        //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroUnfilt), XYZ_AXIS_COUNT);
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->gyroUnfiltered[ii] + _mainStateHistory[2]->gyroUnfiltered[ii]) / 2;
             _encoder.writeSignedVB(mainState->gyroUnfiltered[ii] - predictor);
         }
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ACC)) {
-        //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->accADC[ii] + _mainStateHistory[2]->accADC[ii]) / 2;
             _encoder.writeSignedVB(mainState->accADC[ii] - predictor);
         }
     }
+    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ATTITUDE)) {
+        for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
+            const int32_t predictor = (_mainStateHistory[1]->orientation[ii] + _mainStateHistory[2]->orientation[ii]) / 2;
+            _encoder.writeSignedVB(mainState->orientation[ii] - predictor);
+        }
+    }
+
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG)) {
-        //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), blackboxMainState_t::DEBUG_VALUE_COUNT);
         for (size_t ii = 0; ii < blackboxMainState_t::DEBUG_VALUE_COUNT; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->debug[ii] + _mainStateHistory[2]->debug[ii]) / 2;
             _encoder.writeSignedVB(mainState->debug[ii] - predictor);
@@ -882,7 +902,6 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 
     if (isFieldEnabled(LOG_SELECT_MOTOR)) {
-        //writeMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor), _motorCount);
         for (size_t ii = 0; ii < _motorCount; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->motor[ii] + _mainStateHistory[2]->motor[ii]) / 2;
             _encoder.writeSignedVB(mainState->motor[ii] - predictor);
@@ -920,8 +939,10 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     _encoder.endFrame();
 }
 
-/* Write the contents of the global "_slowState" to the log as an "S" frame. Because this data is logged so
- * infrequently, delta updates are not reasonable, so we log independent frames. */
+/*!
+Write the contents of the global "_slowState" to the log as an S frame.
+Because this data is logged so infrequently, delta updates are not reasonable, so we log independent frames.
+*/
 void Blackbox::logSFrame()
 {
     _encoder.beginFrame('S');
@@ -929,7 +950,7 @@ void Blackbox::logSFrame()
     _encoder.writeUnsignedVB(_slowState.flightModeFlags);
     _encoder.writeUnsignedVB(_slowState.stateFlags);
 
-    // Most of the time these three values will be able to pack into one byte for us:
+    // Most of the time these three values will be able to pack into one byte.
     const std::array<int32_t, 3> values {
         _slowState.failsafePhase,
         _slowState.rxSignalReceived ? 1 : 0,

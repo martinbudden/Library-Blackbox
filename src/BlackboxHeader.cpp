@@ -121,12 +121,14 @@ static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blac
 }};
 #endif
 
-/**
- * Description of the blackbox fields we are writing in our main I (intra) and P (inter) frames.
- * This description is written into the flight log header so the log can be properly interpreted.
- * These definitions don't actually cause the encoding to happen,
- * we have to encode the flight log ourselves in logPFrame and logIFrame in a way that matches the encoding we've promised here).
- */
+/*!
+Description of the blackbox fields we are writing in our main I (intra) and P (inter) frames.
+This description is written into the flight log header so the log can be properly interpreted.
+These definitions don't actually cause the encoding to happen,
+we have to encode the flight log ourselves in logPFrame and logIFrame in a way that matches the encoding we've promised here).
+
+Field names and encodings are choosen to be compatible with Betaflight blackbox logs.
+*/
 //static const std::array<Blackbox::blackboxDeltaFieldDefinition_t, MAIN_FIELD_COUNT> blackboxMainFields={{
 static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     /* loopIteration doesn't appear in P frames since it always increments */
@@ -140,17 +142,16 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cpp
     {.name="axisI",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
     {.name="axisI",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
     {.name="axisI",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG2_3S32),.condition=CONDITION(PID)},
-    {.name="axisD",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_0)},
-    {.name="axisD",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_1)},
-    {.name="axisD",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_D_2)},
-    {.name="axisF",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
-    {.name="axisF",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
-    {.name="axisF",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID)},
-#if defined(LIBRARY_BLACKBOX_USE_STERM)
-    {.name="axisS",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_0)},
-    {.name="axisS",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_1)},
-    {.name="axisS",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(NONZERO_PID_S_2)},
-#endif
+    {.name="axisD",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_D_ROLL)},
+    {.name="axisD",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_D_PITCH)},
+    {.name="axisD",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_D_YAW)},
+    // PID K terms use F (feedforward) suffix to be compatible with Betaflight blackbox logs
+    {.name="axisF",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_K)},
+    {.name="axisF",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_K)},
+    {.name="axisF",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_K)},
+    {.name="axisS",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_ROLL)},
+    {.name="axisS",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_PITCH)},
+    {.name="axisS",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_YAW)},
     // rcCommands are encoded together as a group in P-frames:
     {.name="rcCommand",     .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
     {.name="rcCommand",     .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
@@ -162,7 +163,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cpp
     {.name="setpoint",      .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .fieldNameIndex=3,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="vbatLatest",    .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(VBATREF),.Iencode=ENCODING(NEG_14BIT),.Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
-    {.name="amperageLatest",.fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(AMPERAGE_ADC)},
+    {.name="amperageLatest",.fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_CURRENT)},
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
     {.name="magADC",        .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
     {.name="magADC",        .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
@@ -501,21 +502,22 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
     case FLIGHT_LOG_FIELD_CONDITION_PID:
         return isFieldEnabled(LOG_SELECT_PID);
 
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
-        // always log DTERM_0
-        return isFieldEnabled(LOG_SELECT_PID);
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
-        // always log DTERM_1
-        return isFieldEnabled(LOG_SELECT_PID);
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
+    case FLIGHT_LOG_FIELD_CONDITION_PID_K:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_KTERM);
+
+    case FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_DTERM_ROLL);
+    case FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_DTERM_PITCH);
+    case FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW:
         return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_DTERM_YAW);
 
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_0:
-        return false; //isFieldEnabled(LOG_SELECT_PID);
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_1:
-        return false;//isFieldEnabled(LOG_SELECT_PID);
-    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_S_2:
-        return false;//isFieldEnabled(LOG_SELECT_PID);
+    case FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_STERM_ROLL);
+    case FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_STERM_PITCH);
+    case FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW:
+        return isFieldEnabled(LOG_SELECT_PID) && isFieldEnabled(LOG_SELECT_PID_STERM_YAW);
 
     case FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS:
         return isFieldEnabled(LOG_SELECT_RC_COMMANDS);
@@ -530,10 +532,10 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
         return isFieldEnabled(LOG_SELECT_BAROMETER);
 
     case FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE:
-        return isFieldEnabled(LOG_SELECT_BATTERY_VOLTMETER);
+        return isFieldEnabled(LOG_SELECT_BATTERY_VOLTAGE);
 
-    case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-        return isFieldEnabled(LOG_SELECT_CURRENT_METER);
+    case FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT:
+        return isFieldEnabled(LOG_SELECT_BATTERY_CURRENT);
 
     case FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER:
         return isFieldEnabled(LOG_SELECT_RANGEFINDER);
@@ -552,6 +554,9 @@ bool Blackbox::testFieldConditionUncached(flight_log_field_condition_e condition
 
     case FLIGHT_LOG_FIELD_CONDITION_ACC:
         return isFieldEnabled(LOG_SELECT_ACCELEROMETER);
+
+    case FLIGHT_LOG_FIELD_CONDITION_ATTITUDE:
+        return isFieldEnabled(LOG_SELECT_ATTITUDE);
 
     case FLIGHT_LOG_FIELD_CONDITION_DEBUG:
         return isFieldEnabled(LOG_SELECT_DEBUG) && (_debugMode != 0);

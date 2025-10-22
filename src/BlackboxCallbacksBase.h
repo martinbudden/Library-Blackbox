@@ -64,6 +64,7 @@ struct blackboxSlowState_t {
 
 struct blackboxMainState_t {
     enum { XYZ_AXIS_COUNT = 3 };
+    enum { RPY_AXIS_COUNT = 3 };
 #if defined(LIBRARY_BLACKBOX_USE_EIGHT_MOTORS)
     enum { MAX_SUPPORTED_MOTOR_COUNT = 8 };
 #else
@@ -79,11 +80,11 @@ struct blackboxMainState_t {
     uint16_t vbatLatest;
     uint16_t rssi;
 
-    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_P;
-    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_I;
-    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_D;
-    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_F;
-    std::array<int32_t, XYZ_AXIS_COUNT> axisPID_S;
+    std::array<int32_t, RPY_AXIS_COUNT> axisPID_P;
+    std::array<int32_t, RPY_AXIS_COUNT> axisPID_I;
+    std::array<int32_t, RPY_AXIS_COUNT> axisPID_D;
+    std::array<int32_t, RPY_AXIS_COUNT> axisPID_S;
+    std::array<int32_t, RPY_AXIS_COUNT> axisPID_K;
 
     std::array<int16_t, 4> rcCommand;
     std::array<int16_t, 4> setpoint;

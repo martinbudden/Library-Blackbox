@@ -483,7 +483,7 @@ void test_blackbox_fields()
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_PID));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RC_COMMANDS));
     TEST_ASSERT_EQUAL(true, Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_SETPOINT));
-    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BATTERY_VOLTMETER));
+    TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BATTERY_VOLTAGE));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_MAGNETOMETER));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_BAROMETER));
     TEST_ASSERT_EQUAL(false,  Blackbox::isFieldEnabled(enabledMask, Blackbox::LOG_SELECT_RSSI));
@@ -519,6 +519,7 @@ void test_blackbox_conditions()
     });
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ALWAYS));
+
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3));
@@ -527,6 +528,7 @@ void test_blackbox_conditions()
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8));
+
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MOTOR_1_HAS_RPM));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MOTOR_2_HAS_RPM));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MOTOR_3_HAS_RPM));
@@ -541,14 +543,18 @@ void test_blackbox_conditions()
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BAROMETER));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE));
-    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RSSI));
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID));
-    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0));
-    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1));
-    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2));
+    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_K));
+    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL));
+    TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW));
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SETPOINT));
@@ -558,6 +564,7 @@ void test_blackbox_conditions()
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO_UNFILTERED));
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ACC));
+    TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ATTITUDE));
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG));
 
     TEST_ASSERT_EQUAL(false, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NEVER));

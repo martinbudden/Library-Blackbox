@@ -71,6 +71,7 @@ public:
     // regular logging iteration. This way we won't hog the CPU by making a gigantic write:
 
     enum { XYZ_AXIS_COUNT = 3 };
+    enum { RPY_AXIS_COUNT = 3 };
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
 
     enum device_e : uint8_t {
@@ -95,24 +96,31 @@ public:
     };
 
     enum log_field_select_e { // no more than 32
-        LOG_SELECT_PID              = 0x0001,
-        LOG_SELECT_SETPOINT         = 0x0002,
-        LOG_SELECT_RC_COMMANDS      = 0x0004,
-        LOG_SELECT_RSSI             = 0x0008,
-        LOG_SELECT_GYRO             = 0x0010,
-        LOG_SELECT_GYRO_UNFILTERED  = 0x0020,
-        LOG_SELECT_ACCELEROMETER    = 0x0040,
-        LOG_SELECT_MAGNETOMETER     = 0x0080,
-        LOG_SELECT_MOTOR            = 0x0100,
-        LOG_SELECT_MOTOR_RPM        = 0x0200,
-        LOG_SELECT_SERVO            = 0x0400,
-        LOG_SELECT_BATTERY_VOLTMETER= 0x0800,
-        LOG_SELECT_CURRENT_METER    = 0x1000,
-        LOG_SELECT_BAROMETER        = 0x2000,
-        LOG_SELECT_RANGEFINDER      = 0x4000,
-        LOG_SELECT_DEBUG            = 0x8000,
-        LOG_SELECT_GPS             = 0x10000,
-        LOG_SELECT_PID_DTERM_YAW   = 0x20000,
+        LOG_SELECT_DEBUG            = 0x0001,
+        LOG_SELECT_PID              = 0x0002,
+        LOG_SELECT_PID_DTERM_ROLL   = 0x0004,
+        LOG_SELECT_PID_DTERM_PITCH  = 0x0008,
+        LOG_SELECT_PID_DTERM_YAW    = 0x0010,
+        LOG_SELECT_PID_STERM_ROLL   = 0x0020,
+        LOG_SELECT_PID_STERM_PITCH  = 0x0040,
+        LOG_SELECT_PID_STERM_YAW    = 0x0080,
+        LOG_SELECT_PID_KTERM        = 0x0100,
+        LOG_SELECT_SETPOINT         = 0x0200,
+        LOG_SELECT_RC_COMMANDS      = 0x0400,
+        LOG_SELECT_RSSI             = 0x0800,
+        LOG_SELECT_GYRO             = 0x1000,
+        LOG_SELECT_GYRO_UNFILTERED  = 0x2000,
+        LOG_SELECT_ACCELEROMETER    = 0x4000,
+        LOG_SELECT_ATTITUDE         = 0x8000,
+        LOG_SELECT_MAGNETOMETER    = 0x10000,
+        LOG_SELECT_MOTOR           = 0x20000,
+        LOG_SELECT_MOTOR_RPM       = 0x40000,
+        LOG_SELECT_SERVO           = 0x80000,
+        LOG_SELECT_BATTERY_VOLTAGE= 0x100000,
+        LOG_SELECT_BATTERY_CURRENT= 0x200000,
+        LOG_SELECT_BAROMETER      = 0x400000,
+        LOG_SELECT_RANGEFINDER    = 0x800000,
+        LOG_SELECT_GPS           = 0x1000000,
     };
 
     enum state_e {
