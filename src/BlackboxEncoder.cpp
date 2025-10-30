@@ -144,7 +144,7 @@ void BlackboxEncoder::writeTag2_3S32(const int32_t *values) // NOLINT(readabilit
      * 32 bits per field sstt tttt followed by fields of various byte counts
      */
     int selector = BITS_2;
-    for (int x = 0; x < NUM_FIELDS; x++) {
+    for (size_t x = 0; x < NUM_FIELDS; x++) {
         //Require more than 6 bits?
         if (values[x] >= 32 || values[x] < -32) {
             selector = BITS_32;
@@ -190,7 +190,7 @@ void BlackboxEncoder::writeTag2_3S32(const int32_t *values) // NOLINT(readabilit
         selector2 = 0;
 
         //Encode in reverse order so the first field is in the low bits:
-        for (int x = NUM_FIELDS - 1; x >= 0; x--) {
+        for (int x = NUM_FIELDS - 1; x >= 0; --x) {
             selector2 <<= 2;
 
             if (values[x] < 128 && values[x] >= -128) {
@@ -208,7 +208,7 @@ void BlackboxEncoder::writeTag2_3S32(const int32_t *values) // NOLINT(readabilit
         write(static_cast<uint8_t>((selector << 6) | selector2));
 
         //And now the values according to the selectors we picked for them
-        for (int x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
+        for (size_t x = 0; x < NUM_FIELDS; ++x, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
                 write(static_cast<uint8_t>(values[x]));
@@ -314,7 +314,7 @@ int BlackboxEncoder::writeTag2_3SVariable(const int32_t *values)
          */
         selector2 = 0;
         //Encode in reverse order so the first field is in the low bits:
-        for (int x = FIELD_COUNT - 1; x >= 0; x--) {
+        for (int x = FIELD_COUNT - 1; x >= 0; --x) {
             selector2 <<= 2;
 
             if (values[x] < 128 && values[x] >= -128) {
@@ -332,7 +332,7 @@ int BlackboxEncoder::writeTag2_3SVariable(const int32_t *values)
         write(static_cast<uint8_t>((selector << 6) | selector2));
 
         //And now the values according to the selectors we picked for them
-        for (int x = 0; x < FIELD_COUNT; x++, selector2 >>= 2) {
+        for (size_t x = 0; x < FIELD_COUNT; ++x, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
                 write(static_cast<uint8_t>(values[x]));
@@ -377,7 +377,7 @@ void BlackboxEncoder::writeTag8_4S16(const int32_t *values)
 
     uint8_t selector = 0;
     //Encode in reverse order so the first field is in the low bits:
-    for (int x = 3; x >= 0; x--) {
+    for (int x = 3; x >= 0; --x) {
         selector <<= 2;
 
         if (values[x] == 0) {
@@ -395,7 +395,7 @@ void BlackboxEncoder::writeTag8_4S16(const int32_t *values)
 
     int nibbleIndex = 0;
     uint8_t buffer = 0;
-    for (int x = 0; x < 4; x++, selector >>= 2) {
+    for (size_t x = 0; x < 4; ++x, selector >>= 2) {
         switch (selector & 0x03) {
         case FIELD_ZERO:
             //No-op

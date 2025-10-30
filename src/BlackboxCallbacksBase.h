@@ -84,6 +84,7 @@ struct blackboxMainState_t {
 
 class BlackboxCallbacksBase {
 public:
+    virtual ~BlackboxCallbacksBase() = default;
     //! Load the rarely-changing values, used for slow frames
     virtual void loadSlowState(blackboxSlowState_t& slowState) = 0;
 

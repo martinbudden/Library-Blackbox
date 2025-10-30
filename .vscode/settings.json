@@ -83,25 +83,35 @@
         "vbatscale",
         "vbatwarningcellvoltage",
         "vdop",
+        "Waggressive",
         "Wattributes",
         "Wcast",
+        "Wdeprecated",
         "Wdisabled",
         "Wdouble",
         "Werror",
         "Wextra",
         "Wfloat",
+        "Wignored",
         "Wimplicit",
         "Winline",
         "Wmissing",
         "Wnarrowing",
+        "Wnon",
         "Wpacked",
         "Wpadded",
+        "Wpedantic",
+        "Wredundant",
         "Wshadow",
         "Wsign",
-        "Wtrampolines"
+        "Wstrict",
+        "Wtrampolines",
+        "Wunsafe",
+        "Wunused"
     ],
     "files.associations": {
         "bitset": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "array": "cpp"
     }
 }

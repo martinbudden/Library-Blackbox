@@ -31,6 +31,7 @@
 
 #include <array>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdint>
 
 #include "printf.h"
@@ -40,14 +41,14 @@
 
 // print bf, padded from left to at least n characters.
 // padding is zero ('0') if z!=0, space (' ') otherwise
-static int putchw(void* handle, putcFnPtr putFn, int n, char z, char *bf)
+static size_t putchw(void* handle, putcFnPtr putFn, int n, char z, char *bf)
 {
-    int written = 0;
     const char fc = z ? '0' : ' ';
     char *p = bf;
     while (*p++ && n > 0) {
         n--;
     }
+    size_t written = 0;
     while (n-- > 0) {
         putFn(handle, fc);
         ++written;
@@ -110,7 +111,7 @@ static void i2a(int num, char *bf)
         num = -num;
         *bf++ = '-';
     }
-    ui2a(num, 10, 0, bf);
+    ui2a(static_cast<unsigned int>(num), 10, 0, bf);
 }
 
 static int a2d(char ch)

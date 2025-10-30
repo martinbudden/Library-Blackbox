@@ -17,27 +17,15 @@ void tearDown()
 
 class BlackboxMessageQueueNull : public BlackboxMessageQueueBase {
 public:
-    virtual ~BlackboxMessageQueueNull() = default;
     BlackboxMessageQueueNull() = default;
+
     int32_t WAIT_IF_EMPTY(uint32_t& timeMicroseconds) const override { (void)timeMicroseconds; return 0; }
-    // BlackboxMessageQueueNull is not copyable or moveable
-    BlackboxMessageQueueNull(const BlackboxMessageQueueNull&) = delete;
-    BlackboxMessageQueueNull& operator=(const BlackboxMessageQueueNull&) = delete;
-    BlackboxMessageQueueNull(BlackboxMessageQueueNull&&) = delete;
-    BlackboxMessageQueueNull& operator=(BlackboxMessageQueueNull&&) = delete;
 };
 
 class BlackboxTest : public BlackboxNull {
 public:
-    virtual ~BlackboxTest() = default;
     BlackboxTest(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
         BlackboxNull(pidLoopTimeUs, callbacks, messageQueue, serialDevice) {}
-public:
-    // BlackboxTest is not copyable or moveable
-    BlackboxTest(const BlackboxTest&) = delete;
-    BlackboxTest& operator=(const BlackboxTest&) = delete;
-    BlackboxTest(BlackboxTest&&) = delete;
-    BlackboxTest& operator=(BlackboxTest&&) = delete;
 public:
     uint32_t getBlackboxIteration() const { return _iteration; }
     uint16_t getBlackboxLoopIndex() const { return _loopIndex; }

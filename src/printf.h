@@ -104,7 +104,7 @@ For further details see source code.
 regs Kusti, 23.10.2004
 */
 
-#include <stdarg.h>
+#include <cstddef>
 
 typedef void (*putcFnPtr)(void*, char); // function pointer to 'putc' function
 

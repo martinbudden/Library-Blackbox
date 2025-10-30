@@ -36,6 +36,7 @@ public:
     };
 
 public:
+    virtual ~BlackboxSerialDevice() = default;
     virtual int32_t init() = 0;
     virtual size_t write(uint8_t value) = 0;
     virtual size_t write(const uint8_t* buf, size_t length) = 0;

@@ -37,6 +37,7 @@ enum flight_log_field_condition_e : uint8_t;
 
 class Blackbox {
 public:
+    virtual ~Blackbox() = default;
     Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
         _serialDevice(serialDevice),
         _encoder(_serialDevice),
@@ -235,7 +236,7 @@ public:
     write_e writeFieldHeaderGPS_H();
     write_e writeFieldHeaderGPS_G();
 
-    static inline bool isFieldEnabled(uint32_t enabledMask, log_field_select_e field) { return (enabledMask & field) != 0; }
+    static inline bool isFieldEnabled(uint32_t enabledMask, log_field_select_e field) { return (enabledMask & static_cast<uint32_t>(field)) != 0; }
     inline bool isFieldEnabled(log_field_select_e field) const { return isFieldEnabled(_logSelectEnabled, field); }
 
     void buildFieldConditionCache();
@@ -299,7 +300,7 @@ protected:
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
     };
-    size_t _headerBudget {};
+    int32_t _headerBudget {};
     // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
     uint32_t _targetPidLooptimeUs; // time in microseconds
     state_e _state = STATE_DISABLED;

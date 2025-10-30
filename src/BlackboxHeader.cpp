@@ -250,7 +250,7 @@ size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) 
 
     headerWrite('\n');
 
-    _headerBudget -= written + 3;
+    _headerBudget -= static_cast<int32_t>(written + 3);
 
     return written + 3;
 }
@@ -303,12 +303,12 @@ Blackbox::write_e Blackbox::writeHeader()
     // Transmit the header in chunks so we don't overflow its transmit
     // buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
     if (_serialDevice.reserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-        for (int ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[_xmitState.headerIndex] != '\0'; ++ii) {
+        for (size_t ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[_xmitState.headerIndex] != '\0'; ++ii) {
             //Write header, ie
             //"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
             //"H Data version:2\n"
-            _encoder.write(blackboxHeader[_xmitState.headerIndex]);
-            _headerBudget--;
+            _encoder.write(static_cast<uint8_t>(blackboxHeader[_xmitState.headerIndex]));
+            --_headerBudget;
             ++_xmitState.headerIndex;
         }
         if (blackboxHeader[_xmitState.headerIndex] == 0) {
@@ -396,7 +396,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
     if (_xmitState.headerIndex == 0) {
         //0:H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[_xmitState.fieldIndex];
+            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
             headerPrintf(_xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     } else {
@@ -404,7 +404,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
         //2:H Field S predictor:0,0,0,0,0
         //3:H Field S encoding: 1,1,7,7,7
         for (; _xmitState.fieldIndex < SLOW_FIELD_COUNT; ++_xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[_xmitState.fieldIndex];
+            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
             const uint8_t value =
                 _xmitState.headerIndex == 1 ? def.isSigned :
                 _xmitState.headerIndex == 2 ? def.predict : def.encode;

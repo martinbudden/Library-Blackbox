@@ -686,7 +686,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 
     if (isFieldEnabled(LOG_SELECT_MOTOR)) {
         //Motors can be below minimum output when disarmed, but that doesn't happen much
-        _encoder.writeUnsignedVB(mainState->motor[0] - static_cast<int>(_motorOutputLow));
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(mainState->motor[0] - static_cast<int>(_motorOutputLow)));
 
         //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
         for (size_t ii = 1; ii < _motorCount; ++ii) {
