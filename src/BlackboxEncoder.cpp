@@ -30,7 +30,7 @@
 // !!TODO move all the printf related into Blackbox
 void BlackboxEncoder::putc(void* handle, char c)
 {
-    reinterpret_cast<BlackboxSerialDevice*>(handle)->write(c); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    reinterpret_cast<BlackboxSerialDevice*>(handle)->write(static_cast<uint8_t>(c)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 /*!
@@ -88,17 +88,17 @@ void BlackboxEncoder::writeUnsignedVB(uint32_t value)
 }
 
 
-void BlackboxEncoder::writeSignedVBArray(const int32_t *array, int count)
+void BlackboxEncoder::writeSignedVBArray(const int32_t *array, size_t count)
 {
-    for (int i = 0; i < count; i++) {
-        writeSignedVB(array[i]);
+    for (size_t ii = 0; ii < count; ++ii) {
+        writeSignedVB(array[ii]);
     }
 }
 
-void BlackboxEncoder::writeSigned16VBArray(const int16_t *array, int count)
+void BlackboxEncoder::writeSigned16VBArray(const int16_t *array, size_t count)
 {
-    for (int i = 0; i < count; i++) {
-        writeSignedVB(array[i]);
+    for (size_t ii = 0; ii < count; ++ii) {
+        writeSignedVB(array[ii]);
     }
 }
 
@@ -448,7 +448,7 @@ void BlackboxEncoder::writeTag8_4S16(const int32_t *values)
  *
  * valueCount must be 8 or less.
  */
-void BlackboxEncoder::writeTag8_8SVB(const int32_t *values, int valueCount)
+void BlackboxEncoder::writeTag8_8SVB(const int32_t *values, size_t valueCount)
 {
     if (valueCount > 0) {
         //If we're only writing one field then we can skip the header
@@ -459,19 +459,19 @@ void BlackboxEncoder::writeTag8_8SVB(const int32_t *values, int valueCount)
             uint8_t header = 0;
 
             // First field should be in low bits of header
-            for (int i = valueCount - 1; i >= 0; i--) {
+            for (int ii = static_cast<int>(valueCount) - 1; ii >= 0; --ii) {
                 header <<= 1;
 
-                if (values[i] != 0) {
+                if (values[ii] != 0) {
                     header |= 0x01;
                 }
             }
 
             write(header);
 
-            for (int i = 0; i < valueCount; i++) {
-                if (values[i] != 0) {
-                    writeSignedVB(values[i]);
+            for (size_t ii = 0; ii < valueCount; ++ii) {
+                if (values[ii] != 0) {
+                    writeSignedVB(values[ii]);
                 }
             }
         }

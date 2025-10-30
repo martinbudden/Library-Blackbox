@@ -222,8 +222,8 @@ public:
     BlackboxMessageQueueBase& getMessageQueue() const { return _messageQueue; }
 
     bool headerReserveBufferSpace();
-    int printfv(const char* fmt, va_list va);
-    int printf(const char* fmt, ...);
+    size_t printfv(const char* fmt, va_list va);
+    size_t printf(const char* fmt, ...);
     size_t headerPrintfHeaderLine(const char* name, const char* fmt, ...);
     size_t headerPrintf(const char* fmt, ...);
     void headerWrite(uint8_t value);
@@ -299,7 +299,7 @@ protected:
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
     };
-    int32_t _headerBudget {};
+    size_t _headerBudget {};
     // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
     uint32_t _targetPidLooptimeUs; // time in microseconds
     state_e _state = STATE_DISABLED;

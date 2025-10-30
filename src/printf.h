@@ -109,4 +109,4 @@ regs Kusti, 23.10.2004
 typedef void (*putcFnPtr)(void*, char); // function pointer to 'putc' function
 
 // Note the 'void* p' in 'putc' and 'tfp_format' has been replaced by 'void* handle' for clarity.
-int tfp_format(void* handle, putcFnPtr putFn, const char* fmt, va_list va);
+size_t tfp_format(void* handle, putcFnPtr putFn, const char* fmt, va_list va);

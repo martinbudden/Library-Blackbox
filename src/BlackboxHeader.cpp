@@ -213,18 +213,18 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cpp
 #undef CONDITION
 };
 
-int Blackbox::printfv(const char* fmt, va_list va)
+size_t Blackbox::printfv(const char* fmt, va_list va)
 {
     return tfp_format(&_serialDevice, BlackboxEncoder::putc, fmt, va);
 }
 
 
 //printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
-int Blackbox::printf(const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
+size_t Blackbox::printf(const char* fmt, ...) // NOLINT(cert-dcl50-cpp)
 {
     va_list va;
     va_start(va, fmt);
-    const int written = printfv(fmt, va);
+    const size_t written = printfv(fmt, va);
     va_end(va);
 
     return written;
@@ -244,7 +244,7 @@ size_t Blackbox::headerPrintfHeaderLine(const char* name, const char* fmt, ...) 
     va_list va;
     va_start(va, fmt);
 
-    const int written = printfv(fmt, va);
+    const size_t written = printfv(fmt, va);
 
     va_end(va);
 
@@ -260,7 +260,7 @@ size_t Blackbox::headerPrintf(const char *fmt, ...) // NOLINT(cert-dcl50-cpp)
     va_list va;
     va_start(va, fmt);
 
-    const int ret = printfv(fmt, va); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+    const size_t ret = printfv(fmt, va); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
     va_end(va);
 

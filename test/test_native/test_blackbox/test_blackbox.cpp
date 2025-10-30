@@ -45,7 +45,7 @@ public:
 
     state_e getBlackboxState() const { return _state; }
     xmit_state_t getXmitState() const { return _xmitState; }
-    int32_t getHeaderBudget() const { return _headerBudget; }
+    size_t getHeaderBudget() const { return _headerBudget; }
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,misc-const-correctness,readability-magic-numbers)

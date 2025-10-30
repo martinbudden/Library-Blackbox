@@ -146,10 +146,10 @@ static char a2i(char ch, const char **src, int base, int *nump)
 }
 
 // retrun number of bytes written
-int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NOLINT(readability-non-const-parameter,readability-function-cognitive-complexity)
+size_t tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NOLINT(readability-non-const-parameter,readability-function-cognitive-complexity)
 {
     std::array<char, 12> bf;
-    int written = 0;
+    size_t written = 0;
     char ch;
 
     while ((ch = *(fmt++))) {
@@ -212,7 +212,7 @@ int tfp_format(void *handle, putcFnPtr putFn, const char *fmt, va_list va) // NO
                 ++written;
                 break;
             case 'n':
-                *va_arg(va, int*) = written;
+                *va_arg(va, int*) = static_cast<int>(written);
                 break;
             default:
                 break;

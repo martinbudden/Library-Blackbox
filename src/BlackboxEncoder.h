@@ -49,11 +49,11 @@ public:
     void writeSignedVB(int32_t value) { //!< Write a signed integer using ZigZig and variable byte encoding.
         writeUnsignedVB(zigzagEncode(value)); // ZigZag encode to make the value always positive
     }
-    void writeSignedVBArray(const int32_t* array, int count);
+    void writeSignedVBArray(const int32_t* array, size_t count);
     void writeSignedVBArray(const std::array<int32_t, 3>& array) { for (auto item : array) { writeSignedVB(item); } }
 
     void writeSigned16VBArray(const std::array<int16_t, 4>& array);
-    void writeSigned16VBArray(const int16_t* array, int count);
+    void writeSigned16VBArray(const int16_t* array, size_t count);
     void writeS16(int16_t value) {
         write(static_cast<uint8_t>(value & 0xFFU));
         write(static_cast<uint8_t>((value >> 8U) & 0xFFU));
@@ -61,7 +61,7 @@ public:
     void writeTag2_3S32(const int32_t* values);
     int writeTag2_3SVariable(const int32_t* values);
     void writeTag8_4S16(const int32_t* values);
-    void writeTag8_8SVB(const int32_t* values, int valueCount);
+    void writeTag8_8SVB(const int32_t* values, size_t valueCount);
 
     void writeU32(uint32_t value) {
         write(static_cast<uint8_t>(value));

@@ -568,7 +568,7 @@ uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function
     return _state;
 }
 
-static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+static inline uint32_t llog2(uint32_t n) { return static_cast<uint32_t>(31 - __builtin_clz(n | 1)); }  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
@@ -621,7 +621,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
         // Write the throttle separately from the rest of the RC data as it's unsigned.
         // Throttle lies in range [PWM_RANGE_MIN,PWM_RANGE_MAX], ie [1000,2000]
         enum { ROLL = 0, PITCH, YAW, THROTTLE };
-        _encoder.writeUnsignedVB(mainState->rcCommand[THROTTLE]);
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(mainState->rcCommand[THROTTLE]));
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SETPOINT)) {
@@ -706,7 +706,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 #if defined(LIBRARY_BLACKBOX_USE_DSHOT_TELEMETRY)
     if (isFieldEnabled(LOG_SELECT_MOTOR_RPM)) {
         for (size_t ii = 0; ii < _motorCount; ++ii) {
-            _encoder.writeUnsignedVB(mainState->erpm[ii]);
+            _encoder.writeUnsignedVB(static_cast<uint32_t>(mainState->erpm[ii]));
         }
     }
 #endif
@@ -810,7 +810,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     enum { MAX_DELTA_COUNT = 8 };
     std::array<int32_t, MAX_DELTA_COUNT> deltas;
     //Check for sensors that are updated periodically (so deltas are normally zero)
-    int optionalFieldCount = 0;
+    size_t optionalFieldCount = 0;
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
         deltas[optionalFieldCount++] = mainState->vbatLatest - previousMainState->vbatLatest;
