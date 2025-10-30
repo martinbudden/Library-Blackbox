@@ -99,5 +99,9 @@
         "Wshadow",
         "Wsign",
         "Wtrampolines"
-    ]
+    ],
+    "files.associations": {
+        "bitset": "cpp",
+        "algorithm": "cpp"
+    }
 }
