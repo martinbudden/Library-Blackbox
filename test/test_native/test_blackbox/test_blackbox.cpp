@@ -1,6 +1,5 @@
 #include "BlackboxCallbacksNull.h"
 #include "BlackboxFieldDefinitions.h"
-#include "BlackboxMessageQueueBase.h"
 #include "BlackboxNull.h"
 #include "BlackboxSerialDeviceNull.h"
 
@@ -15,17 +14,10 @@ void tearDown()
 {
 }
 
-class BlackboxMessageQueueNull : public BlackboxMessageQueueBase {
-public:
-    BlackboxMessageQueueNull() = default;
-
-    int32_t WAIT_IF_EMPTY(uint32_t& timeMicroseconds) const override { (void)timeMicroseconds; return 0; }
-};
-
 class BlackboxTest : public BlackboxNull {
 public:
-    BlackboxTest(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
-        BlackboxNull(pidLoopTimeUs, callbacks, messageQueue, serialDevice) {}
+    BlackboxTest(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) :
+        BlackboxNull(pidLoopTimeUs, callbacks, serialDevice) {}
 public:
     uint32_t getBlackboxIteration() const { return _iteration; }
     uint16_t getBlackboxLoopIndex() const { return _loopIndex; }
@@ -41,9 +33,8 @@ void test_blackbox_init()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
@@ -67,9 +58,8 @@ void test_blackbox_init2()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 5000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
@@ -108,9 +98,8 @@ void test_blackbox_initial_updates()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
     const Blackbox::timeUs_t timeUs = 0;
 
     TEST_ASSERT_EQUAL(0, blackbox.getDebugMode());
@@ -243,9 +232,8 @@ void test_blackbox_frames()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     const Blackbox::start_t start{};
     blackbox.start(start);
@@ -282,9 +270,8 @@ void test_blackbox_slow_header()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     const Blackbox::timeUs_t currentTimeUs = 0;
 
@@ -313,9 +300,8 @@ void test_blackbox_write_sys_info()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
     serialDevice.fill(0xa5);
     serialDevice.resetIndex();
 
@@ -364,9 +350,8 @@ void test_blackbox_print_header_line()
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
     serialDevice.fill(0xa5);
 
     serialDevice.resetIndex();
@@ -393,9 +378,8 @@ void test_blackbox_printf()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     serialDevice.fill(0xa5);
     blackbox.printf("hello"); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
@@ -440,9 +424,8 @@ void test_blackbox_header_printf()
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     serialDevice.resetIndex();
     const int len = blackbox.headerPrintf("S:%s", "flight"); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
@@ -490,9 +473,8 @@ void test_blackbox_conditions()
     static BlackboxSerialDeviceNull serialDevice;
     //static BlackboxEncode blackboxEncoder(serialDevice);
     static BlackboxCallbacksNull callbacks {};
-    static BlackboxMessageQueueNull messageQueue {};
     enum { PID_LOOP_TIME = 1000 };
-    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, messageQueue, serialDevice);
+    static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     blackbox.init({
         .sample_rate = Blackbox::RATE_ONE,

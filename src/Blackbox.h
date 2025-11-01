@@ -30,7 +30,6 @@
 #include <bitset>
 
 class BlackboxCallbacksBase;
-class BlackboxMessageQueueBase;
 class BlackboxSerialDevice;
 enum flight_log_field_condition_e : uint8_t;
 
@@ -38,11 +37,10 @@ enum flight_log_field_condition_e : uint8_t;
 class Blackbox {
 public:
     virtual ~Blackbox() = default;
-    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxMessageQueueBase& messageQueue, BlackboxSerialDevice& serialDevice) :
+    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) :
         _serialDevice(serialDevice),
         _encoder(_serialDevice),
         _callbacks(callbacks),
-        _messageQueue(messageQueue),
         _targetPidLooptimeUs(pidLoopTimeUs)
         {}
 public:
@@ -220,7 +218,6 @@ public:
 
     uint32_t update(uint32_t currentTimeUs); // main loop function
     BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
-    BlackboxMessageQueueBase& getMessageQueue() const { return _messageQueue; }
 
     bool headerReserveBufferSpace();
     size_t printfv(const char* fmt, va_list va);
@@ -287,7 +284,6 @@ protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
     BlackboxCallbacksBase& _callbacks;
-    BlackboxMessageQueueBase& _messageQueue;
     size_t _motorCount;
     size_t _servoCount;
     uint32_t _logSelectEnabled {};

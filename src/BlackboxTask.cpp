@@ -23,9 +23,9 @@
  */
 
 #include "Blackbox.h"
-#include "BlackboxMessageQueueBase.h"
 #include "BlackboxTask.h"
 
+#include <MessageQueueBase.h>
 #include <TimeMicroseconds.h>
 #include <cassert>
 
@@ -43,11 +43,11 @@
 #endif
 
 
-BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox) :
+BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox, const MessageQueueBase& messageQueue) :
     TaskBase(taskIntervalMicroseconds),
     _taskIntervalMilliseconds(taskIntervalMicroseconds/1000), // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _blackbox(blackbox),
-    _messageQueue(blackbox.getMessageQueue())
+    _messageQueue(messageQueue)
 {
 }
 
