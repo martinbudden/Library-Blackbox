@@ -74,7 +74,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
     if (_taskIntervalMicroseconds == 0) {
         uint32_t timeMicroseconds {};
         while (true) {
-            _messageQueue.WAIT_IF_EMPTY(timeMicroseconds); // wait until there is IMU data.
+            _messageQueue.WAIT(timeMicroseconds); // wait until there is AHRS data.
             _blackbox.update(timeMicroseconds);
         }
     } else {

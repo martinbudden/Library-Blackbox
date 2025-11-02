@@ -61,7 +61,7 @@ classDiagram
     }
     class MessageQueueBase {
         <<abstract>>
-        WAIT_IF_EMPTY() const int32_t *
+        WAIT const int32_t *
     }
     class BlackboxSerialDevice {
         <<abstract>>
@@ -80,6 +80,6 @@ classDiagram
         +loop()
         -task() [[noreturn]]
     }
-    BlackboxTask o-- MessageQueueBase : calls WAIT_IF_EMPTY
+    BlackboxTask o-- MessageQueueBase : calls WAIT
     BlackboxTask o-- Blackbox : calls update
 ```
