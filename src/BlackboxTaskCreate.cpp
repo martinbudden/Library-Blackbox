@@ -44,13 +44,13 @@
 #endif
 
 
-BlackboxTask* BlackboxTask::createTask(Blackbox& blackbox, const MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::createTask(Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
     task_info_t taskInfo {};
     return createTask(taskInfo, blackbox, messageQueue, priority, core, taskIntervalMicroseconds);
 }
 
-BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox, const MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
     static BlackboxTask blackboxTask(taskIntervalMicroseconds, blackbox, messageQueue);

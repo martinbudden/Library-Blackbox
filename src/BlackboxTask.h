@@ -33,10 +33,10 @@ class MessageQueueBase;
 
 class BlackboxTask : public TaskBase {
 public:
-    BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox, const MessageQueueBase& messageQueue);
+    BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox, MessageQueueBase& messageQueue);
 public:
-    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, const MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
-    static BlackboxTask* createTask(Blackbox& blackbox, const MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
+    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
+    static BlackboxTask* createTask(Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
 private:
     // class is not copyable or moveable
     BlackboxTask(const BlackboxTask&) = delete;
@@ -51,5 +51,5 @@ private:
 private:
     uint32_t _taskIntervalMilliseconds;
     Blackbox& _blackbox;
-    const MessageQueueBase& _messageQueue;
+    MessageQueueBase& _messageQueue;
 };
