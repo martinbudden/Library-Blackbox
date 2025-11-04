@@ -21,7 +21,7 @@
         }
     ],
     "license": "GPL-3.0-or-later",
-    "version": "0.0.21",
+    "version": "0.0.22",
     "frameworks": "*",
     "platforms": "*",
     "headers": [ "Blackbox.h", "BlackboxCallbacksBase.h", "BlackboxSerialDevice.h", "BlackboxSerialDeviceSDCard.h", "BlackboxTask.h" ]
