@@ -61,7 +61,7 @@ void BlackboxTask::loop()
 
     if (_timeMicrosecondsDelta >= _taskIntervalMicroseconds) { // if _taskIntervalMicroSeconds has passed, then run the update
         _timeMicrosecondsPrevious = timeMicroseconds;
-        _blackbox.update(timeMicroseconds);
+        _blackbox.updateLog(timeMicroseconds);
     }
 }
 
@@ -75,7 +75,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
         uint32_t timeMicroseconds {};
         while (true) {
             _messageQueue.WAIT(timeMicroseconds); // wait until there is AHRS data.
-            _blackbox.update(timeMicroseconds);
+            _blackbox.updateLog(timeMicroseconds);
         }
     } else {
         // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
@@ -88,7 +88,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
             vTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
 
             const uint32_t timeMicroseconds = timeUs();
-            _blackbox.update(timeMicroseconds);
+            _blackbox.updateLog(timeMicroseconds);
         }
     }
 #else

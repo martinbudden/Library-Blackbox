@@ -376,7 +376,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
-uint32_t Blackbox::update(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
+uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
 {
     switch (_state) {
     case STATE_STOPPED:
