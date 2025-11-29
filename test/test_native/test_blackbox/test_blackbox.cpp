@@ -128,7 +128,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0, blackbox.getHeaderBudget());
 
 
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
@@ -137,7 +137,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0, blackbox.getHeaderBudget());
 
     serialDevice.fill(0xa5);
-    blackbox.update(timeUs); // write first 64 bytes of header (header length = 79)
+    blackbox.updateLog(timeUs); // write first 64 bytes of header (header length = 79)
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(64, xmitState.headerIndex);
@@ -158,7 +158,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0xa5, serialDevice[64]);
 
     // "H Data version:2\n\0"
-    blackbox.update(timeUs); // write rest of header
+    blackbox.updateLog(timeUs); // write rest of header
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(50, blackbox.getHeaderBudget());
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
@@ -177,7 +177,7 @@ void test_blackbox_initial_updates()
 
     serialDevice.resetIndex();
     serialDevice.fill(0xa5);
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
@@ -201,30 +201,30 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL('l', serialDevice[15]);
     TEST_ASSERT_EQUAL('o', serialDevice[16]);
 
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     while (Blackbox::STATE_SEND_MAIN_FIELD_HEADER == blackbox.getBlackboxState()) {
-        blackbox.update(timeUs);
+        blackbox.updateLog(timeUs);
     }
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
     while (Blackbox::STATE_SEND_SLOW_FIELD_HEADER == blackbox.getBlackboxState()) {
-        blackbox.update(timeUs);
+        blackbox.updateLog(timeUs);
     }
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SYSINFO, blackbox.getBlackboxState());
     while (Blackbox::STATE_SEND_SYSINFO == blackbox.getBlackboxState()) {
-        blackbox.update(timeUs);
+        blackbox.updateLog(timeUs);
     }
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     TEST_ASSERT_EQUAL(Blackbox::STATE_RUNNING, blackbox.getBlackboxState());
 
     const uint32_t iteration  = blackbox.getBlackboxIteration();
-    blackbox.update(timeUs);
+    blackbox.updateLog(timeUs);
     TEST_ASSERT_EQUAL(iteration + 1, blackbox.getBlackboxIteration());
 }
 
@@ -282,16 +282,16 @@ void test_blackbox_slow_header()
     blackbox.setState(Blackbox::STATE_SEND_SLOW_FIELD_HEADER);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
-    blackbox.update(currentTimeUs); // 1
+    blackbox.updateLog(currentTimeUs); // 1
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
-    blackbox.update(currentTimeUs); // 2
+    blackbox.updateLog(currentTimeUs); // 2
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
-    blackbox.update(currentTimeUs); // 3
+    blackbox.updateLog(currentTimeUs); // 3
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
 
-    blackbox.update(currentTimeUs); // 4
+    blackbox.updateLog(currentTimeUs); // 4
     // after 4 (BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) updates, state changes to STATE_CACHE_FLUSH
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 }
