@@ -500,7 +500,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
          *
          * Don't wait longer than it could possibly take if something funky happens.
          */
-        if (_serialDevice.endLog(_loggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) {
+        if (_serialDevice.endLog(_loggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) { // cppcheck-suppress unsignedLessThanZero
             _serialDevice.close();
             setState(STATE_STOPPED);
         }
