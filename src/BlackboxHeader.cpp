@@ -68,7 +68,7 @@ const std::array<const char* const, BLACKBOX_FIELD_HEADER_NAMES_COUNT> blackboxF
 
 // Rarely-updated fields
 enum { SLOW_FIELD_COUNT = 5 };
-static const std::array<blackboxSimpleFieldDefinition_t, SLOW_FIELD_COUNT> blackboxSlowFields={{
+static const std::array<blackbox_simple_field_definition_t, SLOW_FIELD_COUNT> blackboxSlowFields={{
     {.name="flightModeFlags",       .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
     {.name="stateFlags",            .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
 
@@ -80,7 +80,7 @@ static const std::array<blackboxSimpleFieldDefinition_t, SLOW_FIELD_COUNT> black
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
 // GPS position/velocity frame
 enum { GPS_G_FIELD_COUNT = 7 };
-static const std::array<blackboxConditionalFieldDefinition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields={{
+static const std::array<blackbox_conditional_field_definition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields={{
     {.name="time",          .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(LAST_MAIN_FRAME_TIME), .encode=ENCODING(UNSIGNED_VB),.condition=CONDITION(NOT_LOGGING_EVERY_FRAME)},
     {.name="GPS_numSat",    .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
     {.name="GPS_coord",     .fieldNameIndex=0,  .isSigned=SIGNED,    .predict=PREDICT(HOME_COORD),.encode=ENCODING(SIGNED_VB),  .condition=CONDITION(ALWAYS)},
@@ -92,7 +92,7 @@ static const std::array<blackboxConditionalFieldDefinition_t, GPS_G_FIELD_COUNT>
 
 // GPS home frame
 enum { GPS_H_FIELD_COUNT = 3 };
-static const std::array<blackboxSimpleFieldDefinition_t, GPS_H_FIELD_COUNT> blackboxGpsHFields={{
+static const std::array<blackbox_simple_field_definition_t, GPS_H_FIELD_COUNT> blackboxGpsHFields={{
     {.name="GPS_home",      .fieldNameIndex=0,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)},
     {.name="GPS_home",      .fieldNameIndex=1,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)},
     {.name="GPS_home",      .fieldNameIndex=2,  .isSigned=SIGNED,     .predict=PREDICT(0),      .encode=ENCODING(SIGNED_VB)}
@@ -107,8 +107,8 @@ we have to encode the flight log ourselves in logPFrame and logIFrame in a way t
 
 Field names and encodings are choosen to be compatible with Betaflight blackbox logs.
 */
-//static const std::array<Blackbox::blackboxDeltaFieldDefinition_t, MAIN_FIELD_COUNT> blackboxMainFields={{
-static const blackboxDeltaFieldDefinition_t blackboxMainFields[]={ // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+//static const std::array<Blackbox::blackbox_delta_field_definition_t, MAIN_FIELD_COUNT> blackboxMainFields={{
+static const blackbox_delta_field_definition_t blackboxMainFields[]={ // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     /* loopIteration doesn't appear in P frames since it always increments */
     {.name="loopIteration", .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(INC),         .Pencode=FLIGHT_LOG_FIELD_ENCODING_NULL,.condition=CONDITION(ALWAYS)},
     // Time advances pretty steadily so the P-frame prediction is a straight line
@@ -324,7 +324,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
     // the whole header.
 
     // On our first call we need to print the name of the header and a colon
-    const int32_t fieldCount = sizeof(blackboxMainFields) / sizeof(blackboxDeltaFieldDefinition_t);
+    const int32_t fieldCount = sizeof(blackboxMainFields) / sizeof(blackbox_delta_field_definition_t);
     if (_xmitState.fieldIndex == -1) {
         const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmitState.headerIndex]);
         if (_serialDevice.reserveBufferSpace(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
@@ -340,7 +340,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
     if (_xmitState.headerIndex == 0) {
         //0: H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
-            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[_xmitState.fieldIndex];
+            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmitState.fieldIndex];
             if (testFieldCondition(def.condition)) {
                 if (def.fieldNameIndex == -1) {
                     headerPrintf(_xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
@@ -356,7 +356,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
         //4: H Field P predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3, 3,3,3,3
         //5: H Field P encoding: 9,0,0,0,0,7,7,7,0,0,0,8,8,8,8,6,6,0,0,0, 0,0,0,0
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
-            const blackboxDeltaFieldDefinition_t& def = blackboxMainFields[_xmitState.fieldIndex];
+            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmitState.fieldIndex];
             const uint8_t value =
                 _xmitState.headerIndex == 1 ? def.isSigned :
                 _xmitState.headerIndex == 2 ? def.Ipredict :
@@ -396,7 +396,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
     if (_xmitState.headerIndex == 0) {
         //0:H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
+            const blackbox_simple_field_definition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
             headerPrintf(_xmitState.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     } else {
@@ -404,7 +404,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSlow() // NOLINT(readability-functio
         //2:H Field S predictor:0,0,0,0,0
         //3:H Field S encoding: 1,1,7,7,7
         for (; _xmitState.fieldIndex < SLOW_FIELD_COUNT; ++_xmitState.fieldIndex) {
-            const blackboxSimpleFieldDefinition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
+            const blackbox_simple_field_definition_t& def = blackboxSlowFields[static_cast<size_t>(_xmitState.fieldIndex)];
             const uint8_t value =
                 _xmitState.headerIndex == 1 ? def.isSigned :
                 _xmitState.headerIndex == 2 ? def.predict : def.encode;

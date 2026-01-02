@@ -77,7 +77,7 @@ size_t BlackboxSerialDeviceNull::replenishHeaderBudget()
     return HEADER_BUDGET_SIZE;
 }
 
-BlackboxSerialDevice::blackboxBufferReserveStatus_e BlackboxSerialDeviceNull::reserveBufferSpace(size_t bytes)
+BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceNull::reserveBufferSpace(size_t bytes)
 {
     (void)bytes;
     return BLACKBOX_RESERVE_SUCCESS;

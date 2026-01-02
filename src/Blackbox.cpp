@@ -31,7 +31,7 @@
 #include <cassert>
 #include <cstring>
 
-#ifdef USE_FLASH_TEST_PRBS
+#if defined(USE_FLASH_TEST_PRBS)
 void checkFlashStart();
 void checkFlashStop();
 #endif
@@ -105,8 +105,8 @@ Start Blackbox logging if it is not already running. Intended to be called upon 
 */
 Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 {
-    assert(startParameters.motorCount <= blackboxMainState_t::MAX_SUPPORTED_MOTOR_COUNT);
-    assert(startParameters.servoCount <= blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
+    assert(startParameters.motorCount <= blackbox_main_state_t::MAX_SUPPORTED_MOTOR_COUNT);
+    assert(startParameters.servoCount <= blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
     _motorCount = startParameters.motorCount;
     _servoCount = startParameters.servoCount;
     _debugMode = startParameters.debugMode;
@@ -127,7 +127,7 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
         // If we are logging battery voltage, then loadMainState to get the reference battery voltage.
-        blackboxMainState_t mainState {};
+        blackbox_main_state_t mainState {};
         _callbacks.loadMainState(mainState, 0);
         _vbatReference = mainState.vbatLatest;
     }
@@ -255,7 +255,7 @@ void Blackbox::setState(state_e newState)
         break;
     case STATE_RUNNING:
         _SFrameIndex = _SInterval; //Force a slow frame to be written on the first iteration
-#ifdef USE_FLASH_TEST_PRBS
+#if defined(USE_FLASH_TEST_PRBS)
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
 #endif
@@ -264,7 +264,7 @@ void Blackbox::setState(state_e newState)
         _xmitState.startTime = timeMs();
         break;
 
-#ifdef USE_FLASH_TEST_PRBS
+#if defined(USE_FLASH_TEST_PRBS)
     case STATE_STOPPED:
         // Now that the log is shut down, verify it
         checkFlashStop();
@@ -292,7 +292,7 @@ bool Blackbox::logSFrameIfNeeded()
     }
 
     // Only write a slow frame if it was different from the previous state
-    blackboxSlowState_t newSlowState {};
+    blackbox_slow_state_t newSlowState {};
     _callbacks.loadSlowState(newSlowState);
     if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
         // Use the new state as our new history
@@ -384,8 +384,8 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
             _serialDevice.open();
             start();
         }
-#ifdef USE_FLASHFS
-        if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
+#if defined(USE_FLASHFS)
+        if (_callbacks.isBlackboxEraseModeActive()) {
             setState(STATE_START_ERASE);
         }
 #endif
@@ -462,7 +462,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
         break;
     case STATE_PAUSED:
         // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-        if (_callbacks.isBlackboxRcModeActive() && shouldLogIFrame()) {
+        if (_callbacks.isBlackboxModeActive() && shouldLogIFrame()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
             //flightLogEvent_loggingResume_t resume {
             //    .logIteration = _iteration,
@@ -485,7 +485,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
     case STATE_RUNNING:
         // On entry to this state, _iteration, _PFrameIndex and _IFrameIndex are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-        if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxRcModeActive() && !_startedLoggingInTestMode) {
+        if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxModeActive() && !_startedLoggingInTestMode) {
             setState(STATE_PAUSED);
         } else {
             logIteration(currentTimeUs);
@@ -505,7 +505,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
             setState(STATE_STOPPED);
         }
         break;
-#ifdef USE_FLASHFS
+#if defined(USE_FLASHFS)
     case STATE_START_ERASE:
         blackboxEraseAll();
         setState(STATE_ERASING);
@@ -519,7 +519,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
         }
         break;
     case STATE_ERASED:
-        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
+        if (!_callbacks.isBlackboxEraseModeActive()) {
             setState(STATE_STOPPED);
         }
         break;
@@ -530,7 +530,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
 
     // Did we run out of room on the device? Stop!
     if (_serialDevice.isDeviceFull()) {
-#ifdef USE_FLASHFS
+#if defined(USE_FLASHFS)
         if (_state != STATE_ERASING
             && _state != STATE_START_ERASE
             && _state != STATE_ERASED)
@@ -581,7 +581,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 
     _encoder.writeUnsignedVB(_iteration);
 
-    const blackboxMainState_t* mainState = _mainStateHistory[0];
+    const blackbox_main_state_t* mainState = _mainStateHistory[0];
 
     _encoder.writeUnsignedVB(mainState->time);
 
@@ -681,7 +681,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG)) {
-        _encoder.writeSigned16VBArray(&mainState->debug[0], blackboxMainState_t::DEBUG_VALUE_COUNT);
+        _encoder.writeSigned16VBArray(&mainState->debug[0], blackbox_main_state_t::DEBUG_VALUE_COUNT);
     }
 
     if (isFieldEnabled(LOG_SELECT_MOTOR)) {
@@ -695,11 +695,11 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 #if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
-        std::array <int32_t, blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT> out;
-        for (size_t ii = 0; ii < blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
+        std::array <int32_t, blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT> out;
+        for (size_t ii = 0; ii < blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
             out[ii] = mainState->servo[ii] - 1500;
         }
-        _encoder.writeTag8_8SVB(&out[0], blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
+        _encoder.writeTag8_8SVB(&out[0], blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
     }
 #endif
 
@@ -715,7 +715,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 // 2=1
 // 1=0
 // 0=2
-    blackboxMainState_t* const history2Save = _mainStateHistory[2];
+    blackbox_main_state_t* const history2Save = _mainStateHistory[2];
 
     // The current state becomes the new "before" state
     _mainStateHistory[1] = _mainStateHistory[0];
@@ -750,8 +750,8 @@ inline std::array<int32_t, 4> operator-(const std::array<int16_t, 4>& a, const s
 void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 {
     _encoder.beginFrame('P');
-    const blackboxMainState_t* mainState = _mainStateHistory[0];
-    const blackboxMainState_t* previousMainState = _mainStateHistory[1];
+    const blackbox_main_state_t* mainState = _mainStateHistory[0];
+    const blackbox_main_state_t* previousMainState = _mainStateHistory[1];
 
     //No need to store iteration count since its delta is always 1
 
@@ -873,7 +873,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG)) {
-        for (size_t ii = 0; ii < blackboxMainState_t::DEBUG_VALUE_COUNT; ++ii) {
+        for (size_t ii = 0; ii < blackbox_main_state_t::DEBUG_VALUE_COUNT; ++ii) {
             const int32_t predictor = (_mainStateHistory[1]->debug[ii] + _mainStateHistory[2]->debug[ii]) / 2;
             _encoder.writeSignedVB(mainState->debug[ii] - predictor);
         }
@@ -888,11 +888,11 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
 #if defined(LIBRARY_BLACKBOX_USE_SERVOS)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
-        std::array <int32_t, blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT> out;
-        for (size_t ii = 0; ii < blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
+        std::array <int32_t, blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT> out;
+        for (size_t ii = 0; ii < blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
             out[ii] = mainState->servo[ii] - 1500;
         }
-        _encoder.writeTag8_8SVB(&out[0], blackboxMainState_t::MAX_SUPPORTED_SERVO_COUNT);
+        _encoder.writeTag8_8SVB(&out[0], blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
     }
 #endif
 
@@ -907,7 +907,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 // 2=1
 // 1=0
 // 0=2
-    blackboxMainState_t* const history2Save = _mainStateHistory[2];
+    blackbox_main_state_t* const history2Save = _mainStateHistory[2];
     _mainStateHistory[2] = _mainStateHistory[1];
     _mainStateHistory[1] = _mainStateHistory[0];
     //_mainStateHistory[0] = &_mainStateHistoryRing[0] + ((_mainStateHistory[0] - &_mainStateHistoryRing[1]) % 3);
@@ -1042,11 +1042,11 @@ bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
         break;
     case LOG_EVENT_INFLIGHT_ADJUSTMENT:
         if (data->inflightAdjustment.floatFlag) {
-            enum { LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG = 128 };
-            _encoder.write(data->inflightAdjustment.adjustmentFunction + LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
+            enum { LOG_EVENT_INFLIGHT_ADJUSTMENT_FLOAT_VALUE_FLAG = 128 };
+            _encoder.write(data->inflightAdjustment.adjustment + LOG_EVENT_INFLIGHT_ADJUSTMENT_FLOAT_VALUE_FLAG);
             _encoder.writeFloat(data->inflightAdjustment.newFloatValue);
         } else {
-            _encoder.write(data->inflightAdjustment.adjustmentFunction);
+            _encoder.write(data->inflightAdjustment.adjustment);
             _encoder.writeSignedVB(data->inflightAdjustment.newValue);
         }
         break;

@@ -48,7 +48,7 @@ public:
     virtual bool flushForceComplete() override;
 
     virtual size_t replenishHeaderBudget() override;
-    virtual blackboxBufferReserveStatus_e reserveBufferSpace(size_t bytes) override;
+    virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) override;
 
 // debugging functions
     void resetIndex() { _index = 0; }

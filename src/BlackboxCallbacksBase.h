@@ -30,7 +30,7 @@
 #pragma pack(push, 1)
 // We pack this struct so that padding doesn't interfere with memcmp()
 // This data is updated really infrequently:
-struct blackboxSlowState_t {
+struct blackbox_slow_state_t {
     uint32_t flightModeFlags; // extend this data size (from uint16_t)
     uint8_t stateFlags;
     uint8_t failsafePhase;
@@ -40,7 +40,7 @@ struct blackboxSlowState_t {
 #pragma pack(pop)
 
 
-struct blackboxMainState_t {
+struct blackbox_main_state_t {
     enum { XYZ_AXIS_COUNT = 3 };
     enum { RPY_AXIS_COUNT = 3 };
 #if defined(LIBRARY_BLACKBOX_USE_EIGHT_MOTORS)
@@ -86,13 +86,14 @@ class BlackboxCallbacksBase {
 public:
     virtual ~BlackboxCallbacksBase() = default;
     //! Load the rarely-changing values, used for slow frames
-    virtual void loadSlowState(blackboxSlowState_t& slowState) = 0;
+    virtual void loadSlowState(blackbox_slow_state_t& slowState) = 0;
 
     //! Load the main state of the blackbox, used for I-frames and P-frames
-    virtual void loadMainState(blackboxMainState_t& mainState, uint32_t currentTimeUs) = 0;
+    virtual void loadMainState(blackbox_main_state_t& mainState, uint32_t currentTimeUs) = 0;
 
     virtual bool isArmed() const = 0;
-    virtual bool isBlackboxRcModeActive() const = 0;
+    virtual bool isBlackboxModeActive() const = 0;
+    virtual bool isBlackboxEraseModeActive() const = 0;
     virtual bool isBlackboxModeActivationConditionPresent() const = 0;
     virtual uint32_t getArmingBeepTimeMicroseconds() const = 0;
     virtual bool areMotorsRunning() const = 0;

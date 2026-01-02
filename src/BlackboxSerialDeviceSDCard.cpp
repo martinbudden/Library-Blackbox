@@ -286,7 +286,7 @@ size_t BlackboxSerialDeviceSDCard::replenishHeaderBudget()
     return BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
 }
 
-BlackboxSerialDevice::blackboxBufferReserveStatus_e BlackboxSerialDeviceSDCard::reserveBufferSpace(size_t bytes)
+BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceSDCard::reserveBufferSpace(size_t bytes)
 {
     (void)bytes;
     return BLACKBOX_RESERVE_SUCCESS;

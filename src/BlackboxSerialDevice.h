@@ -29,7 +29,7 @@
 
 class BlackboxSerialDevice {
 public:
-    enum blackboxBufferReserveStatus_e {
+    enum blackbox_buffer_reserve_status_e {
         BLACKBOX_RESERVE_SUCCESS,
         BLACKBOX_RESERVE_TEMPORARY_FAILURE,
         BLACKBOX_RESERVE_PERMANENT_FAILURE
@@ -53,5 +53,5 @@ public:
     virtual bool flushForceComplete() = 0;
 
     virtual size_t replenishHeaderBudget() = 0;
-    virtual blackboxBufferReserveStatus_e reserveBufferSpace(size_t bytes) = 0;
+    virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) = 0;
 };

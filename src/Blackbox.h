@@ -137,7 +137,7 @@ public:
         int32_t fieldIndex;
         uint32_t startTime;
     };
-    struct log_event_syncBeep_t {
+    struct log_event_sync_beep_t {
         uint32_t time;
     };
     struct log_event_disarm_t {
@@ -147,22 +147,22 @@ public:
         uint32_t flags;
         uint32_t lastFlags;
     };
-    struct log_event_inflightAdjustment_t {
+    struct log_event_inflight_adjustment_t {
         int32_t newValue;
         float newFloatValue;
-        uint8_t adjustmentFunction;
+        uint8_t adjustment;
         bool floatFlag;
     };
-    struct log_event_loggingResume_t {
+    struct log_event_logging_resume_t {
         uint32_t logIteration;
         uint32_t currentTime;
     };
     union log_event_data_u {
-        log_event_syncBeep_t syncBeep;
+        log_event_sync_beep_t syncBeep;
         log_event_flightMode_t flightMode; // New event data
         log_event_disarm_t disarm;
-        log_event_inflightAdjustment_t inflightAdjustment;
-        log_event_loggingResume_t loggingResume;
+        log_event_inflight_adjustment_t inflightAdjustment;
+        log_event_logging_resume_t loggingResume;
     };
     enum log_event_e {
         LOG_EVENT_SYNC_BEEP = 0,
@@ -260,7 +260,6 @@ public:
     void resetIterationTimers();
     void setState(state_e newState);
 
-    // !!TODO move following into BlackboxInterface??
     void init(const config_t& config);
     state_e start(const start_t& startParameters, uint32_t logSelectEnabled);
     state_e start(const start_t& startParameters);
@@ -326,11 +325,11 @@ protected:
     gps_location_t _gpsHomeLocation {};
     gps_state_t _gpsState {};
 #endif
-    blackboxSlowState_t _slowState {};
+    blackbox_slow_state_t _slowState {};
     // Keep a history of length 2, plus a buffer to store the new values into
-    std::array<blackboxMainState_t, 3> _mainStateHistoryRing {};
+    std::array<blackbox_main_state_t, 3> _mainStateHistoryRing {};
     // These point into _mainStateHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-    std::array<blackboxMainState_t*, 3> _mainStateHistory {
+    std::array<blackbox_main_state_t*, 3> _mainStateHistory {
         &_mainStateHistoryRing[0],
         &_mainStateHistoryRing[1],
         &_mainStateHistoryRing[2]

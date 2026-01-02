@@ -29,7 +29,7 @@
 
 #pragma pack(push, 1)
 // simple fields
-struct blackboxSimpleFieldDefinition_t {
+struct blackbox_simple_field_definition_t {
     const char *name;
     int8_t fieldNameIndex;
     uint8_t isSigned;
@@ -38,7 +38,7 @@ struct blackboxSimpleFieldDefinition_t {
 };
 
 // conditional fields, used for GPS
-struct blackboxConditionalFieldDefinition_t {
+struct blackbox_conditional_field_definition_t {
     const char *name;
     int8_t fieldNameIndex;
     uint8_t isSigned;
@@ -48,7 +48,7 @@ struct blackboxConditionalFieldDefinition_t {
 };
 
 // delta fields, used for P-frames
-struct blackboxDeltaFieldDefinition_t {
+struct blackbox_delta_field_definition_t {
     const char* name;
     int8_t fieldNameIndex;
     uint8_t isSigned;
@@ -60,12 +60,12 @@ struct blackboxDeltaFieldDefinition_t {
 };
 #pragma pack(pop)
 
-enum FlightLogFieldSign_e {
+enum flight_log_fieldSign_e {
     FLIGHT_LOG_FIELD_UNSIGNED = 0,
     FLIGHT_LOG_FIELD_SIGNED   = 1
 };
 
-enum FlightLogFieldPredictor_e {
+enum flight_logField_predictor_e {
     // No prediction:
     FLIGHT_LOG_FIELD_PREDICTOR_0              = 0,
 
