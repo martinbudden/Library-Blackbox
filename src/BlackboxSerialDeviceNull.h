@@ -54,15 +54,18 @@ public:
     virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) override;
 
 // debugging functions
-    void resetIndex() { _index = 0; }
-    void fill(uint8_t value) { _buf.fill(value); }
-    uint8_t operator[](size_t index) const { return _buf[index]; }
+    void resetIndex();
+    void fill(uint8_t value);
+    uint8_t operator[](size_t index) const { return _output[index]; }
     const uint8_t* getBuf() const { return &_buf[0]; }
     const char* getBufChar() const { return reinterpret_cast<const char*>(&_buf[0]); }
+    const uint8_t* getOutput() const { return &_output[0]; }
+    const char* getOutputChar() const { return reinterpret_cast<const char*>(&_output[0]); }
 public:
     size_t _index = 0;
     enum { HEADER_BUDGET_SIZE = 64 };
-    enum { BUFFER_SIZE = 1024 };
-    std::array<uint8_t, BUFFER_SIZE> _buf;
+    enum { BUFFER_SIZE = 2048 };
+    std::array<uint8_t, HEADER_BUDGET_SIZE> _buf;
     StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);
+    std::array<uint8_t, BUFFER_SIZE> _output;
 };

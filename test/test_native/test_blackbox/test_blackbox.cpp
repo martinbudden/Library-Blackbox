@@ -141,22 +141,26 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(64, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(0, xmitState.fieldIndex);
     TEST_ASSERT_EQUAL(0, xmitState.startTime);
     TEST_ASSERT_EQUAL(0, blackbox.getHeaderBudget());
-    // "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    // "H Data version:2\n\0"
+    static const char* H0 = "H Product:Blackbox flight data recorder by Nicholas Sherlock\n";
+    static const char* H1 = "H Data version:2\n\0";
+    TEST_ASSERT_EQUAL(61, strlen(H0));
+    //TEST_ASSERT_EQUAL_CHAR_ARRAY(H0, serialDevice.getBufChar(), strlen(H0));
     TEST_ASSERT_EQUAL('H', serialDevice[0]);
     TEST_ASSERT_EQUAL(' ', serialDevice[1]);
     TEST_ASSERT_EQUAL('P', serialDevice[2]);
     TEST_ASSERT_EQUAL('r', serialDevice[3]);
     TEST_ASSERT_EQUAL('o', serialDevice[4]);
+
     TEST_ASSERT_EQUAL('k', serialDevice[59]);
     TEST_ASSERT_EQUAL('\n', serialDevice[60]);
     TEST_ASSERT_EQUAL('H', serialDevice[61]);
     TEST_ASSERT_EQUAL(' ', serialDevice[62]);
     TEST_ASSERT_EQUAL('D', serialDevice[63]);
     TEST_ASSERT_EQUAL(0xa5, serialDevice[64]);
-
+    
     // "H Data version:2\n\0"
     blackbox.updateLog(timeUs); // write rest of header
     xmitState = blackbox.getXmitState();
@@ -164,6 +168,8 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
     TEST_ASSERT_EQUAL(0, xmitState.startTime);
+    TEST_ASSERT_EQUAL('H', serialDevice[61]);
+
     TEST_ASSERT_EQUAL('D', serialDevice[63]);
     TEST_ASSERT_EQUAL('a', serialDevice[64]);
     TEST_ASSERT_EQUAL('t', serialDevice[65]);
@@ -266,10 +272,11 @@ void test_blackbox_frames()
     TEST_ASSERT_EQUAL(logEventData.disarm.reason, serialDevice[2]); // NOLINT(cppcoreguidelines-pro-type-union-access)
 }
 
+//                        012345678901234567890
 static const char* SH0 = "H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid\n";
-static const char* SH1 = "H Field S signed:0,0,0,0,0";
-static const char* SH2 = "H Field S predictor:0,0,0,0,0";
-static const char* SH3 = "H Field S encoding:1,1,7,7,7";
+static const char* SH1 = "H Field S signed:0,0,0,0,0\n";
+static const char* SH2 = "H Field S predictor:0,0,0,0,0\n";
+static const char* SH3 = "H Field S encoding:1,1,7,7,7\n";
 
 void test_blackbox_slow_header()
 {
@@ -301,25 +308,33 @@ void test_blackbox_slow_header()
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
-    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH0, serialDevice.getBufChar(), strlen(SH0));
+    const char* outputPtr = serialDevice.getOutputChar();
+    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH0, outputPtr, strlen(SH0));
 
     blackbox.updateLog(currentTimeUs); // 2
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(2, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
-    //TEST_ASSERT_EQUAL_CHAR_ARRAY(SH1, serialDevice.getBufChar(), strlen(SH1));
+    outputPtr += strlen(SH0);
+    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH1, outputPtr, strlen(SH1));
 
     blackbox.updateLog(currentTimeUs); // 3
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(3, xmitState.headerIndex);
     TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
-    //TEST_ASSERT_EQUAL_CHAR_ARRAY(SH2, serialDevice.getBufChar(), strlen(SH2));
+    outputPtr += strlen(SH1);
+    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH2, outputPtr, strlen(SH2));
 
     blackbox.updateLog(currentTimeUs); // 4
     // after 4 (BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) updates, state changes to STATE_CACHE_FLUSH
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
+    xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(4, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
+    outputPtr += strlen(SH2);
+    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH3, outputPtr, strlen(SH3));
 }
 
 void test_blackbox_write_sys_info()

@@ -82,6 +82,7 @@ bool BlackboxSerialDeviceNull::isDeviceFull()
 
 size_t BlackboxSerialDeviceNull::replenishHeaderBudget()
 {
+    _sbuf.reset();
     return HEADER_BUDGET_SIZE;
 }
 
@@ -93,15 +94,47 @@ BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceNull:
 
 size_t BlackboxSerialDeviceNull::write(uint8_t value)
 {
-    _buf[_index++] = value;
-    return 1;
+    return write(&value, 1);
 }
 
+#define USE_SBUF
 size_t BlackboxSerialDeviceNull::write(const uint8_t* buf, size_t length)
 {
+#if defined(USE_SBUF)
+    if (_sbuf.bytesRemaining() < length) {
+        _sbuf.reset();
+    }
+    if (_sbuf.bytesRemaining() < length) {
+        _sbuf.writeData(buf, length);
+    }
+    if (_index + length < sizeof(_output)) {
+        memcpy(&_output[_index], buf, length);
+    }
+    _index += length;
+    return length;
+#else
+    if (_index + length < sizeof(_output)) {
+        memcpy(&_output[_index], buf, length);
+    }
     if (_index + length < _buf.max_size()) {
         memcpy(&_buf[_index], buf, length);
+        _index += length;
         return length;
     }
+#endif
     return 0;
+}
+
+void BlackboxSerialDeviceNull::resetIndex()
+{
+#if defined(USE_SBUF)
+    _sbuf.reset();
+#endif
+    _index = 0;
+}
+
+void BlackboxSerialDeviceNull::fill(uint8_t value)
+{ 
+    _buf.fill(value);
+    memset(&_output[0], value, sizeof(_output));
 }
