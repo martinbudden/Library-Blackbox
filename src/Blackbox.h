@@ -32,7 +32,7 @@
 class BlackboxCallbacksBase;
 class BlackboxSerialDevice;
 enum flight_log_field_condition_e : uint8_t;
-
+struct blackbox_simple_field_definition_t;
 
 class Blackbox {
 public:
@@ -229,6 +229,7 @@ public:
 
     write_e writeHeader();
     write_e writeFieldHeaderMain();
+    write_e writeFieldHeaderSimple(char fieldChar, const blackbox_simple_field_definition_t* fields, int32_t fieldCount);
     write_e writeFieldHeaderSlow();
     write_e writeFieldHeaderGPS_H();
     write_e writeFieldHeaderGPS_G();
