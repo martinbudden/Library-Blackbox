@@ -69,6 +69,9 @@ public:
     void enumerateFiles();
     void createLogFile();
 public:
+    virtual void eraseAll() override;
+    virtual bool isErased() override;
+
     virtual bool beginLog() override;
     virtual bool endLog(bool retainLog) override;
 

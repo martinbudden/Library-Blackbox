@@ -269,16 +269,19 @@ public:
     void startInTestMode();
     void stopInTestMode();
 
-    uint16_t getDebugMode() const { return _debugMode; };
+    uint16_t getDebugMode() const { return _debugMode; }
 
     uint8_t calculateSampleRate(uint16_t pRatio) const;
 
     bool inMotorTestMode();
+    void beep() {}
 
 // test functions
     int32_t getIInterval() const { return _IInterval; }
     int32_t getPInterval() const { return _PInterval; }
     int32_t getSInterval() const { return _SInterval; }
+    void replenishHeaderBudget();
+
 protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;

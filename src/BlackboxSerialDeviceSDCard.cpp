@@ -192,6 +192,15 @@ void BlackboxSerialDeviceSDCard::createLogFile()
 #endif
 }
 
+void BlackboxSerialDeviceSDCard::eraseAll()
+{
+}
+
+bool BlackboxSerialDeviceSDCard::isErased()
+{
+    return true;
+}
+
 /*
 Begin a new log on the SDCard.
 Keep calling until the function returns true (open is complete).

@@ -40,6 +40,15 @@ void BlackboxSerialDeviceNull::close()
 {
 }
 
+void BlackboxSerialDeviceNull::eraseAll()
+{
+}
+
+bool BlackboxSerialDeviceNull::isErased()
+{
+    return true;
+}
+
 bool BlackboxSerialDeviceNull::beginLog()
 {
     resetIndex();
@@ -73,7 +82,6 @@ bool BlackboxSerialDeviceNull::isDeviceFull()
 
 size_t BlackboxSerialDeviceNull::replenishHeaderBudget()
 {
-    enum { HEADER_BUDGET_SIZE = 64 };
     return HEADER_BUDGET_SIZE;
 }
 

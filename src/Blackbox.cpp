@@ -43,7 +43,7 @@ Call during system startup to initialize the
 */
 void Blackbox::init(const config_t& config)
 {
-// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _serialDevice.init();
 
     _config = config;
@@ -87,7 +87,7 @@ void Blackbox::init(const config_t& config)
     } else {
         setState(STATE_STOPPED);
     }
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }
 
 Blackbox::state_e Blackbox::start()
@@ -175,9 +175,14 @@ void Blackbox::endLog()
     _serialDevice.endLog(true);
 }
 
-/**
- * Test Motors Blackbox Logging
- */
+/*
+Test Motors Blackbox Logging
+*/
+
+void Blackbox::replenishHeaderBudget()
+{
+    _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
+}
 
 void Blackbox::startInTestMode()
 {
@@ -384,7 +389,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
             _serialDevice.open();
             start();
         }
-#if defined(USE_FLASHFS)
+#if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
         if (_callbacks.isBlackboxEraseModeActive()) {
             setState(STATE_START_ERASE);
         }
@@ -505,17 +510,17 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
             setState(STATE_STOPPED);
         }
         break;
-#if defined(USE_FLASHFS)
+#if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
     case STATE_START_ERASE:
-        blackboxEraseAll();
+        _serialDevice.eraseAll();
         setState(STATE_ERASING);
-        beeper(BEEPER_BLACKBOX_ERASE);
+        beep();
         break;
     case STATE_ERASING:
-        if (isBlackboxErased()) {
+        if (_serialDevice.isErased()) {
             //Done erasing
             setState(STATE_ERASED);
-            beeper(BEEPER_BLACKBOX_ERASE);
+            beep();
         }
         break;
     case STATE_ERASED:
@@ -530,7 +535,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
 
     // Did we run out of room on the device? Stop!
     if (_serialDevice.isDeviceFull()) {
-#if defined(USE_FLASHFS)
+#if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
         if (_state != STATE_ERASING
             && _state != STATE_START_ERASE
             && _state != STATE_ERASED)
@@ -697,7 +702,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
         std::array <int32_t, blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT> out;
         for (size_t ii = 0; ii < blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
-            out[ii] = mainState->servo[ii] - 1500;
+            out[ii] = mainState->servo[ii] - 1500; // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         }
         _encoder.writeTag8_8SVB(&out[0], blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
     }
@@ -890,7 +895,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SERVOS)) {
         std::array <int32_t, blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT> out;
         for (size_t ii = 0; ii < blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT; ++ii) {
-            out[ii] = mainState->servo[ii] - 1500;
+            out[ii] = mainState->servo[ii] - 1500; // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         }
         _encoder.writeTag8_8SVB(&out[0], blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
     }
@@ -943,13 +948,13 @@ void Blackbox::logSFrame()
 }
 
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
-/*
- * If the GPS home point has been updated, or every 128 I-frames (~10 seconds), write the
- * GPS home position.
- *
- * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
- * still be interpreted correctly.
- */
+/*!
+If the GPS home point has been updated, or every 128 I-frames (~10 seconds), write the
+GPS home position.
+
+We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
+still be interpreted correctly.
+*/
 bool Blackbox::shouldLogHFrame() const
 {
     if ((_gpsHomeLocation.latitude != _gpsState.home.latitude
@@ -1010,7 +1015,7 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
 
     _encoder.endFrame();
 }
-#endif // USE_GPS
+#endif // LIBRARY_BLACKBOX_USE_GPS
 
 
 /*!

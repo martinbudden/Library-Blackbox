@@ -40,6 +40,9 @@ public:
     virtual void close() override;
     virtual bool isDeviceFull() override;
 
+    virtual void eraseAll() override;
+    virtual bool isErased() override;
+
     virtual bool beginLog() override;
     virtual bool endLog(bool retainLog) override;
 
@@ -54,8 +57,11 @@ public:
     void resetIndex() { _index = 0; }
     void fill(uint8_t value) { _buf.fill(value); }
     uint8_t operator[](size_t index) const { return _buf[index]; }
+    const uint8_t* getBuf() const { return &_buf[0]; }
+    const char* getBufChar() const { return reinterpret_cast<const char*>(&_buf[0]); }
 public:
     size_t _index = 0;
+    enum { HEADER_BUDGET_SIZE = 64 };
     enum { BUFFER_SIZE = 1024 };
     std::array<uint8_t, BUFFER_SIZE> _buf;
     StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);

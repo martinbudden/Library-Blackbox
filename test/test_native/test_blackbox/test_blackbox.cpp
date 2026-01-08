@@ -24,7 +24,7 @@ public:
     uint16_t get_PFrameIndex() const { return _PFrameIndex; }
 
     state_e getBlackboxState() const { return _state; }
-    xmit_state_t getXmitState() const { return _xmitState; }
+    const xmit_state_t& getXmitState() const { return _xmitState; }
     size_t getHeaderBudget() const { return _headerBudget; }
 };
 
@@ -266,12 +266,19 @@ void test_blackbox_frames()
     TEST_ASSERT_EQUAL(logEventData.disarm.reason, serialDevice[2]); // NOLINT(cppcoreguidelines-pro-type-union-access)
 }
 
+static const char* SH0 = "H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid\n";
+static const char* SH1 = "H Field S signed:0,0,0,0,0";
+static const char* SH2 = "H Field S predictor:0,0,0,0,0";
+static const char* SH3 = "H Field S encoding:1,1,7,7,7";
+
 void test_blackbox_slow_header()
 {
     static BlackboxSerialDeviceNull serialDevice;
     static BlackboxCallbacksNull callbacks {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
+    serialDevice.fill(0xa5);
+    serialDevice.resetIndex();
 
     const Blackbox::timeUs_t currentTimeUs = 0;
 
@@ -280,16 +287,35 @@ void test_blackbox_slow_header()
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     blackbox.setState(Blackbox::STATE_SEND_SLOW_FIELD_HEADER);
+    Blackbox::xmit_state_t xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
+
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
 
     blackbox.updateLog(currentTimeUs); // 1
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
+    TEST_ASSERT_EQUAL_CHAR_ARRAY(SH0, serialDevice.getBufChar(), strlen(SH0));
 
     blackbox.updateLog(currentTimeUs); // 2
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(2, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
+    //TEST_ASSERT_EQUAL_CHAR_ARRAY(SH1, serialDevice.getBufChar(), strlen(SH1));
 
     blackbox.updateLog(currentTimeUs); // 3
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
+    xmitState = blackbox.getXmitState();
+    TEST_ASSERT_EQUAL(3, xmitState.headerIndex);
+    TEST_ASSERT_EQUAL(-1, xmitState.fieldIndex);
+    //TEST_ASSERT_EQUAL_CHAR_ARRAY(SH2, serialDevice.getBufChar(), strlen(SH2));
 
     blackbox.updateLog(currentTimeUs); // 4
     // after 4 (BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) updates, state changes to STATE_CACHE_FLUSH
