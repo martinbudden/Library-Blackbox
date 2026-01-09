@@ -16,8 +16,8 @@
             "version": "^0.0.4"
         },
         {
-            "name": "martinbudden/TaskBase",
-            "version": "^0.0.13"
+            "name": "martinbudden/TaskUtilities",
+            "version": "^0.0.1"
         }
     ],
     "license": "GPL-3.0-or-later",
