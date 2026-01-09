@@ -365,8 +365,8 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
                 logHFrame();
                 logGFrame(currentTimeUs);
             } else if (_gpsSolutionData.satelliteCount != _gpsState.satelliteCount
-                || _gpsSolutionData.location.latitude != _gpsState.GPS_coord.latitude
-                || _gpsSolutionData.location.longitude != _gpsState.GPS_coord.longitude) {
+                || _gpsSolutionData.location.latitude_deg1E7 != _gpsState.GPS_coord.latitude_deg1E7
+                || _gpsSolutionData.location.longitude_deg1E7 != _gpsState.GPS_coord.longitude_deg1E7) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 logGFrame(currentTimeUs);
             }
@@ -536,9 +536,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
     // Did we run out of room on the device? Stop!
     if (_serialDevice.isDeviceFull()) {
 #if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
-        if (_state != STATE_ERASING
-            && _state != STATE_START_ERASE
-            && _state != STATE_ERASED)
+        if (_state != STATE_ERASING && _state != STATE_START_ERASE && _state != STATE_ERASED)
 #endif
         {
             setState(STATE_STOPPED);
@@ -550,17 +548,17 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
         case MODE_MOTOR_TEST:
             // Handle Motor Test Mode
             if (inMotorTestMode()) {
-                if (_state==STATE_STOPPED) {
+                if (_state == STATE_STOPPED) {
                     startInTestMode();
                 }
             } else {
-                if (_state!=STATE_STOPPED) {
+                if (_state != STATE_STOPPED) {
                     stopInTestMode();
                 }
             }
             break;
         case MODE_ALWAYS_ON:
-            if (_state==STATE_STOPPED) {
+            if (_state == STATE_STOPPED) {
                 startInTestMode();
             }
             break;
@@ -588,7 +586,7 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 
     const blackbox_main_state_t* mainState = _mainStateHistory[0];
 
-    _encoder.writeUnsignedVB(mainState->time);
+    _encoder.writeUnsignedVB(mainState->timeUs);
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
         _encoder.writeSignedVBArray(&mainState->axisPID_P[0], RPY_AXIS_COUNT);
@@ -762,7 +760,7 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
     // Since the difference between the difference between successive times will be nearly zero (due to consistent
     // looptime spacing), use second-order differences.
-    _encoder.writeSignedVB(static_cast<int32_t>(mainState->time - 2 * _mainStateHistory[1]->time + _mainStateHistory[2]->time));
+    _encoder.writeSignedVB(static_cast<int32_t>(mainState->timeUs - 2 * _mainStateHistory[1]->timeUs + _mainStateHistory[2]->timeUs));
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
         //arraySubInt32(&deltas[0], &mainState->axisPID_P[0], &previousMainState->axisPID_P[0], RPY_AXIS_COUNT);
@@ -957,8 +955,8 @@ still be interpreted correctly.
 */
 bool Blackbox::shouldLogHFrame() const
 {
-    if ((_gpsHomeLocation.latitude != _gpsState.home.latitude
-         || _gpsHomeLocation.longitude != _gpsState.home.longitude
+    if ((_gpsHomeLocation.latitude_deg1E7 != _gpsState.home.latitude_deg1E7
+         || _gpsHomeLocation.longitude_deg1E7 != _gpsState.home.longitude_deg1E7
          || (_PFrameIndex == _IInterval / 2 && _IFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
@@ -970,11 +968,9 @@ void Blackbox::logHFrame()
 {
     _encoder.beginFrame('H');
 
-    _encoder.writeSignedVB(_gpsHomeLocation.latitude);
-    _encoder.writeSignedVB(_gpsHomeLocation.longitude);
-     //log home altitude, in increments of 0.1m
-    _encoder.writeSignedVB(_gpsHomeLocation.altitudeCm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
-    // Suggestion: it'd be great if we could grab the GPS current time and write that too
+    _encoder.writeSignedVB(_gpsHomeLocation.latitude_deg1E7);
+    _encoder.writeSignedVB(_gpsHomeLocation.longitude_deg1E7);
+    _encoder.writeSignedVB(_gpsHomeLocation.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     _gpsState.home = _gpsHomeLocation;
 
@@ -985,30 +981,31 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
 {
     _encoder.beginFrame('G');
 
-    /*
-     * If we're logging every frame, then a GPS frame always appears just after a frame with the
-     * currentTime timestamp in the log, so the reader can just use that timestamp for the GPS frame.
-     *
-     * If we're not logging every frame, we need to store the time of this GPS frame.
-     */
+    // If we're logging every frame, then a GPS frame always appears just after a frame with the
+    // currentTime timestamp in the log, so the reader can just use that timestamp for the GPS frame.
+    // If we're not logging every frame, we need to store the time of this GPS frame.
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
         // Predict the time of the last frame in the main log
-        _encoder.writeUnsignedVB(currentTimeUs - _mainStateHistory[1]->time);
+        _encoder.writeUnsignedVB(currentTimeUs - _mainStateHistory[1]->timeUs);
     }
 
     _encoder.writeUnsignedVB(_gpsSolutionData.satelliteCount);
-    _encoder.writeSignedVB(_gpsSolutionData.location.latitude - _gpsState.home.latitude);
-    _encoder.writeSignedVB(_gpsSolutionData.location.longitude - _gpsState.home.longitude);
+    _encoder.writeSignedVB(_gpsSolutionData.location.latitude_deg1E7 - _gpsState.home.latitude_deg1E7);
+    _encoder.writeSignedVB(_gpsSolutionData.location.longitude_deg1E7 - _gpsState.home.longitude_deg1E7);
     // log altitude in increments of 0.1m
-    _encoder.writeSignedVB(_gpsSolutionData.location.altitudeCm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    _encoder.writeSignedVB(_gpsSolutionData.location.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
-    //if (gpsConfig()->gps_use_3d_speed) {
-    //    _encoder.writeUnsignedVB(_gpsSolutionData.speed3d);
-    //} else {
-        _encoder.writeUnsignedVB(_gpsSolutionData.groundSpeed);
-    //}
+    if (_config.gps_use_3d_speed) {
+        _encoder.writeUnsignedVB(_gpsSolutionData.speed3d_cmps);
+    } else {
+        _encoder.writeUnsignedVB(_gpsSolutionData.groundSpeed_cmps);
+    }
 
-    _encoder.writeUnsignedVB(_gpsSolutionData.groundCourse);
+    _encoder.writeUnsignedVB(_gpsSolutionData.groundCourse_deciDegrees);
+
+    _encoder.writeSignedVB(_gpsSolutionData.velocity.north_cmps);
+    _encoder.writeSignedVB(_gpsSolutionData.velocity.east_cmps);
+    _encoder.writeSignedVB(_gpsSolutionData.velocity.down_cmps);
 
     _gpsState.satelliteCount = _gpsSolutionData.satelliteCount;
     _gpsState.GPS_coord = _gpsSolutionData.location;

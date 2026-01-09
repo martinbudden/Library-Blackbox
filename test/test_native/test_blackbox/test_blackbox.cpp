@@ -47,6 +47,7 @@ void test_blackbox_init()
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .gps_use_3d_speed = false,
     });
 
     TEST_ASSERT_EQUAL(32, blackbox.getIInterval());
@@ -72,6 +73,7 @@ void test_blackbox_init2()
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .gps_use_3d_speed = false,
     });
 
     TEST_ASSERT_EQUAL(6, blackbox.getIInterval()); // every 6*5000uS = every 30ms
@@ -115,6 +117,7 @@ void test_blackbox_initial_updates()
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
+        .gps_use_3d_speed = false,
     });
 
 
@@ -397,10 +400,10 @@ void test_blackbox_gps_h_header()
 
 //                                  1         2         3
 //                        0123456789012345678901234567890123456789
-static const char* GH0 = "H Field G name:time,GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed,GPS_ground_course\n";
-static const char* GH1 = "H Field G signed:0,0,1,1,1,0,0\n";
-static const char* GH2 = "H Field G predictor:10,0,7,7,0,0,0\n";
-static const char* GH3 = "H Field G encoding:1,1,0,0,0,1,1\n";
+static const char* GH0 = "H Field G name:time,GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed,GPS_ground_course,GPS_velned[0],GPS_velned[1],GPS_velned[2]\n";
+static const char* GH1 = "H Field G signed:0,0,1,1,1,0,0,1,1,1\n";
+static const char* GH2 = "H Field G predictor:10,0,7,7,0,0,0,0,0,0\n";
+static const char* GH3 = "H Field G encoding:1,1,0,0,0,1,1,0,0,0\n";
 
 void test_blackbox_gps_g_header()
 {
@@ -641,6 +644,7 @@ void test_blackbox_conditions()
         .sample_rate = Blackbox::RATE_ONE,
         .device = Blackbox::DEVICE_NONE,
         .mode = Blackbox::MODE_NORMAL,
+        .gps_use_3d_speed = false,
     });
 
     blackbox.start({

@@ -87,7 +87,7 @@ static const std::array<blackbox_simple_field_definition_t, GPS_H_FIELD_COUNT> b
 }};
 
 // GPS position/velocity frame
-enum { GPS_G_FIELD_COUNT = 7 };
+enum { GPS_G_FIELD_COUNT = 10 };
 static const std::array<blackbox_conditional_field_definition_t, GPS_G_FIELD_COUNT> blackboxGpsGFields={{
     {.name="time",          .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(LAST_MAIN_FRAME_TIME), .encode=ENCODING(UNSIGNED_VB),.condition=CONDITION(NOT_LOGGING_EVERY_FRAME)},
     {.name="GPS_numSat",    .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
@@ -95,7 +95,10 @@ static const std::array<blackbox_conditional_field_definition_t, GPS_G_FIELD_COU
     {.name="GPS_coord",     .fieldNameIndex=1,  .isSigned=SIGNED,    .predict=PREDICT(HOME_COORD),.encode=ENCODING(SIGNED_VB),  .condition=CONDITION(ALWAYS)},
     {.name="GPS_altitude",  .fieldNameIndex=-1, .isSigned=SIGNED,    .predict=PREDICT(0),       .encode=ENCODING(SIGNED_VB),    .condition=CONDITION(ALWAYS)},
     {.name="GPS_speed",     .fieldNameIndex=-1, .isSigned=UNSIGNED,  .predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
-    {.name="GPS_ground_course",.fieldNameIndex=-1,.isSigned=UNSIGNED,.predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)}
+    {.name="GPS_ground_course",.fieldNameIndex=-1,.isSigned=UNSIGNED,.predict=PREDICT(0),       .encode=ENCODING(UNSIGNED_VB),  .condition=CONDITION(ALWAYS)},
+    {.name="GPS_velned",    .fieldNameIndex=0,  .isSigned=SIGNED,    .predict=PREDICT(0),       .encode=ENCODING(SIGNED_VB),    .condition=CONDITION(ALWAYS)},
+    {.name="GPS_velned",    .fieldNameIndex=1,  .isSigned=SIGNED,    .predict=PREDICT(0),       .encode=ENCODING(SIGNED_VB),    .condition=CONDITION(ALWAYS)},
+    {.name="GPS_velned",    .fieldNameIndex=2,  .isSigned=SIGNED,    .predict=PREDICT(0),       .encode=ENCODING(SIGNED_VB),    .condition=CONDITION(ALWAYS)},
 }};
 #endif
 
@@ -453,7 +456,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-conver
         ++_xmitState.fieldIndex;
     }
     if (_xmitState.headerIndex == 0) {
-        // H Field G name:time,GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed,GPS_ground_course
+        // H Field G name:time,GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed,GPS_ground_course,GPS_velned[0],GPS_velned[1],GPS_velned[2]
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
             const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmitState.fieldIndex)];
             if (def.fieldNameIndex == -1) {
@@ -463,9 +466,9 @@ Blackbox::write_e Blackbox::writeFieldHeaderGPS_G() // NOLINT(readability-conver
             }
         }
     } else {
-        // H Field G signed:0,0,1,1,0,0,0
-        // H Field G predictor:10,0,7,7,0,0,0
-        // H Field G encoding:1,1,0,0,1,1,1
+        // H Field G signed:0,0,1,1,1,0,0,1,1,1
+        // H Field G predictor:10,0,7,7,0,0,0,0,0,0
+        // H Field G encoding:1,1,0,0,0,1,1,0,0,0
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
             const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmitState.fieldIndex)];
             const uint8_t value =

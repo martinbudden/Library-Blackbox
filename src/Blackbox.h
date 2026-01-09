@@ -34,6 +34,7 @@ class BlackboxSerialDevice;
 enum flight_log_field_condition_e : uint8_t;
 struct blackbox_simple_field_definition_t;
 
+
 class Blackbox {
 public:
     virtual ~Blackbox() = default;
@@ -126,6 +127,7 @@ public:
         sample_rate_e sample_rate;
         device_e device;
         mode_e mode;
+        bool gps_use_3d_speed;
     };
     struct start_t {
         uint16_t debugMode;
@@ -180,31 +182,38 @@ public:
         log_event_data_u data;
     };
     struct gps_location_t {
-        int32_t latitude;   // latitude * 1e+7
-        int32_t longitude;  // longitude * 1e+7
-        int32_t altitudeCm; // altitude in 0.01m
+        int32_t longitude_deg1E7;   // longitude in degrees * 1e+7
+        int32_t latitude_deg1E7;    // latitude in degrees * 1e+7
+        int32_t altitude_cm;        // altitude in cm
+    };
+    // Only available on U-blox protocol
+    struct gps_accuracy_t {
+        uint32_t horizontalAccuracy_mm;
+        uint32_t verticalAccuracy_mm;
+        uint32_t speedAccuracy_mmps;
+    };
+    // Only available on U-blox protocol
+    struct velocity_ned_t {
+        int16_t north_cmps;         // north velocity, cm/s
+        int16_t east_cmps;          // east velocity, cm/s
+        int16_t down_cmps;          // down velocity, cm/s
     };
     // A value below 100 means great accuracy is possible with GPS satellite constellation
-    struct gps_dilution_t {
+    struct gps_dilution_of_precision_t {
         uint16_t positionalDOP; // positional DOP - 3D (* 100)
         uint16_t horizontalDOP; // horizontal DOP - 2D (* 100)
         uint16_t verticalDOP;   // vertical DOP   - 1D (* 100)
     };
-    // Only available on U-blox protocol
-    struct gps_accuracy_t {
-        uint32_t horizontalAccuracyMm;
-        uint32_t verticalAccuracyMm;
-        uint32_t speedAccuracyMmPS;
-    };
     struct gps_solution_data_t {
-        uint32_t time;              // GPS msToW
-        uint32_t navIntervalMs;     // interval between nav solutions in ms
+        uint32_t timeOfWeek_ms;             // GPS time of week in ms
+        uint32_t interval_ms;               // interval between nav solutions in ms
         gps_location_t location;
-        gps_dilution_t dilution;
+        gps_dilution_of_precision_t dop;
         gps_accuracy_t accuracy;
-        uint16_t speed3d;           // speed in 0.1m/s
-        uint16_t groundSpeed;       // speed in 0.1m/s
-        uint16_t groundCourse;      // degrees * 10
+        velocity_ned_t velocity;
+        uint16_t speed3d_cmps;              // speed in cm/s
+        uint16_t groundSpeed_cmps;          // speed in cm/s
+        uint16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
         uint8_t satelliteCount;
     };
     struct gps_state_t {
@@ -298,6 +307,7 @@ protected:
         .sample_rate = RATE_ONE,
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
+        .gps_use_3d_speed = false
     };
     int32_t _headerBudget {};
     // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes

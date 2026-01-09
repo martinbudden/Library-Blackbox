@@ -51,7 +51,7 @@ struct blackbox_main_state_t {
     enum { MAX_SUPPORTED_SERVO_COUNT = 4 };
     enum { DEBUG_VALUE_COUNT = 8 };
 
-    uint32_t time;
+    uint32_t timeUs;
     int32_t baroAlt;
     int32_t surfaceRaw;
     int32_t amperageLatest;
