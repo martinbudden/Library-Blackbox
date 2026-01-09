@@ -279,7 +279,6 @@ public:
     uint8_t calculateSampleRate(uint16_t pRatio) const;
 
     bool inMotorTestMode();
-    void beep() {}
 
 // test functions
     int32_t getIInterval() const { return _IInterval; }

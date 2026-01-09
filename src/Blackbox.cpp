@@ -525,13 +525,13 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
     case STATE_START_ERASE:
         _serialDevice.eraseAll();
         setState(STATE_ERASING);
-        beep();
+        _callbacks.beep();
         break;
     case STATE_ERASING:
         if (_serialDevice.isErased()) {
             //Done erasing
             setState(STATE_ERASED);
-            beep();
+            _callbacks.beep();
         }
         break;
     case STATE_ERASED:

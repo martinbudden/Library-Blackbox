@@ -16,4 +16,5 @@ public:
     virtual uint32_t getArmingBeepTimeMicroseconds() const override;
     virtual bool areMotorsRunning() const override;
     virtual uint32_t rcModeActivationMask() const override;
+    virtual void beep() const override;
 };

@@ -55,3 +55,7 @@ uint32_t BlackboxCallbacksNull::rcModeActivationMask() const
 {
     return 0;
 }
+
+void BlackboxCallbacksNull::beep() const
+{
+}
