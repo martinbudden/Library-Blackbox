@@ -111,10 +111,5 @@
         "Wtrampolines",
         "Wunsafe",
         "Wunused"
-    ],
-    "files.associations": {
-        "bitset": "cpp",
-        "algorithm": "cpp",
-        "array": "cpp"
-    }
+    ]
 }

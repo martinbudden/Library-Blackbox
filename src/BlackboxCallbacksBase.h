@@ -39,6 +39,23 @@ struct blackbox_slow_state_t {
 };
 #pragma pack(pop)
 
+struct blackbox_gps_state_t {
+    uint32_t timeOfWeek_ms;         // GPS time of week in ms
+    uint32_t interval_ms;           // interval between nav solutions in ms
+    int32_t homeLongitude_deg1E7;   // home longitude in degrees * 1e+7
+    int32_t homeLatitude_deg1E7;    // home latitude in degrees * 1e+7
+    int32_t homeAltitude_cm;        // home altitude in cm
+    int32_t longitude_deg1E7;       // longitude in degrees * 1e+7
+    int32_t latitude_deg1E7;        // latitude in degrees * 1e+7
+    int32_t altitude_cm;            // altitude in cm
+    int16_t velocityNorth_cmps;     // north velocity, cm/s
+    int16_t velocityEast_cmps;      // east velocity, cm/s
+    int16_t velocityDown_cmps;      // down velocity, cm/s
+    uint16_t speed3d_cmps;          // speed in cm/s
+    uint16_t groundSpeed_cmps;      // speed in cm/s
+    uint16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
+    uint8_t satelliteCount;
+};
 
 struct blackbox_main_state_t {
     enum { XYZ_AXIS_COUNT = 3 };
@@ -90,6 +107,7 @@ public:
 
     //! Load the main state of the blackbox, used for I-frames and P-frames
     virtual void loadMainState(blackbox_main_state_t& mainState, uint32_t currentTimeUs) = 0;
+    virtual void loadGPS_State(blackbox_gps_state_t& gpsState) = 0;
 
     virtual bool isArmed() const = 0;
     virtual bool isBlackboxModeActive() const = 0;

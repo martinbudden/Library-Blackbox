@@ -31,19 +31,24 @@ uint32_t BlackboxCallbacksNull::getArmingBeepTimeMicroseconds() const
     return 0;
 }
 
-void BlackboxCallbacksNull::loadSlowState(blackbox_slow_state_t& slow)
+void BlackboxCallbacksNull::loadSlowState(blackbox_slow_state_t& slowState)
 {
-    slow.flightModeFlags = 0;
-    slow.stateFlags = 0;
-    slow.failsafePhase = 0;
-    slow.rxSignalReceived = false;
-    slow.rxFlightChannelsValid = false;
+    slowState.flightModeFlags = 0;
+    slowState.stateFlags = 0;
+    slowState.failsafePhase = 0;
+    slowState.rxSignalReceived = false;
+    slowState.rxFlightChannelsValid = false;
 }
 
-void BlackboxCallbacksNull::loadMainState(blackbox_main_state_t& blackboxCurrent, uint32_t currentTimeUs)
+void BlackboxCallbacksNull::loadMainState(blackbox_main_state_t& mainState, uint32_t currentTimeUs)
 {
-    (void)blackboxCurrent;
+    (void)mainState;
     (void)currentTimeUs;
+}
+
+void BlackboxCallbacksNull::loadGPS_State(blackbox_gps_state_t& gpsState)
+{
+    (void)gpsState;
 }
 
 uint32_t BlackboxCallbacksNull::rcModeActivationMask() const

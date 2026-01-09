@@ -361,12 +361,23 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
         }
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
         if (isFieldEnabled(LOG_SELECT_GPS)) {
+            blackbox_gps_state_t gpsStateNew {};
+            _callbacks.loadGPS_State(gpsStateNew);
+
+            const bool gpsStateChanged = 
+                gpsStateNew.satelliteCount != _gpsState.satelliteCount
+                || gpsStateNew.latitude_deg1E7 != _gpsState.latitude_deg1E7
+                || gpsStateNew.longitude_deg1E7 != _gpsState.longitude_deg1E7;
+
+            _gpsState = gpsStateNew;
+
             if (shouldLogHFrame()) {
+                _gpsHomeLocation.latitude_deg1E7 = _gpsState.homeLatitude_deg1E7;
+                _gpsHomeLocation.longitude_deg1E7 = _gpsState.homeLongitude_deg1E7;
+                _gpsHomeLocation.altitude_cm = _gpsState.homeAltitude_cm;
                 logHFrame();
                 logGFrame(currentTimeUs);
-            } else if (_gpsSolutionData.satelliteCount != _gpsState.satelliteCount
-                || _gpsSolutionData.location.latitude_deg1E7 != _gpsState.GPS_coord.latitude_deg1E7
-                || _gpsSolutionData.location.longitude_deg1E7 != _gpsState.GPS_coord.longitude_deg1E7) {
+            } else if (gpsStateChanged) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 logGFrame(currentTimeUs);
             }
@@ -955,8 +966,8 @@ still be interpreted correctly.
 */
 bool Blackbox::shouldLogHFrame() const
 {
-    if ((_gpsHomeLocation.latitude_deg1E7 != _gpsState.home.latitude_deg1E7
-         || _gpsHomeLocation.longitude_deg1E7 != _gpsState.home.longitude_deg1E7
+    if ((_gpsHomeLocation.latitude_deg1E7 != _gpsState.homeLatitude_deg1E7
+         || _gpsHomeLocation.longitude_deg1E7 != _gpsState.homeLongitude_deg1E7
          || (_PFrameIndex == _IInterval / 2 && _IFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
@@ -968,11 +979,9 @@ void Blackbox::logHFrame()
 {
     _encoder.beginFrame('H');
 
-    _encoder.writeSignedVB(_gpsHomeLocation.latitude_deg1E7);
-    _encoder.writeSignedVB(_gpsHomeLocation.longitude_deg1E7);
-    _encoder.writeSignedVB(_gpsHomeLocation.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
-
-    _gpsState.home = _gpsHomeLocation;
+    _encoder.writeSignedVB(_gpsState.homeLatitude_deg1E7);
+    _encoder.writeSignedVB(_gpsState.homeLongitude_deg1E7);
+    _encoder.writeSignedVB(_gpsState.homeAltitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     _encoder.endFrame();
 }
@@ -989,26 +998,23 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
         _encoder.writeUnsignedVB(currentTimeUs - _mainStateHistory[1]->timeUs);
     }
 
-    _encoder.writeUnsignedVB(_gpsSolutionData.satelliteCount);
-    _encoder.writeSignedVB(_gpsSolutionData.location.latitude_deg1E7 - _gpsState.home.latitude_deg1E7);
-    _encoder.writeSignedVB(_gpsSolutionData.location.longitude_deg1E7 - _gpsState.home.longitude_deg1E7);
+    _encoder.writeUnsignedVB(_gpsState.satelliteCount);
+    _encoder.writeSignedVB(_gpsState.latitude_deg1E7 - _gpsHomeLocation.latitude_deg1E7);
+    _encoder.writeSignedVB(_gpsState.longitude_deg1E7 - _gpsHomeLocation.longitude_deg1E7);
     // log altitude in increments of 0.1m
-    _encoder.writeSignedVB(_gpsSolutionData.location.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    _encoder.writeSignedVB(_gpsState.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     if (_config.gps_use_3d_speed) {
-        _encoder.writeUnsignedVB(_gpsSolutionData.speed3d_cmps);
+        _encoder.writeUnsignedVB(_gpsState.speed3d_cmps);
     } else {
-        _encoder.writeUnsignedVB(_gpsSolutionData.groundSpeed_cmps);
+        _encoder.writeUnsignedVB(_gpsState.groundSpeed_cmps);
     }
 
-    _encoder.writeUnsignedVB(_gpsSolutionData.groundCourse_deciDegrees);
+    _encoder.writeUnsignedVB(_gpsState.groundCourse_deciDegrees);
 
-    _encoder.writeSignedVB(_gpsSolutionData.velocity.north_cmps);
-    _encoder.writeSignedVB(_gpsSolutionData.velocity.east_cmps);
-    _encoder.writeSignedVB(_gpsSolutionData.velocity.down_cmps);
-
-    _gpsState.satelliteCount = _gpsSolutionData.satelliteCount;
-    _gpsState.GPS_coord = _gpsSolutionData.location;
+    _encoder.writeSignedVB(_gpsState.velocityNorth_cmps);
+    _encoder.writeSignedVB(_gpsState.velocityEast_cmps);
+    _encoder.writeSignedVB(_gpsState.velocityDown_cmps);
 
     _encoder.endFrame();
 }

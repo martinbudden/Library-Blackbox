@@ -208,17 +208,12 @@ public:
         uint32_t timeOfWeek_ms;             // GPS time of week in ms
         uint32_t interval_ms;               // interval between nav solutions in ms
         gps_location_t location;
-        gps_dilution_of_precision_t dop;
-        gps_accuracy_t accuracy;
+        // gps_dilution_of_precision_t dop;
+        // gps_accuracy_t accuracy;
         velocity_ned_t velocity;
         uint16_t speed3d_cmps;              // speed in cm/s
         uint16_t groundSpeed_cmps;          // speed in cm/s
         uint16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
-        uint8_t satelliteCount;
-    };
-    struct gps_state_t {
-        gps_location_t home;
-        gps_location_t GPS_coord;
         uint8_t satelliteCount;
     };
 public:
@@ -335,9 +330,8 @@ protected:
     xmit_state_t  _xmitState {};
     state_e _cacheFlushNextState {};
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
-    gps_solution_data_t _gpsSolutionData {}; // this is a copy of the data received from the GPS
     gps_location_t _gpsHomeLocation {};
-    gps_state_t _gpsState {};
+    blackbox_gps_state_t _gpsState {};
 #endif
     blackbox_slow_state_t _slowState {};
     // Keep a history of length 2, plus a buffer to store the new values into
