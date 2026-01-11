@@ -1005,12 +1005,12 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
     _encoder.writeSignedVB(_gpsState.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     if (_config.gps_use_3d_speed) {
-        _encoder.writeUnsignedVB(_gpsState.speed3d_cmps);
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.speed3d_cmps));
     } else {
-        _encoder.writeUnsignedVB(_gpsState.groundSpeed_cmps);
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.groundSpeed_cmps));
     }
 
-    _encoder.writeUnsignedVB(_gpsState.groundCourse_deciDegrees);
+    _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.groundCourse_deciDegrees));
 
     _encoder.writeSignedVB(_gpsState.velocityNorth_cmps);
     _encoder.writeSignedVB(_gpsState.velocityEast_cmps);

@@ -192,30 +192,6 @@ public:
         uint32_t verticalAccuracy_mm;
         uint32_t speedAccuracy_mmps;
     };
-    // Only available on U-blox protocol
-    struct velocity_ned_t {
-        int16_t north_cmps;         // north velocity, cm/s
-        int16_t east_cmps;          // east velocity, cm/s
-        int16_t down_cmps;          // down velocity, cm/s
-    };
-    // A value below 100 means great accuracy is possible with GPS satellite constellation
-    struct gps_dilution_of_precision_t {
-        uint16_t positionalDOP; // positional DOP - 3D (* 100)
-        uint16_t horizontalDOP; // horizontal DOP - 2D (* 100)
-        uint16_t verticalDOP;   // vertical DOP   - 1D (* 100)
-    };
-    struct gps_solution_data_t {
-        uint32_t timeOfWeek_ms;             // GPS time of week in ms
-        uint32_t interval_ms;               // interval between nav solutions in ms
-        gps_location_t location;
-        // gps_dilution_of_precision_t dop;
-        // gps_accuracy_t accuracy;
-        velocity_ned_t velocity;
-        uint16_t speed3d_cmps;              // speed in cm/s
-        uint16_t groundSpeed_cmps;          // speed in cm/s
-        uint16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
-        uint8_t satelliteCount;
-    };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e writeSystemInformation() = 0;

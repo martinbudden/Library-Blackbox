@@ -31,17 +31,17 @@
 // We pack this struct so that padding doesn't interfere with memcmp()
 // This data is updated really infrequently:
 struct blackbox_slow_state_t {
-    uint32_t flightModeFlags; // extend this data size (from uint16_t)
+    uint32_t flightModeFlags;
     uint8_t stateFlags;
     uint8_t failsafePhase;
-    bool rxSignalReceived; // sizeof(bool) is commonly 1, but not defined by the C++ standard
+    bool rxSignalReceived;
     bool rxFlightChannelsValid;
 };
 #pragma pack(pop)
 
 struct blackbox_gps_state_t {
     uint32_t timeOfWeek_ms;         // GPS time of week in ms
-    uint32_t interval_ms;           // interval between nav solutions in ms
+    uint32_t interval_ms;           // interval between GPS solutions in ms
     int32_t homeLongitude_deg1E7;   // home longitude in degrees * 1e+7
     int32_t homeLatitude_deg1E7;    // home latitude in degrees * 1e+7
     int32_t homeAltitude_cm;        // home altitude in cm
@@ -51,9 +51,9 @@ struct blackbox_gps_state_t {
     int16_t velocityNorth_cmps;     // north velocity, cm/s
     int16_t velocityEast_cmps;      // east velocity, cm/s
     int16_t velocityDown_cmps;      // down velocity, cm/s
-    uint16_t speed3d_cmps;          // speed in cm/s
-    uint16_t groundSpeed_cmps;      // speed in cm/s
-    uint16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
+    int16_t speed3d_cmps;           // speed in cm/s
+    int16_t groundSpeed_cmps;       // speed in cm/s
+    int16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
     uint8_t satelliteCount;
 };
 
