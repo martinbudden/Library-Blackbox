@@ -366,14 +366,14 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
 
             const bool gpsStateChanged = 
                 gpsStateNew.satelliteCount != _gpsState.satelliteCount
-                || gpsStateNew.latitude_deg1E7 != _gpsState.latitude_deg1E7
-                || gpsStateNew.longitude_deg1E7 != _gpsState.longitude_deg1E7;
+                || gpsStateNew.latitude_degrees1E7 != _gpsState.latitude_degrees1E7
+                || gpsStateNew.longitude_degrees1E7 != _gpsState.longitude_degrees1E7;
 
             _gpsState = gpsStateNew;
 
             if (shouldLogHFrame()) {
-                _gpsHomeLocation.latitude_deg1E7 = _gpsState.homeLatitude_deg1E7;
-                _gpsHomeLocation.longitude_deg1E7 = _gpsState.homeLongitude_deg1E7;
+                _gpsHomeLocation.latitude_degrees1E7 = _gpsState.homeLatitude_degrees1E7;
+                _gpsHomeLocation.longitude_degrees1E7 = _gpsState.homeLongitude_degrees1E7;
                 _gpsHomeLocation.altitude_cm = _gpsState.homeAltitude_cm;
                 logHFrame();
                 logGFrame(currentTimeUs);
@@ -966,8 +966,8 @@ still be interpreted correctly.
 */
 bool Blackbox::shouldLogHFrame() const
 {
-    if ((_gpsHomeLocation.latitude_deg1E7 != _gpsState.homeLatitude_deg1E7
-         || _gpsHomeLocation.longitude_deg1E7 != _gpsState.homeLongitude_deg1E7
+    if ((_gpsHomeLocation.latitude_degrees1E7 != _gpsState.homeLatitude_degrees1E7
+         || _gpsHomeLocation.longitude_degrees1E7 != _gpsState.homeLongitude_degrees1E7
          || (_PFrameIndex == _IInterval / 2 && _IFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
@@ -979,8 +979,8 @@ void Blackbox::logHFrame()
 {
     _encoder.beginFrame('H');
 
-    _encoder.writeSignedVB(_gpsState.homeLatitude_deg1E7);
-    _encoder.writeSignedVB(_gpsState.homeLongitude_deg1E7);
+    _encoder.writeSignedVB(_gpsState.homeLatitude_degrees1E7);
+    _encoder.writeSignedVB(_gpsState.homeLongitude_degrees1E7);
     _encoder.writeSignedVB(_gpsState.homeAltitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     _encoder.endFrame();
@@ -999,8 +999,8 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
     }
 
     _encoder.writeUnsignedVB(_gpsState.satelliteCount);
-    _encoder.writeSignedVB(_gpsState.latitude_deg1E7 - _gpsHomeLocation.latitude_deg1E7);
-    _encoder.writeSignedVB(_gpsState.longitude_deg1E7 - _gpsHomeLocation.longitude_deg1E7);
+    _encoder.writeSignedVB(_gpsState.latitude_degrees1E7 - _gpsHomeLocation.latitude_degrees1E7);
+    _encoder.writeSignedVB(_gpsState.longitude_degrees1E7 - _gpsHomeLocation.longitude_degrees1E7);
     // log altitude in increments of 0.1m
     _encoder.writeSignedVB(_gpsState.altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
