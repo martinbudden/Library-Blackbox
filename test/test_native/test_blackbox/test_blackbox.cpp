@@ -163,7 +163,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(' ', serialDevice[62]);
     TEST_ASSERT_EQUAL('D', serialDevice[63]);
     TEST_ASSERT_EQUAL(0xa5, serialDevice[64]);
-    
+
     // "H Data version:2\n\0"
     blackbox.updateLog(timeUs); // write rest of header
     xmitState = blackbox.getXmitState();

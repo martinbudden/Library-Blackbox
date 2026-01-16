@@ -31,10 +31,9 @@ This means the code is a curious mix of both my style and the original style. It
 
 ## License Information
 
-
-This library is a port (modification) of the Blackbox implementation by 
+This library is a port (modification) of the Blackbox implementation by
 [Nicholas Sherlock (aka thenickdude)](https://www.nicksherlock.com/),
-[source code](https://github.com/thenickdude/blackbox). 
+[source code](https://github.com/thenickdude/blackbox).
 This was licensed under the GNU GPL v3.
 
 This library also contains Kustaa Nyholm's `printf` implementation, which is included under

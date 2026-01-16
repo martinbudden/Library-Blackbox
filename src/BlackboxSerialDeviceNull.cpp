@@ -134,7 +134,7 @@ void BlackboxSerialDeviceNull::resetIndex()
 }
 
 void BlackboxSerialDeviceNull::fill(uint8_t value)
-{ 
+{
     _buf.fill(value);
     memset(&_output[0], value, sizeof(_output));
 }

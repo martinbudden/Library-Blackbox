@@ -44,7 +44,7 @@ public:
     virtual bool open() = 0;
     virtual void close() = 0;
     virtual bool isDeviceFull() = 0;
-    
+
     virtual void eraseAll() = 0;
     virtual bool isErased() = 0;
 

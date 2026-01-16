@@ -48,7 +48,7 @@ void Blackbox::init(const config_t& config)
 
     _config = config;
 
-    _logSelectEnabled = 
+    _logSelectEnabled =
         Blackbox::LOG_SELECT_PID
         | Blackbox::LOG_SELECT_PID_KTERM
         | Blackbox::LOG_SELECT_PID_DTERM_ROLL
@@ -364,7 +364,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
             blackbox_gps_state_t gpsStateNew {};
             _callbacks.loadGPS_State(gpsStateNew);
 
-            const bool gpsStateChanged = 
+            const bool gpsStateChanged =
                 gpsStateNew.satelliteCount != _gpsState.satelliteCount
                 || gpsStateNew.latitude_degrees1E7 != _gpsState.latitude_degrees1E7
                 || gpsStateNew.longitude_degrees1E7 != _gpsState.longitude_degrees1E7;
