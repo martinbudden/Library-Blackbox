@@ -250,6 +250,7 @@ public:
     void startInTestMode();
     void stopInTestMode();
 
+    const config_t& getConfig() const { return _config; }
     uint16_t getDebugMode() const { return _debugMode; }
 
     uint8_t calculateSampleRate(uint16_t pRatio) const;
