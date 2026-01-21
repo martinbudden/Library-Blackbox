@@ -48,6 +48,7 @@ void test_blackbox_init()
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
+        .fieldsDisabledMask = 0,
     });
 
     TEST_ASSERT_EQUAL(32, blackbox.getIInterval());
@@ -74,6 +75,7 @@ void test_blackbox_init2()
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
+        .fieldsDisabledMask = 0,
     });
 
     TEST_ASSERT_EQUAL(6, blackbox.getIInterval()); // every 6*5000uS = every 30ms
@@ -118,6 +120,7 @@ void test_blackbox_initial_updates()
         .device = Blackbox::DEVICE_SDCARD,
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
+        .fieldsDisabledMask = 0,
     });
 
 
@@ -645,6 +648,7 @@ void test_blackbox_conditions()
         .device = Blackbox::DEVICE_NONE,
         .mode = Blackbox::MODE_NORMAL,
         .gps_use_3d_speed = false,
+        .fieldsDisabledMask = 0,
     });
 
     blackbox.start({

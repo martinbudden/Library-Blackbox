@@ -128,6 +128,7 @@ public:
         device_e device;
         mode_e mode;
         bool gps_use_3d_speed;
+        uint32_t fieldsDisabledMask;
     };
     struct start_t {
         uint16_t debugMode;
@@ -252,17 +253,17 @@ public:
 
     const config_t& getConfig() const { return _config; }
     uint16_t getDebugMode() const { return _debugMode; }
-
-    uint8_t calculateSampleRate(uint16_t pRatio) const;
-
-    bool inMotorTestMode();
-
-// test functions
     int32_t getIInterval() const { return _IInterval; }
     int32_t getPInterval() const { return _PInterval; }
     int32_t getSInterval() const { return _SInterval; }
-    void replenishHeaderBudget();
+    bool mayEditConfig(void);
 
+    uint8_t calculateSampleRate(uint16_t pRatio) const;
+    int calculateP_Denominator(int rateNumerator, int rateDenominator) { return _IInterval * rateNumerator / rateDenominator; }
+
+    bool inMotorTestMode();
+
+    void replenishHeaderBudget();
 protected:
     BlackboxSerialDevice& _serialDevice;
     BlackboxEncoder _encoder;
@@ -278,7 +279,8 @@ protected:
         .sample_rate = RATE_ONE,
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
-        .gps_use_3d_speed = false
+        .gps_use_3d_speed = false,
+        .fieldsDisabledMask = 0
     };
     int32_t _headerBudget {};
     // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes

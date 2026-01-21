@@ -39,7 +39,7 @@ void checkFlashStop();
 enum { BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS = 200 };
 
 /*!
-Call during system startup to initialize the
+Call during system startup.
 */
 void Blackbox::init(const config_t& config)
 {
@@ -587,6 +587,14 @@ static inline uint32_t llog2(uint32_t n) { return static_cast<uint32_t>(31 - __b
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
     return static_cast<uint8_t>(llog2(32000 / (_targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+}
+
+/*!
+Return true if it is safe to edit the Blackbox configuration.
+*/
+bool Blackbox::mayEditConfig()
+{
+    return _state <= STATE_STOPPED;
 }
 
 void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
