@@ -25,7 +25,7 @@
  */
 
 #include "BlackboxSerialDevice.h"
-#include <StreamBuf.h>
+#include <StreamBufWriter.h>
 #include <array>
 
 
@@ -66,6 +66,6 @@ public:
     enum { HEADER_BUDGET_SIZE = 64 };
     enum { BUFFER_SIZE = 2048 };
     std::array<uint8_t, HEADER_BUDGET_SIZE> _buf;
-    StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);
+    StreamBufWriter _sbuf = StreamBufWriter(&_buf[0], BUFFER_SIZE);
     std::array<uint8_t, BUFFER_SIZE> _output;
 };

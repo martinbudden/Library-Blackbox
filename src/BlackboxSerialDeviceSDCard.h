@@ -28,7 +28,7 @@
 #if defined(FRAMEWORK_ARDUINO_ESP32)
 #include <FS.h>
 #endif
-#include <StreamBuf.h>
+#include <StreamBufWriter.h>
 #include <array>
 
 
@@ -93,7 +93,7 @@ private:
     stm32_spi_pins_t _pins;
     enum { BUFFER_SIZE = 256 };
     std::array<uint8_t, BUFFER_SIZE> _buf {};
-    StreamBuf _sbuf = StreamBuf(&_buf[0], BUFFER_SIZE);
+    StreamBufWriter _sbuf = StreamBufWriter(&_buf[0], BUFFER_SIZE);
 
 #if defined(FRAMEWORK_ARDUINO_ESP32)
     File _file {};

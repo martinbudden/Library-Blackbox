@@ -96,7 +96,7 @@ bool BlackboxSerialDeviceSDCard::isDeviceFull()
 size_t BlackboxSerialDeviceSDCard::write(uint8_t value)
 {
 #if defined(USE_BLACKBOX_SBUF)
-    if (_sbuf.bytesRemaining() <= 1) {
+    if (_sbuf.bytes_remaining() <= 1) {
         _sbuf.switchToReader();
 #if defined(FRAMEWORK_ARDUINO_ESP32)
         _file.write(_sbuf.ptr(), _sbuf.bytesWritten());
@@ -121,14 +121,14 @@ size_t BlackboxSerialDeviceSDCard::write(uint8_t value)
 size_t BlackboxSerialDeviceSDCard::write(const uint8_t* buf, size_t length)
 {
 #if defined(USE_BLACKBOX_SBUF)
-    if (_sbuf.bytesRemaining() <= length) {
+    if (_sbuf.bytes_remaining() <= length) {
         _sbuf.switchToReader();
 #if defined(FRAMEWORK_ARDUINO_ESP32)
         _file.write(_sbuf.ptr(), _sbuf.bytesWritten());
 #endif
         _sbuf.reset();
     }
-    _sbuf.writeData(buf, length);
+    _sbuf.write_data(buf, length);
     return length;
 #else
 
@@ -286,7 +286,7 @@ size_t BlackboxSerialDeviceSDCard::replenishHeaderBudget()
     //_headerBudget = MIN(MIN(freeSpace, _headerBudget + blackboxMaxHeaderBytesPerIteration), BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET);
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
 #if defined(USE_BLACKBOX_SBUF)
-    if (_sbuf.bytesRemaining() <= BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) {
+    if (_sbuf.bytes_remaining() <= BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) {
         _sbuf.switchToReader();
         _file.write(_sbuf.ptr(), _sbuf.bytesWritten());
         _sbuf.reset();

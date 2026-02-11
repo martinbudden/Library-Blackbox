@@ -101,11 +101,11 @@ size_t BlackboxSerialDeviceNull::write(uint8_t value)
 size_t BlackboxSerialDeviceNull::write(const uint8_t* buf, size_t length)
 {
 #if defined(USE_SBUF)
-    if (_sbuf.bytesRemaining() < length) {
+    if (_sbuf.bytes_remaining() < length) {
         _sbuf.reset();
     }
-    if (_sbuf.bytesRemaining() < length) {
-        _sbuf.writeData(buf, length);
+    if (_sbuf.bytes_remaining() < length) {
+        _sbuf.write_data(buf, length);
     }
     if (_index + length < sizeof(_output)) {
         memcpy(&_output[_index], buf, length);
