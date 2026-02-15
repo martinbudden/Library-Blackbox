@@ -28,7 +28,7 @@
 #if defined(FRAMEWORK_ARDUINO_ESP32)
 #include <FS.h>
 #endif
-#include <StreamBufWriter.h>
+#include <stream_buf_writer.h>
 #include <array>
 
 

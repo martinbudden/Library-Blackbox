@@ -25,7 +25,7 @@
  */
 
 #include "BlackboxSerialDevice.h"
-#include <StreamBufWriter.h>
+#include <stream_buf_writer.h>
 #include <array>
 
 
