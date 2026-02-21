@@ -82,16 +82,16 @@ Task function for the MSP. Sets up and runs the task loop() function.
         const uint32_t task_interval_ticks = pdMS_TO_TICKS(_task_interval_microseconds / 1000);
         assert(task_interval_ticks > 0 && "Blackbox task_interval_ticks is zero.");
 
-        _previousWakeTimeTicks = xTaskGetTickCount();
+        _previous_wake_time_ticks = xTaskGetTickCount();
         while (true) {
             // delay until the end of the next task_interval_ticks
 #if (tskKERNEL_VERSION_MAJOR > 10) || ((tskKERNEL_VERSION_MAJOR == 10) && (tskKERNEL_VERSION_MINOR >= 5))
-            const BaseType_t was_delayed = xTaskDelayUntil(&_previousWakeTimeTicks, task_interval_ticks);
+            const BaseType_t was_delayed = xTaskDelayUntil(&_previous_wake_time_ticks, task_interval_ticks);
             if (was_delayed) {
                 _was_delayed = true;
             }
 #else
-            vTaskDelayUntil(&_previousWakeTimeTicks, task_interval_ticks);
+            vTaskDelayUntil(&_previous_wake_time_ticks, task_interval_ticks);
 #endif
             const uint32_t time_microseconds = time_us();
             _blackbox.update_log(time_microseconds);
