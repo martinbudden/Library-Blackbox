@@ -24,7 +24,7 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include <TaskBase.h>
+#include <task_base.h>
 
 class Blackbox;
 class BlackboxCallbacksBase;
@@ -33,10 +33,10 @@ class MessageQueueBase;
 
 class BlackboxTask : public TaskBase {
 public:
-    BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox, MessageQueueBase& messageQueue);
+    BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue);
 public:
-    static BlackboxTask* createTask(task_info_t& taskInfo, Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
-    static BlackboxTask* createTask(Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds);
+    static BlackboxTask* create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
+    static BlackboxTask* create_task(Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
 private:
     // class is not copyable or moveable
     BlackboxTask(const BlackboxTask&) = delete;
@@ -44,12 +44,12 @@ private:
     BlackboxTask(BlackboxTask&&) = delete;
     BlackboxTask& operator=(BlackboxTask&&) = delete;
 public:
-    [[noreturn]] static void Task(void* arg);
+    [[noreturn]] static void task_static(void* arg);
     void loop();
 private:
     [[noreturn]] void task();
 private:
-    uint32_t _taskIntervalMilliseconds;
+    uint32_t _task_interval_milliseconds;
     Blackbox& _blackbox;
-    MessageQueueBase& _messageQueue;
+    MessageQueueBase& _message_queue;
 };

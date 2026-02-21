@@ -27,7 +27,7 @@
 #include "BlackboxFieldDefinitions.h"
 #include "BlackboxSerialDevice.h"
 
-#include <TimeMicroseconds.h>
+#include <time_microseconds.h>
 #include <cassert>
 #include <cstring>
 
@@ -222,11 +222,11 @@ bool Blackbox::inMotorTestMode()
 {
     if (!_callbacks.isArmed() && _callbacks.areMotorsRunning()) {
         enum { FIVE_SECONDS_IN_MS = 5000 };
-        _resetTime = timeMs() + FIVE_SECONDS_IN_MS;
+        _resetTime = time_ms() + FIVE_SECONDS_IN_MS;
         return true;
     }
     // Monitor the duration at minimum
-    return (timeMs() < _resetTime);
+    return (time_ms() < _resetTime);
 }
 
 void Blackbox::setState(state_e newState)
@@ -242,7 +242,7 @@ void Blackbox::setState(state_e newState)
 #if defined(FRAMEWORK_TEST)
         _xmitState.startTime = 0;
 #else
-        _xmitState.startTime = timeMs();
+        _xmitState.startTime = time_ms();
 #endif
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
@@ -266,7 +266,7 @@ void Blackbox::setState(state_e newState)
 #endif
         break;
     case STATE_SHUTTING_DOWN:
-        _xmitState.startTime = timeMs();
+        _xmitState.startTime = time_ms();
         break;
 
 #if defined(USE_FLASH_TEST_PRBS)
@@ -392,7 +392,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
-uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
+uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
 {
     switch (_state) {
     case STATE_STOPPED:
@@ -415,7 +415,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
         _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
         //On entry of this state, _xmitState.headerIndex is 0 and startTime is initialized
         // Give the UART time to initialize
-        //if (timeMs() < _xmitState.startTime + 100) {
+        //if (time_ms() < _xmitState.startTime + 100) {
         //    break;
         //}
         if (writeHeader() == WRITE_COMPLETE) { // keep on writing chunks of the header until it returns false, signalling completion
@@ -516,7 +516,7 @@ uint32_t Blackbox::updateLog(uint32_t currentTimeUs) // NOLINT(readability-funct
          *
          * Don't wait longer than it could possibly take if something funky happens.
          */
-        if (_serialDevice.endLog(_loggedAnyFrames) && (timeMs() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) { // cppcheck-suppress unsignedLessThanZero
+        if (_serialDevice.endLog(_loggedAnyFrames) && (time_ms() > _xmitState.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serialDevice.flushForce())) { // cppcheck-suppress unsignedLessThanZero
             _serialDevice.close();
             setState(STATE_STOPPED);
         }

@@ -197,7 +197,7 @@ public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e writeSystemInformation() = 0;
 
-    uint32_t updateLog(uint32_t currentTimeUs); // main loop function, updates the blackbox log
+    uint32_t update_log(uint32_t currentTimeUs); // main loop function, updates the blackbox log
     BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
 
     bool headerReserveBufferSpace();

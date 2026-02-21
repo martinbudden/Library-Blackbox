@@ -44,20 +44,20 @@
 #endif
 
 
-BlackboxTask* BlackboxTask::createTask(Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::create_task(Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
-    task_info_t taskInfo {};
-    return createTask(taskInfo, blackbox, messageQueue, priority, core, taskIntervalMicroseconds);
+    task_info_t task_info {};
+    return create_task(task_info, blackbox, message_queue, priority, core, task_interval_microseconds);
 }
 
-BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox, MessageQueueBase& messageQueue, uint8_t priority, uint32_t core, uint32_t taskIntervalMicroseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
-    static BlackboxTask blackboxTask(taskIntervalMicroseconds, blackbox, messageQueue);
+    static BlackboxTask blackbox_task(task_interval_microseconds, blackbox, message_queue);
 
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
-    static TaskBase::parameters_t taskParameters { // NOLINT(misc-const-correctness) false positive
-        .task = &blackboxTask
+    static TaskBase::parameters_t task_parameters { // NOLINT(misc-const-correctness) false positive
+        .task = &blackbox_task
     };
 #if !defined(BLACKBOX_TASK_STACK_DEPTH_BYTES)
     enum { BLACKBOX_TASK_STACK_DEPTH_BYTES = 4096 };
@@ -67,61 +67,61 @@ BlackboxTask* BlackboxTask::createTask(task_info_t& taskInfo, Blackbox& blackbox
 #else
     static std::array <StackType_t, BLACKBOX_TASK_STACK_DEPTH_BYTES / sizeof(StackType_t)> stack;
 #endif
-    taskInfo = {
-        .taskHandle = nullptr,
+    task_info = {
+        .task_handle = nullptr,
         .name = "BlackboxTask",
-        .stackDepthBytes = BLACKBOX_TASK_STACK_DEPTH_BYTES,
-        .stackBuffer = reinterpret_cast<uint8_t*>(&stack[0]), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        .stack_depth_bytes = BLACKBOX_TASK_STACK_DEPTH_BYTES,
+        .stack_buffer = reinterpret_cast<uint8_t*>(&stack[0]), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         .priority = priority,
         .core = core,
-        .taskIntervalMicroseconds = taskIntervalMicroseconds,
+        .task_interval_microseconds = task_interval_microseconds,
     };
 
 #if defined(FRAMEWORK_USE_FREERTOS)
-    assert(strlen(taskInfo.name) < configMAX_TASK_NAME_LEN && "BlackboxTask: taskname too long");
-    assert(taskInfo.priority < configMAX_PRIORITIES && "BlackboxTask: priority too high");
+    assert(strlen(task_info.name) < configMAX_TASK_NAME_LEN && "BlackboxTask: taskname too long");
+    assert(task_info.priority < configMAX_PRIORITIES && "BlackboxTask: priority too high");
 
-    static StaticTask_t taskBuffer;
+    static StaticTask_t task_buffer;
 #if defined(FRAMEWORK_ESPIDF) || defined(FRAMEWORK_ARDUINO_ESP32)
-    taskInfo.taskHandle = xTaskCreateStaticPinnedToCore(
-        BlackboxTask::Task,
-        taskInfo.name,
-        taskInfo.stackDepthBytes / sizeof(StackType_t),
-        &taskParameters,
-        taskInfo.priority,
+    task_info.task_handle = xTaskCreateStaticPinnedToCore(
+        BlackboxTask::task_static,
+        task_info.name,
+        task_info.stack_depth_bytes / sizeof(StackType_t),
+        &task_parameters,
+        task_info.priority,
         &stack[0],
-        &taskBuffer,
-        taskInfo.core
+        &task_buffer,
+        task_info.core
     );
-    assert(taskInfo.taskHandle != nullptr && "Unable to create BlackboxTask");
+    assert(task_info.task_handle != nullptr && "Unable to create BlackboxTask");
 #elif defined(FRAMEWORK_RPI_PICO) || defined(FRAMEWORK_ARDUINO_RPI_PICO)
-    taskInfo.taskHandle = xTaskCreateStaticAffinitySet(
-        BlackboxTask::Task,
-        taskInfo.name,
-        taskInfo.stackDepthBytes / sizeof(StackType_t),
-        &taskParameters,
-        taskInfo.priority,
+    task_info.task_handle = xTaskCreateStaticAffinitySet(
+        BlackboxTask::task_static,
+        task_info.name,
+        task_info.stack_depth_bytes / sizeof(StackType_t),
+        &task_parameters,
+        task_info.priority,
         &stack[0],
-        &taskBuffer,
-        taskInfo.core
+        &task_buffer,
+        task_info.core
     );
-    assert(taskInfo.taskHandle != nullptr && "Unable to create BlackboxTask");
+    assert(task_info.task_handle != nullptr && "Unable to create BlackboxTask");
 #else
-    taskInfo.taskHandle = xTaskCreateStatic(
-        BlackboxTask::Task,
-        taskInfo.name,
-        taskInfo.stackDepthBytes / sizeof(StackType_t),
-        &taskParameters,
-        taskInfo.priority,
+    task_info.task_handle = xTaskCreateStatic(
+        BlackboxTask::task_static,
+        task_info.name,
+        task_info.stack_depth_bytes / sizeof(StackType_t),
+        &task_parameters,
+        task_info.priority,
         &stack[0],
-        &taskBuffer
+        &task_buffer
     );
-    assert(taskInfo.taskHandle != nullptr && "Unable to create BlackboxTask");
-    // vTaskCoreAffinitySet(taskInfo.taskHandle, taskInfo.core);
+    assert(task_info.task_handle != nullptr && "Unable to create BlackboxTask");
+    // vTaskCoreAffinitySet(task_info.task_handle, task_info.core);
 #endif
 #else
-    (void)taskParameters;
+    (void)task_parameters;
 #endif // FRAMEWORK_USE_FREERTOS
 
-    return &blackboxTask;
+    return &blackbox_task;
 }

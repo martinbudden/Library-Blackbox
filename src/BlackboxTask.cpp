@@ -25,9 +25,9 @@
 #include "Blackbox.h"
 #include "BlackboxTask.h"
 
-#include <MessageQueueBase.h>
-#include <TimeMicroseconds.h>
 #include <cassert>
+#include <message_queue_base.h>
+#include <time_microseconds.h>
 
 #if defined(FRAMEWORK_USE_FREERTOS)
 #if defined(FRAMEWORK_ESPIDF) || defined(FRAMEWORK_ARDUINO_ESP32)
@@ -43,11 +43,11 @@
 #endif
 
 
-BlackboxTask::BlackboxTask(uint32_t taskIntervalMicroseconds, Blackbox& blackbox, MessageQueueBase& messageQueue) :
-    TaskBase(taskIntervalMicroseconds),
-    _taskIntervalMilliseconds(taskIntervalMicroseconds/1000), // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+BlackboxTask::BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue) :
+    TaskBase(task_interval_microseconds),
+    _task_interval_milliseconds(task_interval_microseconds/1000), // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _blackbox(blackbox),
-    _messageQueue(messageQueue)
+    _message_queue(message_queue)
 {
 }
 
@@ -56,12 +56,12 @@ loop() function for when not using FREERTOS
 */
 void BlackboxTask::loop()
 {
-    const uint32_t timeMicroseconds = timeUs();
-    _timeMicrosecondsDelta = timeMicroseconds - _timeMicrosecondsPrevious;
+    const uint32_t time_microseconds = time_us();
+    _time_microseconds_delta = time_microseconds - _time_microseconds_previous;
 
-    if (_timeMicrosecondsDelta >= _taskIntervalMicroseconds) { // if _taskIntervalMicroSeconds has passed, then run the update
-        _timeMicrosecondsPrevious = timeMicroseconds;
-        _blackbox.updateLog(timeMicroseconds);
+    if (_time_microseconds_delta >= _task_interval_microseconds) { // if _taskIntervalMicroSeconds has passed, then run the update
+        _time_microseconds_previous = time_microseconds;
+        _blackbox.update_log(time_microseconds);
     }
 }
 
@@ -71,30 +71,30 @@ Task function for the MSP. Sets up and runs the task loop() function.
 [[noreturn]] void BlackboxTask::task() // NOLINT(readability-convert-member-functions-to-static)
 {
 #if defined(FRAMEWORK_USE_FREERTOS)
-    if (_taskIntervalMicroseconds == 0) {
-        uint32_t timeMicroseconds {};
+    if (_task_interval_microseconds == 0) {
+        uint32_t time_microseconds {};
         while (true) {
-            _messageQueue.WAIT(timeMicroseconds); // wait until there is AHRS data.
-            _blackbox.updateLog(timeMicroseconds);
+            _message_queue.WAIT(time_microseconds); // wait until there is AHRS data.
+            _blackbox.update_log(time_microseconds);
         }
     } else {
         // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
-        const uint32_t taskIntervalTicks = pdMS_TO_TICKS(_taskIntervalMicroseconds / 1000);
-        assert(taskIntervalTicks > 0 && "Blackbox taskIntervalTicks is zero.");
+        const uint32_t task_interval_ticks = pdMS_TO_TICKS(_task_interval_microseconds / 1000);
+        assert(task_interval_ticks > 0 && "Blackbox task_interval_ticks is zero.");
 
         _previousWakeTimeTicks = xTaskGetTickCount();
         while (true) {
-            // delay until the end of the next taskIntervalTicks
+            // delay until the end of the next task_interval_ticks
 #if (tskKERNEL_VERSION_MAJOR > 10) || ((tskKERNEL_VERSION_MAJOR == 10) && (tskKERNEL_VERSION_MINOR >= 5))
-            const BaseType_t wasDelayed = xTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
-            if (wasDelayed) {
-                _wasDelayed = true;
+            const BaseType_t was_delayed = xTaskDelayUntil(&_previousWakeTimeTicks, task_interval_ticks);
+            if (was_delayed) {
+                _was_delayed = true;
             }
 #else
-            vTaskDelayUntil(&_previousWakeTimeTicks, taskIntervalTicks);
+            vTaskDelayUntil(&_previousWakeTimeTicks, task_interval_ticks);
 #endif
-            const uint32_t timeMicroseconds = timeUs();
-            _blackbox.updateLog(timeMicroseconds);
+            const uint32_t time_microseconds = time_us();
+            _blackbox.update_log(time_microseconds);
         }
     }
 #else
@@ -103,9 +103,9 @@ Task function for the MSP. Sets up and runs the task loop() function.
 }
 
 /*!
-Wrapper function for BlackboxTask::Task with the correct signature to be used in xTaskCreate.
+Wrapper function for BlackboxTask::task_static with the correct signature to be used in xTaskCreate.
 */
-[[noreturn]] void BlackboxTask::Task(void* arg)
+[[noreturn]] void BlackboxTask::task_static(void* arg)
 {
     const TaskBase::parameters_t* parameters = static_cast<TaskBase::parameters_t*>(arg);
 
