@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Blackbox.h"
+#include "blackbox.h"
 
 
 class BlackboxNull : public Blackbox {

@@ -22,8 +22,8 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "Blackbox.h"
-#include "BlackboxTask.h"
+#include "blackbox.h"
+#include "blackbox_task.h"
 
 #include <cassert>
 #include <message_queue_base.h>

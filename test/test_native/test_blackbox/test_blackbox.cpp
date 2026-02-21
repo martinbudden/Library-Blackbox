@@ -1,7 +1,7 @@
-#include "BlackboxCallbacksNull.h"
-#include "BlackboxFieldDefinitions.h"
-#include "BlackboxNull.h"
-#include "BlackboxSerialDeviceNull.h"
+#include "blackbox_callbacks_null.h"
+#include "blackbox_field_definitions.h"
+#include "blackbox_null.h"
+#include "blackbox_serial_device_null.h"
 
 #include <array>
 #include <unity.h>

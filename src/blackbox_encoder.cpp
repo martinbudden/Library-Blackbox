@@ -22,8 +22,8 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxEncoder.h"
-#include "BlackboxSerialDevice.h"
+#include "blackbox_encoder.h"
+#include "blackbox_serial_device.h"
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-magic-numbers)
 

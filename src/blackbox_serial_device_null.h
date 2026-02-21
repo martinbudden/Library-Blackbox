@@ -24,9 +24,9 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxSerialDevice.h"
-#include <stream_buf_writer.h>
+#include "blackbox_serial_device.h"
 #include <array>
+#include <stream_buf_writer.h>
 
 
 class BlackboxSerialDeviceNull : public BlackboxSerialDevice {

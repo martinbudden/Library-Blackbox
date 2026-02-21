@@ -22,9 +22,9 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "Blackbox.h"
-#include "BlackboxHeader.h"
-#include "BlackboxSerialDevice.h"
+#include "blackbox.h"
+#include "blackbox_header.h"
+#include "blackbox_serial_device.h"
 #include "printf.h"
 #include <cassert>
 #include <cstring>

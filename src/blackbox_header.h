@@ -24,7 +24,7 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxFieldDefinitions.h"
+#include "blackbox_field_definitions.h"
 
 
 #pragma pack(push, 1)

@@ -1,6 +1,6 @@
-#include "BlackboxCallbacksNull.h"
-#include "BlackboxNull.h"
-#include "BlackboxSerialDevice.h"
+#include "blackbox_callbacks_null.h"
+#include "blackbox_null.h"
+#include "blackbox_serial_device.h"
 #include <cmath>
 
 

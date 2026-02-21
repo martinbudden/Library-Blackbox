@@ -24,5 +24,5 @@
     "version": "0.0.25",
     "frameworks": "*",
     "platforms": "*",
-    "headers": [ "Blackbox.h", "BlackboxCallbacksBase.h", "BlackboxEncoder.h", "BlackboxFieldDefinitions.h", "BlackboxHeader.h", "BlackboxSerialDevice.h", "BlackboxSerialDeviceSDCard.h", "BlackboxTask.h" ]
+    "headers": [ "blackbox.h", "blackbox_callbacks_base.h", "blackbox_encoder.h", "blackbox_field_definitions.h", "blackbox_header.h", "blackbox_serial_device.h", "blackbox_serial_device_sdcard.h", "blackbox_task.h" ]
 }

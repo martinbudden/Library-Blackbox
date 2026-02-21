@@ -1,5 +1,5 @@
-#include "Blackbox.h"
-#include "BlackboxCallbacksNull.h"
+#include "blackbox.h"
+#include "blackbox_callbacks_null.h"
 
 
 bool BlackboxCallbacksNull::isArmed() const

@@ -24,12 +24,12 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxSerialDevice.h"
+#include "blackbox_serial_device.h"
 #if defined(FRAMEWORK_ARDUINO_ESP32)
 #include <FS.h>
 #endif
-#include <stream_buf_writer.h>
 #include <array>
+#include <stream_buf_writer.h>
 
 
 class BlackboxSerialDeviceSDCard : public BlackboxSerialDevice {

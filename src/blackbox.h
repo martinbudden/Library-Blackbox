@@ -24,8 +24,8 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxCallbacksBase.h"
-#include "BlackboxEncoder.h"
+#include "blackbox_callbacks_base.h"
+#include "blackbox_encoder.h"
 
 #include <bitset>
 

@@ -22,7 +22,7 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxTask.h"
+#include "blackbox_task.h"
 
 #include <array>
 #include <cassert>

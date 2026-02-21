@@ -22,7 +22,7 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxSerialDeviceNull.h"
+#include "blackbox_serial_device_null.h"
 #include <cstring>
 
 

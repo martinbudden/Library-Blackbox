@@ -22,7 +22,7 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "BlackboxSerialDeviceSDCard.h"
+#include "blackbox_serial_device_sdcard.h"
 
 #if defined(FRAMEWORK_ARDUINO_ESP32)
 //#define USE_PRINTF

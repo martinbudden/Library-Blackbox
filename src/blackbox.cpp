@@ -22,14 +22,14 @@
  * see https://github.com/thenickdude/blackbox
  */
 
-#include "Blackbox.h"
-#include "BlackboxCallbacksBase.h"
-#include "BlackboxFieldDefinitions.h"
-#include "BlackboxSerialDevice.h"
+#include "blackbox.h"
+#include "blackbox_callbacks_base.h"
+#include "blackbox_field_definitions.h"
+#include "blackbox_serial_device.h"
 
-#include <time_microseconds.h>
 #include <cassert>
 #include <cstring>
+#include <time_microseconds.h>
 
 #if defined(USE_FLASH_TEST_PRBS)
 void checkFlashStart();
