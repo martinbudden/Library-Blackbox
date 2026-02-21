@@ -31,30 +31,30 @@
 // We pack this struct so that padding doesn't interfere with memcmp()
 // This data is updated really infrequently:
 struct blackbox_slow_state_t {
-    uint32_t flightModeFlags;
-    uint8_t stateFlags;
-    uint8_t failsafePhase;
-    bool rxSignalReceived;
-    bool rxFlightChannelsValid;
+    uint32_t flight_mode_flags;
+    uint8_t state_flags;
+    uint8_t failsafe_phase;
+    bool rx_signal_received;
+    bool rx_flight_channe_is_valid;
 };
 #pragma pack(pop)
 
 struct blackbox_gps_state_t {
-    uint32_t timeOfWeek_ms;         // GPS time of week in ms
+    uint32_t time_of_week_ms;         // GPS time of week in ms
     uint32_t interval_ms;           // interval between GPS solutions in ms
-    int32_t homeLongitude_degrees1E7; // home longitude in degrees * 1e+7
-    int32_t homeLatitude_degrees1E7;  // home latitude in degrees * 1e+7
-    int32_t homeAltitude_cm;        // home altitude in cm
+    int32_t home_longitude_degrees1E7; // home longitude in degrees * 1e+7
+    int32_t home_latitude_degrees1E7;  // home latitude in degrees * 1e+7
+    int32_t home_altitude_cm;        // home altitude in cm
     int32_t longitude_degrees1E7;   // longitude in degrees * 1e+7
     int32_t latitude_degrees1E7;    // latitude in degrees * 1e+7
     int32_t altitude_cm;            // altitude in cm
-    int16_t velocityNorth_cmps;     // north velocity, cm/s
-    int16_t velocityEast_cmps;      // east velocity, cm/s
-    int16_t velocityDown_cmps;      // down velocity, cm/s
+    int16_t velocity_north_cmps;     // north velocity, cm/s
+    int16_t velocity_east_cmps;      // east velocity, cm/s
+    int16_t velocity_down_cmps;      // down velocity, cm/s
     int16_t speed3d_cmps;           // speed in cm/s
-    int16_t groundSpeed_cmps;       // speed in cm/s
-    int16_t groundCourse_deciDegrees;  // Heading 2D in 10ths of a degree
-    uint8_t satelliteCount;
+    int16_t ground_speed_cmps;       // speed in cm/s
+    int16_t ground_course_deci_degrees;  // Heading 2D in 10ths of a degree
+    uint8_t satellite_count;
 };
 
 struct blackbox_main_state_t {
@@ -68,27 +68,27 @@ struct blackbox_main_state_t {
     enum { MAX_SUPPORTED_SERVO_COUNT = 4 };
     enum { DEBUG_VALUE_COUNT = 8 };
 
-    uint32_t timeUs;
-    int32_t baroAlt;
-    int32_t surfaceRaw;
-    int32_t amperageLatest;
-    uint16_t vbatLatest;
+    uint32_t time_us;
+    int32_t baro_altitude;
+    int32_t surface_raw;
+    int32_t amperage_latest;
+    uint16_t vbat_latest;
     uint16_t rssi;
 
-    std::array<int32_t, RPY_AXIS_COUNT> axisPID_P;
-    std::array<int32_t, RPY_AXIS_COUNT> axisPID_I;
-    std::array<int32_t, RPY_AXIS_COUNT> axisPID_D;
-    std::array<int32_t, RPY_AXIS_COUNT> axisPID_S;
-    std::array<int32_t, RPY_AXIS_COUNT> axisPID_K;
+    std::array<int32_t, RPY_AXIS_COUNT> axis_pid_p;
+    std::array<int32_t, RPY_AXIS_COUNT> axis_pid_i;
+    std::array<int32_t, RPY_AXIS_COUNT> axis_pid_d;
+    std::array<int32_t, RPY_AXIS_COUNT> axis_pid_s;
+    std::array<int32_t, RPY_AXIS_COUNT> axis_pid_k;
 
-    std::array<int16_t, 4> rcCommand;
+    std::array<int16_t, 4> rc_command;
     std::array<int16_t, 4> setpoint;
 
-    std::array<int16_t, XYZ_AXIS_COUNT> gyroADC;
-    std::array<int16_t, XYZ_AXIS_COUNT> gyroUnfiltered;
-    std::array<int16_t, XYZ_AXIS_COUNT> accADC;
+    std::array<int16_t, XYZ_AXIS_COUNT> gyro_adc;
+    std::array<int16_t, XYZ_AXIS_COUNT> gyro_unfiltered;
+    std::array<int16_t, XYZ_AXIS_COUNT> acc_adc;
     std::array<int16_t, XYZ_AXIS_COUNT> orientation; // only x,y,z are stored; w is always positive
-    std::array<int16_t, XYZ_AXIS_COUNT> magADC;
+    std::array<int16_t, XYZ_AXIS_COUNT> mag_adc;
 
     std::array<int16_t, MAX_SUPPORTED_MOTOR_COUNT> motor;
     std::array<int16_t, MAX_SUPPORTED_MOTOR_COUNT> erpm;
@@ -103,18 +103,18 @@ class BlackboxCallbacksBase {
 public:
     virtual ~BlackboxCallbacksBase() = default;
     //! Load the rarely-changing values, used for slow frames
-    virtual void loadSlowState(blackbox_slow_state_t& slowState) = 0;
+    virtual void load_slow_state(blackbox_slow_state_t& slowState) = 0;
 
     //! Load the main state of the blackbox, used for I-frames and P-frames
-    virtual void loadMainState(blackbox_main_state_t& mainState, uint32_t currentTimeUs) = 0;
-    virtual void loadGPS_State(blackbox_gps_state_t& gpsState) = 0;
+    virtual void load_main_state(blackbox_main_state_t& mainState, uint32_t currentTimeUs) = 0;
+    virtual void load_gps_state(blackbox_gps_state_t& gpsState) = 0;
 
-    virtual bool isArmed() const = 0;
-    virtual bool isBlackboxModeActive() const = 0;
-    virtual bool isBlackboxEraseModeActive() const = 0;
-    virtual bool isBlackboxModeActivationConditionPresent() const = 0;
-    virtual uint32_t getArmingBeepTimeMicroseconds() const = 0;
-    virtual bool areMotorsRunning() const = 0;
-    virtual uint32_t rcModeActivationMask() const = 0; // lower 32 bits of BOX_COUNT bits
+    virtual bool is_armed() const = 0;
+    virtual bool is_blackbox_mode_active() const = 0;
+    virtual bool is_blackbox_erase_mode_active() const = 0;
+    virtual bool is_blackbox_mode_activation_condition_present() const = 0;
+    virtual uint32_t get_arming_beep_time_microseconds() const = 0;
+    virtual bool are_motors_running() const = 0;
+    virtual uint32_t rc_mode_activation_mask() const = 0; // lower 32 bits of BOX_COUNT bits
     virtual void beep() const = 0;
 };

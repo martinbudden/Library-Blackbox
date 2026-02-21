@@ -42,7 +42,7 @@ public:
         _serialDevice(serialDevice),
         _encoder(_serialDevice),
         _callbacks(callbacks),
-        _targetPidLooptimeUs(pidLoopTimeUs)
+        _targetPidLooptime_us(pidLoopTimeUs)
         {}
 public:
     // Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
@@ -120,8 +120,8 @@ public:
         STATE_ERASED
     };
 public:
-    typedef uint32_t timeUs_t;
-    typedef uint32_t timeMs_t;
+    typedef uint32_t time_us_t;
+    typedef uint32_t time_ms_t;
 
     struct config_t {
         sample_rate_e sample_rate;
@@ -232,12 +232,12 @@ public:
     void logSFrame(); // Slow frame
     bool logSFrameIfNeeded();
     void logHFrame(); // GPS home frame
-    void logGFrame(timeUs_t currentTimeUs); // GPS frame
+    void logGFrame(time_us_t currentTimeUs); // GPS frame
     bool logEvent(log_event_e event, const log_event_data_u* data); // E-frame
     void logEventArmingBeepIfNeeded(); // E-frame
     void logEventFlightModeIfNeeded(); // E-frame
 
-    void logIteration(timeUs_t currentTimeUs);
+    void logIteration(time_us_t currentTimeUs);
     void advanceIterationTimers();
     void resetIterationTimers();
     void setState(state_e newState);
@@ -283,8 +283,8 @@ protected:
         .fieldsDisabledMask = 0
     };
     int32_t _headerBudget {};
-    // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
-    uint32_t _targetPidLooptimeUs; // time in microseconds
+    // _targetPidLooptime_us is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptime_us is rounded for short looptimes
+    uint32_t _targetPidLooptime_us; // time in microseconds
     state_e _state = STATE_DISABLED;
 
     bool _startedLoggingInTestMode = false;

@@ -2,56 +2,56 @@
 #include "blackbox_callbacks_null.h"
 
 
-bool BlackboxCallbacksNull::isArmed() const
+bool BlackboxCallbacksNull::is_armed() const
 {
     return true;
 }
 
-bool BlackboxCallbacksNull::areMotorsRunning() const {
+bool BlackboxCallbacksNull::are_motors_running() const {
     return true;
 }
 
-bool BlackboxCallbacksNull::isBlackboxModeActive() const
+bool BlackboxCallbacksNull::is_blackbox_mode_active() const
 {
     return true;
 };
 
-bool BlackboxCallbacksNull::isBlackboxEraseModeActive() const
+bool BlackboxCallbacksNull::is_blackbox_erase_mode_active() const
 {
     return true;
 };
 
-bool BlackboxCallbacksNull::isBlackboxModeActivationConditionPresent() const
+bool BlackboxCallbacksNull::is_blackbox_mode_activation_condition_present() const
 {
     return true;
 }
 
-uint32_t BlackboxCallbacksNull::getArmingBeepTimeMicroseconds() const
+uint32_t BlackboxCallbacksNull::get_arming_beep_time_microseconds() const
 {
     return 0;
 }
 
-void BlackboxCallbacksNull::loadSlowState(blackbox_slow_state_t& slowState)
+void BlackboxCallbacksNull::load_slow_state(blackbox_slow_state_t& slowState)
 {
-    slowState.flightModeFlags = 0;
-    slowState.stateFlags = 0;
-    slowState.failsafePhase = 0;
-    slowState.rxSignalReceived = false;
-    slowState.rxFlightChannelsValid = false;
+    slowState.flight_mode_flags = 0;
+    slowState.state_flags = 0;
+    slowState.failsafe_phase = 0;
+    slowState.rx_signal_received = false;
+    slowState.rx_flight_channe_is_valid = false;
 }
 
-void BlackboxCallbacksNull::loadMainState(blackbox_main_state_t& mainState, uint32_t currentTimeUs)
+void BlackboxCallbacksNull::load_main_state(blackbox_main_state_t& mainState, uint32_t currentTimeUs)
 {
     (void)mainState;
     (void)currentTimeUs;
 }
 
-void BlackboxCallbacksNull::loadGPS_State(blackbox_gps_state_t& gpsState)
+void BlackboxCallbacksNull::load_gps_state(blackbox_gps_state_t& gpsState)
 {
     (void)gpsState;
 }
 
-uint32_t BlackboxCallbacksNull::rcModeActivationMask() const
+uint32_t BlackboxCallbacksNull::rc_mode_activation_mask() const
 {
     return 0;
 }

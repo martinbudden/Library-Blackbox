@@ -69,8 +69,8 @@ void Blackbox::init(const config_t& config)
 
     // an I-frame is written every 32ms
     // blackboxUpdate() is run in synchronisation with the PID loop
-    // _targetPidLooptimeUs is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptimeUs is rounded for short looptimes
-    _IInterval = static_cast<int32_t>(32 * 1000 / _targetPidLooptimeUs);
+    // _targetPidLooptime_us is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptime_us is rounded for short looptimes
+    _IInterval = static_cast<int32_t>(32 * 1000 / _targetPidLooptime_us);
 
     _PInterval = static_cast<int32_t>(1U << _config.sample_rate);
     if (_PInterval > _IInterval) {
@@ -126,22 +126,22 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
 #endif
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
-        // If we are logging battery voltage, then loadMainState to get the reference battery voltage.
+        // If we are logging battery voltage, then load_main_state to get the reference battery voltage.
         blackbox_main_state_t mainState {};
-        _callbacks.loadMainState(mainState, 0);
-        _vbatReference = mainState.vbatLatest;
+        _callbacks.load_main_state(mainState, 0);
+        _vbatReference = mainState.vbat_latest;
     }
 
     // No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
 
-    //!!blackboxModeActivationConditionPresent = _callbacks.isBlackboxModeActivationConditionPresent();
+    //!!blackboxModeActivationConditionPresent = _callbacks.is_blackbox_mode_activation_condition_present();
 
     resetIterationTimers();
 
     // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
     // it finally plays the beep for this arming event.
-    _lastArmingBeep = _callbacks.getArmingBeepTimeMicroseconds();
-    _lastFlightModeFlags = _callbacks.rcModeActivationMask(); // record startup status
+    _lastArmingBeep = _callbacks.get_arming_beep_time_microseconds();
+    _lastFlightModeFlags = _callbacks.rc_mode_activation_mask(); // record startup status
 
     setState(STATE_PREPARE_LOG_FILE);
     return _state;
@@ -220,7 +220,7 @@ void Blackbox::stopInTestMode()
  */
 bool Blackbox::inMotorTestMode()
 {
-    if (!_callbacks.isArmed() && _callbacks.areMotorsRunning()) {
+    if (!_callbacks.is_armed() && _callbacks.are_motors_running()) {
         enum { FIVE_SECONDS_IN_MS = 5000 };
         _resetTime = time_ms() + FIVE_SECONDS_IN_MS;
         return true;
@@ -291,14 +291,14 @@ bool Blackbox::logSFrameIfNeeded()
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
     if (_SFrameIndex >= _SInterval) {
-        _callbacks.loadSlowState(_slowState);
+        _callbacks.load_slow_state(_slowState);
         logSFrame();
         return true;
     }
 
     // Only write a slow frame if it was different from the previous state
     blackbox_slow_state_t newSlowState {};
-    _callbacks.loadSlowState(newSlowState);
+    _callbacks.load_slow_state(newSlowState);
     if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
         // Use the new state as our new history
         memcpy(&_slowState, &newSlowState, sizeof(_slowState));
@@ -335,7 +335,7 @@ void Blackbox::advanceIterationTimers()
 /*!
 Called once every FC loop in order to log the current state
 */
-void Blackbox::logIteration(timeUs_t currentTimeUs)
+void Blackbox::logIteration(time_us_t currentTimeUs)
 {
     // Write a keyframe every _IInterval frames so we can resynchronise upon missing frames
     if (shouldLogIFrame()) { // ie _loopIndex == 0
@@ -345,7 +345,7 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
             logSFrameIfNeeded();
         }
 
-        _callbacks.loadMainState(*_mainStateHistory[0], currentTimeUs);
+        _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs);
         logIFrame();
     } else {
         logEventArmingBeepIfNeeded();
@@ -356,25 +356,25 @@ void Blackbox::logIteration(timeUs_t currentTimeUs)
             // So only log slow frames during loop iterations where we log a main frame.
             logSFrameIfNeeded();
 
-            _callbacks.loadMainState(*_mainStateHistory[0], currentTimeUs);
+            _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs);
             logPFrame();
         }
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
         if (isFieldEnabled(LOG_SELECT_GPS)) {
             blackbox_gps_state_t gpsStateNew {};
-            _callbacks.loadGPS_State(gpsStateNew);
+            _callbacks.load_gps_state(gpsStateNew);
 
             const bool gpsStateChanged =
-                gpsStateNew.satelliteCount != _gpsState.satelliteCount
+                gpsStateNew.satellite_count != _gpsState.satellite_count
                 || gpsStateNew.latitude_degrees1E7 != _gpsState.latitude_degrees1E7
                 || gpsStateNew.longitude_degrees1E7 != _gpsState.longitude_degrees1E7;
 
             _gpsState = gpsStateNew;
 
             if (shouldLogHFrame()) {
-                _gpsHomeLocation.latitude_degrees1E7 = _gpsState.homeLatitude_degrees1E7;
-                _gpsHomeLocation.longitude_degrees1E7 = _gpsState.homeLongitude_degrees1E7;
-                _gpsHomeLocation.altitude_cm = _gpsState.homeAltitude_cm;
+                _gpsHomeLocation.latitude_degrees1E7 = _gpsState.home_latitude_degrees1E7;
+                _gpsHomeLocation.longitude_degrees1E7 = _gpsState.home_longitude_degrees1E7;
+                _gpsHomeLocation.altitude_cm = _gpsState.home_altitude_cm;
                 logHFrame();
                 logGFrame(currentTimeUs);
             } else if (gpsStateChanged) {
@@ -396,12 +396,12 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
 {
     switch (_state) {
     case STATE_STOPPED:
-        if (_callbacks.isArmed()) {
+        if (_callbacks.is_armed()) {
             _serialDevice.open();
             start();
         }
 #if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
-        if (_callbacks.isBlackboxEraseModeActive()) {
+        if (_callbacks.is_blackbox_erase_mode_active()) {
             setState(STATE_START_ERASE);
         }
 #endif
@@ -478,7 +478,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
         break;
     case STATE_PAUSED:
         // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-        if (_callbacks.isBlackboxModeActive() && shouldLogIFrame()) {
+        if (_callbacks.is_blackbox_mode_active() && shouldLogIFrame()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
             //flightLogEvent_loggingResume_t resume {
             //    .logIteration = _iteration,
@@ -501,7 +501,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
     case STATE_RUNNING:
         // On entry to this state, _iteration, _PFrameIndex and _IFrameIndex are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-        if (_callbacks.isBlackboxModeActivationConditionPresent() && !_callbacks.isBlackboxModeActive() && !_startedLoggingInTestMode) {
+        if (_callbacks.is_blackbox_mode_activation_condition_present() && !_callbacks.is_blackbox_mode_active() && !_startedLoggingInTestMode) {
             setState(STATE_PAUSED);
         } else {
             logIteration(currentTimeUs);
@@ -535,7 +535,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
         }
         break;
     case STATE_ERASED:
-        if (!_callbacks.isBlackboxEraseModeActive()) {
+        if (!_callbacks.is_blackbox_erase_mode_active()) {
             setState(STATE_STOPPED);
         }
         break;
@@ -586,7 +586,7 @@ static inline uint32_t llog2(uint32_t n) { return static_cast<uint32_t>(31 - __b
 
 uint8_t Blackbox::calculateSampleRate(uint16_t pRatio) const
 {
-    return static_cast<uint8_t>(llog2(32000 / (_targetPidLooptimeUs * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    return static_cast<uint8_t>(llog2(32000 / (_targetPidLooptime_us * pRatio)));  // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 }
 
 /*!
@@ -605,45 +605,45 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
 
     const blackbox_main_state_t* mainState = _mainStateHistory[0];
 
-    _encoder.writeUnsignedVB(mainState->timeUs);
+    _encoder.writeUnsignedVB(mainState->time_us);
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
-        _encoder.writeSignedVBArray(&mainState->axisPID_P[0], RPY_AXIS_COUNT);
-        _encoder.writeSignedVBArray(&mainState->axisPID_I[0], RPY_AXIS_COUNT);
+        _encoder.writeSignedVBArray(&mainState->axis_pid_p[0], RPY_AXIS_COUNT);
+        _encoder.writeSignedVBArray(&mainState->axis_pid_i[0], RPY_AXIS_COUNT);
 
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[0]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[0]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[1]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[1]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[2]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[2]);
         }
 
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_K)) {
-            _encoder.writeSignedVBArray(&mainState->axisPID_K[0], RPY_AXIS_COUNT);
+            _encoder.writeSignedVBArray(&mainState->axis_pid_k[0], RPY_AXIS_COUNT);
         }
 
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[0]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[0]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[1]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[1]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[2]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[2]);
         }
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS)) {
         // Write roll, pitch and yaw first, these are signed values in the range [-500,500]
-        _encoder.writeSigned16VBArray(&mainState->rcCommand[0], 3);
+        _encoder.writeSigned16VBArray(&mainState->rc_command[0], 3);
 
         // Write the throttle separately from the rest of the RC data as it's unsigned.
         // Throttle lies in range [PWM_RANGE_MIN,PWM_RANGE_MAX], ie [1000,2000]
         enum { ROLL = 0, PITCH, YAW, THROTTLE };
-        _encoder.writeUnsignedVB(static_cast<uint32_t>(mainState->rcCommand[THROTTLE]));
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(mainState->rc_command[THROTTLE]));
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SETPOINT)) {
@@ -656,29 +656,29 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
         //the reference:
         // Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
         enum { LEAST_SIGNIFICANT_14_BITS = 0x3FFF };
-        _encoder.writeUnsignedVB((_vbatReference - mainState->vbatLatest) & LEAST_SIGNIFICANT_14_BITS);
+        _encoder.writeUnsignedVB((_vbatReference - mainState->vbat_latest) & LEAST_SIGNIFICANT_14_BITS);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT)) {
         // 12bit value directly from ADC
-        _encoder.writeSignedVB(mainState->amperageLatest);
+        _encoder.writeSignedVB(mainState->amperage_latest);
     }
 
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER)) {
-        _encoder.writeSigned16VBArray(&mainState->magADC[0], XYZ_AXIS_COUNT);
+        _encoder.writeSigned16VBArray(&mainState->mag_adc[0], XYZ_AXIS_COUNT);
     }
 #endif
 
 #if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BAROMETER)) {
-        _encoder.writeSignedVB(mainState->baroAlt);
+        _encoder.writeSignedVB(mainState->baro_altitude);
     }
 #endif
 
 #if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
-        _encoder.writeSignedVB(mainState->surfaceRaw);
+        _encoder.writeSignedVB(mainState->surface_raw);
     }
 #endif
 
@@ -687,15 +687,15 @@ void Blackbox::logIFrame() // NOLINT(readability-function-cognitive-complexity)
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO)) {
-        _encoder.writeSigned16VBArray(&mainState->gyroADC[0], XYZ_AXIS_COUNT);
+        _encoder.writeSigned16VBArray(&mainState->gyro_adc[0], XYZ_AXIS_COUNT);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO_UNFILTERED)) {
-        _encoder.writeSigned16VBArray(&mainState->gyroUnfiltered[0], XYZ_AXIS_COUNT);
+        _encoder.writeSigned16VBArray(&mainState->gyro_unfiltered[0], XYZ_AXIS_COUNT);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ACC)) {
-        _encoder.writeSigned16VBArray(&mainState->accADC[0], XYZ_AXIS_COUNT);
+        _encoder.writeSigned16VBArray(&mainState->acc_adc[0], XYZ_AXIS_COUNT);
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ATTITUDE)) {
@@ -779,49 +779,49 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
 
     // Since the difference between the difference between successive times will be nearly zero (due to consistent
     // looptime spacing), use second-order differences.
-    _encoder.writeSignedVB(static_cast<int32_t>(mainState->timeUs - 2 * _mainStateHistory[1]->timeUs + _mainStateHistory[2]->timeUs));
+    _encoder.writeSignedVB(static_cast<int32_t>(mainState->time_us - 2 * _mainStateHistory[1]->time_us + _mainStateHistory[2]->time_us));
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID)) {
-        //arraySubInt32(&deltas[0], &mainState->axisPID_P[0], &previousMainState->axisPID_P[0], RPY_AXIS_COUNT);
-        std::array<int32_t, RPY_AXIS_COUNT> deltas = mainState->axisPID_P - previousMainState->axisPID_P;
+        //arraySubInt32(&deltas[0], &mainState->axis_pid_p[0], &previousMainState->axis_pid_p[0], RPY_AXIS_COUNT);
+        std::array<int32_t, RPY_AXIS_COUNT> deltas = mainState->axis_pid_p - previousMainState->axis_pid_p;
         _encoder.writeSignedVBArray(&deltas[0], RPY_AXIS_COUNT);
 
         // The PID I field changes very slowly, most of the time +-2, so use an encoding
         // that can pack all three fields into one byte in that situation.
-        deltas = mainState->axisPID_I - previousMainState->axisPID_I;
+        deltas = mainState->axis_pid_i - previousMainState->axis_pid_i;
         _encoder.writeTag2_3S32(&deltas[0]);
 
         // The PID D term is frequently set to zero for yaw, which makes the result from the calculation
         // always zero. So don't bother recording D results when PID D terms are zero.
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_ROLL)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[0] - previousMainState->axisPID_D[0]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[0] - previousMainState->axis_pid_d[0]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_PITCH)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[1] - previousMainState->axisPID_D[1]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[1] - previousMainState->axis_pid_d[1]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_D_YAW)) {
-            _encoder.writeSignedVB(mainState->axisPID_D[2] - previousMainState->axisPID_D[2]);
+            _encoder.writeSignedVB(mainState->axis_pid_d[2] - previousMainState->axis_pid_d[2]);
         }
 
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_K)) {
-            deltas = mainState->axisPID_K - previousMainState->axisPID_K;
+            deltas = mainState->axis_pid_k - previousMainState->axis_pid_k;
             _encoder.writeSignedVBArray(&deltas[0], RPY_AXIS_COUNT);
         }
 
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_ROLL)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[0] - previousMainState->axisPID_S[0]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[0] - previousMainState->axis_pid_s[0]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_PITCH)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[1] - previousMainState->axisPID_S[1]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[1] - previousMainState->axis_pid_s[1]);
         }
         if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_PID_S_YAW)) {
-            _encoder.writeSignedVB(mainState->axisPID_S[2] - previousMainState->axisPID_S[2]);
+            _encoder.writeSignedVB(mainState->axis_pid_s[2] - previousMainState->axis_pid_s[2]);
         }
     }
 
     // RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RC_COMMANDS)) {
-        const std::array<int32_t, 4> deltas = mainState->rcCommand - previousMainState->rcCommand;
+        const std::array<int32_t, 4> deltas = mainState->rc_command - previousMainState->rc_command;
         _encoder.writeTag8_4S16(&deltas[0]);
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_SETPOINT)) {
@@ -835,30 +835,30 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     size_t optionalFieldCount = 0;
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
-        deltas[optionalFieldCount++] = mainState->vbatLatest - previousMainState->vbatLatest;
+        deltas[optionalFieldCount++] = mainState->vbat_latest - previousMainState->vbat_latest;
     }
 
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_CURRENT)) {
-        deltas[optionalFieldCount++] = mainState->amperageLatest - previousMainState->amperageLatest;
+        deltas[optionalFieldCount++] = mainState->amperage_latest - previousMainState->amperage_latest;
     }
 
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_MAGNETOMETER)) {
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
-            deltas[optionalFieldCount++] = mainState->magADC[ii] - previousMainState->magADC[ii];
+            deltas[optionalFieldCount++] = mainState->mag_adc[ii] - previousMainState->mag_adc[ii];
         }
     }
 #endif
 
 #if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BAROMETER)) {
-        deltas[optionalFieldCount++] = mainState->baroAlt - previousMainState->baroAlt;
+        deltas[optionalFieldCount++] = mainState->baro_altitude - previousMainState->baro_altitude;
     }
 #endif
 
 #if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
-        deltas[optionalFieldCount++] = mainState->surfaceRaw - previousMainState->surfaceRaw;
+        deltas[optionalFieldCount++] = mainState->surface_raw - previousMainState->surface_raw;
     }
 #endif
 
@@ -871,20 +871,20 @@ void Blackbox::logPFrame() // NOLINT(readability-function-cognitive-complexity)
     //Since gyros, accelerometers and motors are noisy, base their predictions on the average of the history:
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO)) {
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
-            const int32_t predictor = (_mainStateHistory[1]->gyroADC[ii] + _mainStateHistory[2]->gyroADC[ii]) / 2;
-            _encoder.writeSignedVB(mainState->gyroADC[ii] - predictor);
+            const int32_t predictor = (_mainStateHistory[1]->gyro_adc[ii] + _mainStateHistory[2]->gyro_adc[ii]) / 2;
+            _encoder.writeSignedVB(mainState->gyro_adc[ii] - predictor);
         }
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_GYRO_UNFILTERED)) {
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
-            const int32_t predictor = (_mainStateHistory[1]->gyroUnfiltered[ii] + _mainStateHistory[2]->gyroUnfiltered[ii]) / 2;
-            _encoder.writeSignedVB(mainState->gyroUnfiltered[ii] - predictor);
+            const int32_t predictor = (_mainStateHistory[1]->gyro_unfiltered[ii] + _mainStateHistory[2]->gyro_unfiltered[ii]) / 2;
+            _encoder.writeSignedVB(mainState->gyro_unfiltered[ii] - predictor);
         }
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ACC)) {
         for (size_t ii = 0; ii < XYZ_AXIS_COUNT; ++ii) {
-            const int32_t predictor = (_mainStateHistory[1]->accADC[ii] + _mainStateHistory[2]->accADC[ii]) / 2;
-            _encoder.writeSignedVB(mainState->accADC[ii] - predictor);
+            const int32_t predictor = (_mainStateHistory[1]->acc_adc[ii] + _mainStateHistory[2]->acc_adc[ii]) / 2;
+            _encoder.writeSignedVB(mainState->acc_adc[ii] - predictor);
         }
     }
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ATTITUDE)) {
@@ -947,14 +947,14 @@ void Blackbox::logSFrame()
 {
     _encoder.beginFrame('S');
 
-    _encoder.writeUnsignedVB(_slowState.flightModeFlags);
-    _encoder.writeUnsignedVB(_slowState.stateFlags);
+    _encoder.writeUnsignedVB(_slowState.flight_mode_flags);
+    _encoder.writeUnsignedVB(_slowState.state_flags);
 
     // Most of the time these three values will be able to pack into one byte.
     const std::array<int32_t, 3> values {
-        _slowState.failsafePhase,
-        _slowState.rxSignalReceived ? 1 : 0,
-        _slowState.rxFlightChannelsValid ? 1 : 0
+        _slowState.failsafe_phase,
+        _slowState.rx_signal_received ? 1 : 0,
+        _slowState.rx_flight_channe_is_valid ? 1 : 0
     };
 
     _encoder.writeTag2_3S32(&values[0]);
@@ -974,8 +974,8 @@ still be interpreted correctly.
 */
 bool Blackbox::shouldLogHFrame() const
 {
-    if ((_gpsHomeLocation.latitude_degrees1E7 != _gpsState.homeLatitude_degrees1E7
-         || _gpsHomeLocation.longitude_degrees1E7 != _gpsState.homeLongitude_degrees1E7
+    if ((_gpsHomeLocation.latitude_degrees1E7 != _gpsState.home_latitude_degrees1E7
+         || _gpsHomeLocation.longitude_degrees1E7 != _gpsState.home_longitude_degrees1E7
          || (_PFrameIndex == _IInterval / 2 && _IFrameIndex % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && isFieldEnabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
@@ -987,14 +987,14 @@ void Blackbox::logHFrame()
 {
     _encoder.beginFrame('H');
 
-    _encoder.writeSignedVB(_gpsState.homeLatitude_degrees1E7);
-    _encoder.writeSignedVB(_gpsState.homeLongitude_degrees1E7);
-    _encoder.writeSignedVB(_gpsState.homeAltitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+    _encoder.writeSignedVB(_gpsState.home_latitude_degrees1E7);
+    _encoder.writeSignedVB(_gpsState.home_longitude_degrees1E7);
+    _encoder.writeSignedVB(_gpsState.home_altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
     _encoder.endFrame();
 }
 
-void Blackbox::logGFrame(timeUs_t currentTimeUs)
+void Blackbox::logGFrame(time_us_t currentTimeUs)
 {
     _encoder.beginFrame('G');
 
@@ -1003,10 +1003,10 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
     // If we're not logging every frame, we need to store the time of this GPS frame.
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
         // Predict the time of the last frame in the main log
-        _encoder.writeUnsignedVB(currentTimeUs - _mainStateHistory[1]->timeUs);
+        _encoder.writeUnsignedVB(currentTimeUs - _mainStateHistory[1]->time_us);
     }
 
-    _encoder.writeUnsignedVB(_gpsState.satelliteCount);
+    _encoder.writeUnsignedVB(_gpsState.satellite_count);
     _encoder.writeSignedVB(_gpsState.latitude_degrees1E7 - _gpsHomeLocation.latitude_degrees1E7);
     _encoder.writeSignedVB(_gpsState.longitude_degrees1E7 - _gpsHomeLocation.longitude_degrees1E7);
     // log altitude in increments of 0.1m
@@ -1015,14 +1015,14 @@ void Blackbox::logGFrame(timeUs_t currentTimeUs)
     if (_config.gps_use_3d_speed) {
         _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.speed3d_cmps));
     } else {
-        _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.groundSpeed_cmps));
+        _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.ground_speed_cmps));
     }
 
-    _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.groundCourse_deciDegrees));
+    _encoder.writeUnsignedVB(static_cast<uint32_t>(_gpsState.ground_course_deci_degrees));
 
-    _encoder.writeSignedVB(_gpsState.velocityNorth_cmps);
-    _encoder.writeSignedVB(_gpsState.velocityEast_cmps);
-    _encoder.writeSignedVB(_gpsState.velocityDown_cmps);
+    _encoder.writeSignedVB(_gpsState.velocity_north_cmps);
+    _encoder.writeSignedVB(_gpsState.velocity_east_cmps);
+    _encoder.writeSignedVB(_gpsState.velocity_down_cmps);
 
     _encoder.endFrame();
 }
@@ -1088,7 +1088,7 @@ bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
 void Blackbox::logEventArmingBeepIfNeeded()
 {
     // Use != so that we can still detect a change if the counter wraps
-    const uint32_t armingBeepTimeMicroseconds = _callbacks.getArmingBeepTimeMicroseconds();
+    const uint32_t armingBeepTimeMicroseconds = _callbacks.get_arming_beep_time_microseconds();
     if (armingBeepTimeMicroseconds != _lastArmingBeep) {
         _lastArmingBeep = armingBeepTimeMicroseconds;
         const log_event_data_u eventData {
@@ -1105,23 +1105,23 @@ void Blackbox::logEventFlightModeIfNeeded()
 {
     // Use != so that we can still detect a change if the counter wraps
 #if false
-    if (memcmp(&_callbacks._rcModeActivationMask, &_lastFlightModeFlags, sizeof(_lastFlightModeFlags))) {
+    if (memcmp(&_callbacks._rc_mode_activation_mask, &_lastFlightModeFlags, sizeof(_lastFlightModeFlags))) {
         static flightLogEvent_flightMode_t eventData {}; // Add new data for current flight mode flags
         eventData.lastFlags = _lastFlightModeFlags;
-        memcpy(&_lastFlightModeFlags, &_callbacks._rcModeActivationMask, sizeof(_lastFlightModeFlags));
-        memcpy(&eventData.flags, &_callbacks._rcModeActivationMask, sizeof(eventData.flags));
+        memcpy(&_lastFlightModeFlags, &_callbacks._rc_mode_activation_mask, sizeof(_lastFlightModeFlags));
+        memcpy(&eventData.flags, &_callbacks._rc_mode_activation_mask, sizeof(eventData.flags));
         logEvent(LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     }
 #endif
-    const uint32_t rcModeActivationMask = _callbacks.rcModeActivationMask();
-    if (rcModeActivationMask != _lastFlightModeFlags) {
+    const uint32_t rc_mode_activation_mask = _callbacks.rc_mode_activation_mask();
+    if (rc_mode_activation_mask != _lastFlightModeFlags) {
         const log_event_data_u eventData = {
             .flightMode = {
-                .flags = rcModeActivationMask,
+                .flags = rc_mode_activation_mask,
                 .lastFlags = _lastFlightModeFlags
             }
         };
-        _lastFlightModeFlags = rcModeActivationMask;
+        _lastFlightModeFlags = rc_mode_activation_mask;
         logEvent(LOG_EVENT_FLIGHTMODE, &eventData);
     }
 }

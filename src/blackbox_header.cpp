@@ -69,12 +69,12 @@ const std::array<const char* const, BLACKBOX_FIELD_HEADER_NAMES_COUNT> blackboxF
 // Rarely-updated fields
 enum { SLOW_FIELD_COUNT = 5 };
 static const std::array<blackbox_simple_field_definition_t, SLOW_FIELD_COUNT> blackboxSlowFields={{
-    {.name="flightModeFlags",       .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
-    {.name="stateFlags",            .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
+    {.name="flight_mode_flags",       .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
+    {.name="state_flags",            .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(UNSIGNED_VB)},
 
-    {.name="failsafePhase",         .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
-    {.name="rxSignalReceived",      .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
-    {.name="rxFlightChannelsValid", .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)}
+    {.name="failsafe_phase",         .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
+    {.name="rx_signal_received",      .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)},
+    {.name="rx_flight_channe_is_valid", .fieldNameIndex=-1,.isSigned=UNSIGNED, .predict=PREDICT(0), .encode=ENCODING(TAG2_3S32)}
 }};
 
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
@@ -133,34 +133,34 @@ static const blackbox_delta_field_definition_t blackboxMainFields[]={ // NOLINT(
     {.name="axisS",         .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_ROLL)},
     {.name="axisS",         .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_PITCH)},
     {.name="axisS",         .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_YAW)},
-    // rcCommands are encoded together as a group in P-frames:
-    {.name="rcCommand",     .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rcCommand",     .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rcCommand",     .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rcCommand",     .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    // setpoint - define 4 fields like rcCommand to use the same encoding. setpoint[4] contains the mixer throttle
+    // rc_commands are encoded together as a group in P-frames:
+    {.name="rc_command",     .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",     .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",     .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",     .fieldNameIndex=3,  .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    // setpoint - define 4 fields like rc_command to use the same encoding. setpoint[4] contains the mixer throttle
     {.name="setpoint",      .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .fieldNameIndex=3,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
-    {.name="vbatLatest",    .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(VBATREF),.Iencode=ENCODING(NEG_14BIT),.Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
-    {.name="amperageLatest",.fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_CURRENT)},
+    {.name="vbat_latest",    .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(VBATREF),.Iencode=ENCODING(NEG_14BIT),.Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
+    {.name="amperage_latest",.fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_CURRENT)},
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
-    {.name="magADC",        .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
-    {.name="magADC",        .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
-    {.name="magADC",        .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",        .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",        .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",        .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
-    {.name="baroAlt",       .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BAROMETER)},
+    {.name="baro_altitude",       .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(BAROMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
-    {.name="surfaceRaw",    .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(RANGEFINDER)},
+    {.name="surface_raw",    .fieldNameIndex=-1, .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(RANGEFINDER)},
 #endif
     {.name="rssi",          .fieldNameIndex=-1, .isSigned=UNSIGNED, .Ipredict=PREDICT(0),   .Iencode=ENCODING(UNSIGNED_VB), .Ppredict=PREDICT(PREVIOUS),    .Pencode=ENCODING(TAG8_8SVB),.condition=CONDITION(RSSI)},
     // Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact
-    {.name="gyroADC",       .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
-    {.name="gyroADC",       .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
-    {.name="gyroADC",       .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",       .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",       .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",       .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
     {.name="gyroUnfilt",    .fieldNameIndex=0,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
     {.name="gyroUnfilt",    .fieldNameIndex=1,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
     {.name="gyroUnfilt",    .fieldNameIndex=2,  .isSigned=SIGNED,   .Ipredict=PREDICT(0),   .Iencode=ENCODING(SIGNED_VB),   .Ppredict=PREDICT(AVERAGE_2),   .Pencode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
@@ -341,7 +341,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderMain() // NOLINT(readability-functio
         ++_xmitState.fieldIndex;
     }
     if (_xmitState.headerIndex == 0) {
-        //0: H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+        //0: H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rc_command[0],rc_command[1],rc_command[2],rc_command[3],vbat_latest,amperage_latest,gyro_adc[0],gyro_adc[1],gyro_adc[2],motor[0],motor[1],motor[2],motor[3]
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
             const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmitState.fieldIndex];
             if (testFieldCondition(def.condition)) {
@@ -396,7 +396,7 @@ Blackbox::write_e Blackbox::writeFieldHeaderSimple(char fieldChar, const blackbo
         ++_xmitState.fieldIndex;
     }
     if (_xmitState.headerIndex == 0) {
-        // H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid
+        // H Field S name:flight_mode_flags,state_flags,failsafe_phase,rx_signal_received,rx_flight_channe_is_valid
         // H Field H name:GPS_home[0],GPS_home[1]
         for (; _xmitState.fieldIndex < fieldCount; ++_xmitState.fieldIndex) {
             const blackbox_simple_field_definition_t& def = fields[static_cast<size_t>(_xmitState.fieldIndex)];

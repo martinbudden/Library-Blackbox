@@ -55,8 +55,8 @@ classDiagram
     }
     class BlackboxCallbacksBase {
         <<abstract>>
-        loadSlowState() *
-        loadMainState() *
+        load_slow_state() *
+        load_main_state() *
     }
     class MessageQueueBase {
         <<abstract>>

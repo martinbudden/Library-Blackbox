@@ -85,13 +85,13 @@ void test_blackbox_init2()
 /*
 H Product:Blackbox flight data recorder by Nicholas Sherlock
 H Data version:2
-H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rc_command[0],rc_command[1],rc_command[2],rc_command[3],vbat_latest,amperage_latest,gyro_adc[0],gyro_adc[1],gyro_adc[2],motor[0],motor[1],motor[2],motor[3]
 H Field I signed:   0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1, 0,0,0,0
 H Field I predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,9,0,0,0,0,11,5,5,5
 H Field I encoding: 1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0, 1,0,0,0
 H Field P predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3, 3,3,3,3
 H Field P encoding: 9,0,0,0,0,7,7,7,0,0,0,8,8,8,8,6,6,0,0,0, 0,0,0,0
-H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid
+H Field S name:flight_mode_flags,state_flags,failsafe_phase,rx_signal_received,rx_flight_channe_is_valid
 H Field S signed:   0,0,0,0,0
 H Field S predictor:0,0,0,0,0
 H Field S encoding: 1,1,7,7,7
@@ -104,7 +104,7 @@ void test_blackbox_initial_updates()
     static BlackboxCallbacksNull callbacks {};
     enum { PID_LOOP_TIME = 1000 };
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
-    const Blackbox::timeUs_t timeUs = 0;
+    const Blackbox::time_us_t time_us = 0;
 
     TEST_ASSERT_EQUAL(0, blackbox.getDebugMode());
 
@@ -134,7 +134,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0, blackbox.getHeaderBudget());
 
 
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
@@ -143,7 +143,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0, blackbox.getHeaderBudget());
 
     serialDevice.fill(0xa5);
-    blackbox.update_log(timeUs); // write first 64 bytes of header (header length = 79)
+    blackbox.update_log(time_us); // write first 64 bytes of header (header length = 79)
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(64, xmitState.headerIndex);
@@ -168,7 +168,7 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL(0xa5, serialDevice[64]);
 
     // "H Data version:2\n\0"
-    blackbox.update_log(timeUs); // write rest of header
+    blackbox.update_log(time_us); // write rest of header
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(50, blackbox.getHeaderBudget());
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
@@ -189,12 +189,12 @@ void test_blackbox_initial_updates()
 
     serialDevice.resetIndex();
     serialDevice.fill(0xa5);
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_MAIN_FIELD_HEADER, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(1, xmitState.headerIndex);
 
-    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],vbatLatest,amperageLatest,gyroADC[0],gyroADC[1],gyroADC[2],motor[0],motor[1],motor[2],motor[3]
+    // H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rc_command[0],rc_command[1],rc_command[2],rc_command[3],vbat_latest,amperage_latest,gyro_adc[0],gyro_adc[1],gyro_adc[2],motor[0],motor[1],motor[2],motor[3]
     TEST_ASSERT_EQUAL('H', serialDevice[0]);
     TEST_ASSERT_EQUAL(' ', serialDevice[1]);
     TEST_ASSERT_EQUAL('F', serialDevice[2]);
@@ -213,30 +213,30 @@ void test_blackbox_initial_updates()
     TEST_ASSERT_EQUAL('l', serialDevice[15]);
     TEST_ASSERT_EQUAL('o', serialDevice[16]);
 
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     while (Blackbox::STATE_SEND_MAIN_FIELD_HEADER == blackbox.getBlackboxState()) {
-        blackbox.update_log(timeUs);
+        blackbox.update_log(time_us);
     }
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SLOW_FIELD_HEADER, blackbox.getBlackboxState());
     while (Blackbox::STATE_SEND_SLOW_FIELD_HEADER == blackbox.getBlackboxState()) {
-        blackbox.update_log(timeUs);
+        blackbox.update_log(time_us);
     }
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     TEST_ASSERT_EQUAL(Blackbox::STATE_SEND_SYSINFO, blackbox.getBlackboxState());
     while (Blackbox::STATE_SEND_SYSINFO == blackbox.getBlackboxState()) {
-        blackbox.update_log(timeUs);
+        blackbox.update_log(time_us);
     }
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_CACHE_FLUSH, blackbox.getBlackboxState());
 
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     TEST_ASSERT_EQUAL(Blackbox::STATE_RUNNING, blackbox.getBlackboxState());
 
     const uint32_t iteration  = blackbox.getBlackboxIteration();
-    blackbox.update_log(timeUs);
+    blackbox.update_log(time_us);
     TEST_ASSERT_EQUAL(iteration + 1, blackbox.getBlackboxIteration());
 }
 
@@ -279,7 +279,7 @@ void test_blackbox_frames()
 }
 
 //                        012345678901234567890
-static const char* SH0 = "H Field S name:flightModeFlags,stateFlags,failsafePhase,rxSignalReceived,rxFlightChannelsValid\n";
+static const char* SH0 = "H Field S name:flight_mode_flags,state_flags,failsafe_phase,rx_signal_received,rx_flight_channe_is_valid\n";
 static const char* SH1 = "H Field S signed:0,0,0,0,0\n";
 static const char* SH2 = "H Field S predictor:0,0,0,0,0\n";
 static const char* SH3 = "H Field S encoding:1,1,7,7,7\n";
@@ -293,7 +293,7 @@ void test_blackbox_slow_header()
     serialDevice.fill(0xa5);
     serialDevice.resetIndex();
 
-    const Blackbox::timeUs_t currentTimeUs = 0;
+    const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
     blackbox.start(start);
@@ -355,7 +355,7 @@ void test_blackbox_gps_h_header()
     serialDevice.fill(0xa5);
     serialDevice.resetIndex();
 
-    const Blackbox::timeUs_t currentTimeUs = 0;
+    const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
     blackbox.start(start);
@@ -417,7 +417,7 @@ void test_blackbox_gps_g_header()
     serialDevice.fill(0xa5);
     serialDevice.resetIndex();
 
-    const Blackbox::timeUs_t currentTimeUs = 0;
+    const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
     blackbox.start(start);
