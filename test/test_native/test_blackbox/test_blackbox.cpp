@@ -500,7 +500,7 @@ void test_blackbox_write_sys_info()
     TEST_ASSERT_EQUAL(0, blackbox.getXmitState().headerIndex);
 
 
-    blackbox.writeSystemInformation(pg);
+    blackbox.write_system_information(pg);
 
     TEST_ASSERT_EQUAL('H', serialDevice[0]);
     TEST_ASSERT_EQUAL(' ', serialDevice[1]);

@@ -200,7 +200,7 @@ void Blackbox::stopInTestMode()
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-bool Blackbox::inMotorTestMode(blackbox_parameter_group_t& pg)
+bool Blackbox::inMotorTestMode(const blackbox_parameter_group_t& pg)
 {
     if (!_callbacks.is_armed(pg) && _callbacks.are_motors_running(pg)) {
         enum { FIVE_SECONDS_IN_MS = 5000 };
@@ -271,7 +271,7 @@ void Blackbox::setState(state_e newState)
  * If allowPeriodicWrite is true, the frame is also logged if it has been more than _SInterval logging iterations
  * since the field was last logged.
  */
-bool Blackbox::logSFrameIfNeeded(blackbox_parameter_group_t& pg)
+bool Blackbox::logSFrameIfNeeded(const blackbox_parameter_group_t& pg)
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
     if (_SFrameIndex >= _SInterval) {
@@ -319,7 +319,7 @@ void Blackbox::advanceIterationTimers()
 /*!
 Called once every FC loop in order to log the current state
 */
-void Blackbox::logIteration(time_us_t currentTimeUs, blackbox_parameter_group_t& pg)
+void Blackbox::logIteration(time_us_t currentTimeUs, const blackbox_parameter_group_t& pg)
 {
     // Write a keyframe every _IInterval frames so we can resynchronise upon missing frames
     if (shouldLogIFrame()) { // ie _loopIndex == 0
@@ -376,7 +376,7 @@ void Blackbox::logIteration(time_us_t currentTimeUs, blackbox_parameter_group_t&
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
-uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
+uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
 {
     switch (_state) {
     case STATE_STOPPED:
@@ -465,7 +465,7 @@ uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTi
         //On entry of this state, _xmitState.headerIndex is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
-        if (writeSystemInformation(pg) == WRITE_COMPLETE) {
+        if (write_system_information(pg) == WRITE_COMPLETE) {
             /*
              * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
              * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
@@ -1090,7 +1090,7 @@ bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
 }
 
 /* If an arming beep has played since it was last logged, write the time of the arming beep to the log as a synchronization point */
-void Blackbox::logEventArmingBeepIfNeeded(blackbox_parameter_group_t& pg)
+void Blackbox::logEventArmingBeepIfNeeded(const blackbox_parameter_group_t& pg)
 {
     // Use != so that we can still detect a change if the counter wraps
     const uint32_t armingBeepTimeMicroseconds = _callbacks.get_arming_beep_time_microseconds(pg);
@@ -1106,7 +1106,7 @@ void Blackbox::logEventArmingBeepIfNeeded(blackbox_parameter_group_t& pg)
 }
 
 /* monitor the flight mode event status and trigger an event record if the state changes */
-void Blackbox::logEventFlightModeIfNeeded(blackbox_parameter_group_t& pg)
+void Blackbox::logEventFlightModeIfNeeded(const blackbox_parameter_group_t& pg)
 {
     // Use != so that we can still detect a change if the counter wraps
 #if false

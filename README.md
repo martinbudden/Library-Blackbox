@@ -50,7 +50,7 @@ classDiagram
     }
     class Blackbox {
         <<abstract>>
-        writeSystemInformation() write_e *
+        write_system_information() write_e *
         virtual update() uint32_t
     }
     class BlackboxCallbacksBase {

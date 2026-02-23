@@ -197,10 +197,9 @@ public:
     };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
-    virtual write_e writeSystemInformation(blackbox_parameter_group_t& pg) = 0;
+    virtual write_e write_system_information(const blackbox_parameter_group_t& pg) = 0;
 
-    uint32_t update_log(blackbox_parameter_group_t& pg, uint32_t currentTimeUs); // main loop function, updates the blackbox log
-    BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
+    uint32_t update_log(const blackbox_parameter_group_t& pg, uint32_t currentTimeUs); // main loop function, updates the blackbox log
 
     bool headerReserveBufferSpace();
     size_t printfv(const char* fmt, va_list va);
@@ -232,14 +231,14 @@ public:
     void logIFrame(); // Intraframe, keyframe
     void logPFrame(); // Interframe, delta frame
     void logSFrame(); // Slow frame
-    bool logSFrameIfNeeded(blackbox_parameter_group_t& pg);
+    bool logSFrameIfNeeded(const blackbox_parameter_group_t& pg);
     void logHFrame(); // GPS home frame
     void logGFrame(time_us_t currentTimeUs); // GPS frame
     bool logEvent(log_event_e event, const log_event_data_u* data); // E-frame
-    void logEventArmingBeepIfNeeded(blackbox_parameter_group_t& pg); // E-frame
-    void logEventFlightModeIfNeeded(blackbox_parameter_group_t& pg); // E-frame
+    void logEventArmingBeepIfNeeded(const blackbox_parameter_group_t& pg); // E-frame
+    void logEventFlightModeIfNeeded(const blackbox_parameter_group_t& pg); // E-frame
 
-    void logIteration(time_us_t currentTimeUs, blackbox_parameter_group_t& pg);
+    void logIteration(time_us_t currentTimeUs, const blackbox_parameter_group_t& pg);
     void advanceIterationTimers();
     void resetIterationTimers();
     void setState(state_e newState);
@@ -263,7 +262,7 @@ public:
     uint8_t calculateSampleRate(uint16_t pRatio) const;
     int calculateP_Denominator(int rateNumerator, int rateDenominator) { return _IInterval * rateNumerator / rateDenominator; }
 
-    bool inMotorTestMode(blackbox_parameter_group_t& pg);
+    bool inMotorTestMode(const blackbox_parameter_group_t& pg);
 
     void replenishHeaderBudget();
 protected:
