@@ -465,7 +465,7 @@ uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTi
         //On entry of this state, _xmitState.headerIndex is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
-        if (writeSystemInformation() == WRITE_COMPLETE) {
+        if (writeSystemInformation(pg) == WRITE_COMPLETE) {
             /*
              * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
              * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations

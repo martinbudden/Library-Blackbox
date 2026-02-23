@@ -197,7 +197,7 @@ public:
     };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
-    virtual write_e writeSystemInformation() = 0;
+    virtual write_e writeSystemInformation(blackbox_parameter_group_t& pg) = 0;
 
     uint32_t update_log(blackbox_parameter_group_t& pg, uint32_t currentTimeUs); // main loop function, updates the blackbox log
     BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }

@@ -8,5 +8,5 @@ public:
     BlackboxNull(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) :
         Blackbox(pidLoopTimeUs, callbacks, serialDevice) {}
 public:
-    virtual write_e writeSystemInformation() override;
+    virtual write_e writeSystemInformation(blackbox_parameter_group_t& pg) override;
 };
