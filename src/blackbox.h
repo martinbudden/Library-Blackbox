@@ -105,6 +105,7 @@ public:
     enum state_e {
         STATE_DISABLED = 0,
         STATE_STOPPED,
+        STATE_START,
         STATE_PREPARE_LOG_FILE,
         STATE_SEND_HEADER,
         STATE_SEND_MAIN_FIELD_HEADER,
@@ -243,13 +244,13 @@ public:
     void resetIterationTimers();
     void setState(state_e newState);
 
-    void init(const config_t& config, blackbox_parameter_group_t& pg);
-    state_e start(const start_t& startParameters, uint32_t logSelectEnabled, blackbox_parameter_group_t& pg);
-    state_e start(const start_t& startParameters, blackbox_parameter_group_t& pg);
-    state_e start(blackbox_parameter_group_t& pg);
+    void init(const config_t& config);
+    state_e start(const start_t& startParameters, uint32_t logSelectEnabled);
+    state_e start(const start_t& startParameters);
+    state_e start();
     void finish();
     void endLog();
-    void startInTestMode(blackbox_parameter_group_t& pg);
+    void startInTestMode();
     void stopInTestMode();
 
     const config_t& getConfig() const { return _config; }

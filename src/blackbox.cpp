@@ -41,7 +41,7 @@ enum { BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS = 200 };
 /*!
 Call during system startup.
 */
-void Blackbox::init(const config_t& config, blackbox_parameter_group_t& pg)
+void Blackbox::init(const config_t& config)
 {
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _serialDevice.init();
@@ -83,27 +83,27 @@ void Blackbox::init(const config_t& config, blackbox_parameter_group_t& pg)
     if (_config.device == DEVICE_NONE) {
         setState(STATE_DISABLED);
     } else if (_config.mode == MODE_ALWAYS_ON) {
-        start(pg);
+        start();
     } else {
         setState(STATE_STOPPED);
     }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }
 
-Blackbox::state_e Blackbox::start(blackbox_parameter_group_t& pg)
+Blackbox::state_e Blackbox::start()
 {
-    return start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)}, pg);
+    return start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)});
 }
 
-Blackbox::state_e Blackbox::start(const start_t& startParameters, blackbox_parameter_group_t& pg)
+Blackbox::state_e Blackbox::start(const start_t& startParameters)
 {
-    return start(startParameters, _logSelectEnabled, pg);
+    return start(startParameters, _logSelectEnabled);
 }
 
 /*!
 Start Blackbox logging if it is not already running. Intended to be called upon arming.
 */
-Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled, blackbox_parameter_group_t& pg)
+Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
 {
     assert(startParameters.motorCount <= blackbox_main_state_t::MAX_SUPPORTED_MOTOR_COUNT);
     assert(startParameters.servoCount <= blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
@@ -125,25 +125,7 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
     memset(&_gpsState, 0, sizeof(_gpsState));
 #endif
 
-    if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
-        // If we are logging battery voltage, then load_main_state to get the reference battery voltage.
-        blackbox_main_state_t mainState {};
-        _callbacks.load_main_state(mainState, 0, pg);
-        _vbatReference = mainState.vbat_latest;
-    }
-
-    // No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
-
-    //!!blackboxModeActivationConditionPresent = _callbacks.is_blackbox_mode_activation_condition_present();
-
-    resetIterationTimers();
-
-    // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
-    // it finally plays the beep for this arming event.
-    _lastArmingBeep = _callbacks.get_arming_beep_time_microseconds(pg);
-    _lastFlightModeFlags = _callbacks.rc_mode_activation_mask(pg); // record startup status
-
-    setState(STATE_PREPARE_LOG_FILE);
+    setState(STATE_START);
     return _state;
 }
 
@@ -184,7 +166,7 @@ void Blackbox::replenishHeaderBudget()
     _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
 }
 
-void Blackbox::startInTestMode(blackbox_parameter_group_t& pg)
+void Blackbox::startInTestMode()
 {
     if (!_startedLoggingInTestMode) {
 #if false
@@ -195,7 +177,7 @@ void Blackbox::startInTestMode(blackbox_parameter_group_t& pg)
             }
         }
 #endif
-        start(pg);
+        start();
         _startedLoggingInTestMode = true;
     }
 }
@@ -233,6 +215,8 @@ void Blackbox::setState(state_e newState)
 {
     //Perform initial setup required for the new state
     switch (newState) {
+    case STATE_START:
+        break;
     case STATE_PREPARE_LOG_FILE:
         _loggedAnyFrames = false;
         break;
@@ -398,13 +382,34 @@ uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTi
     case STATE_STOPPED:
         if (_callbacks.is_armed(pg)) {
             _serialDevice.open();
-            start(pg);
+            start();
         }
 #if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
         if (_callbacks.is_blackbox_erase_mode_active(pg)) {
             setState(STATE_START_ERASE);
         }
 #endif
+        break;
+    case STATE_START:
+        if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
+            // If we are logging battery voltage, then load_main_state to get the reference battery voltage.
+            blackbox_main_state_t mainState {};
+            _callbacks.load_main_state(mainState, 0, pg);
+            _vbatReference = mainState.vbat_latest;
+        }
+
+        // No need to clear the content of _mainStateHistoryRing since our first frame will be an intra which overwrites it
+
+        //!!blackboxModeActivationConditionPresent = _callbacks.is_blackbox_mode_activation_condition_present();
+
+        resetIterationTimers();
+
+        // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
+        // it finally plays the beep for this arming event.
+        _lastArmingBeep = _callbacks.get_arming_beep_time_microseconds(pg);
+        _lastFlightModeFlags = _callbacks.rc_mode_activation_mask(pg); // record startup status
+
+        setState(STATE_PREPARE_LOG_FILE);
         break;
     case STATE_PREPARE_LOG_FILE:
         if (_serialDevice.beginLog()) {
@@ -560,7 +565,7 @@ uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTi
             // Handle Motor Test Mode
             if (inMotorTestMode(pg)) {
                 if (_state == STATE_STOPPED) {
-                    startInTestMode(pg);
+                    startInTestMode();
                 }
             } else {
                 if (_state != STATE_STOPPED) {
@@ -570,7 +575,7 @@ uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTi
             break;
         case MODE_ALWAYS_ON:
             if (_state == STATE_STOPPED) {
-                startInTestMode(pg);
+                startInTestMode();
             }
             break;
         case MODE_NORMAL:

@@ -55,7 +55,7 @@ void test_blackbox_init()
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
         .fieldsDisabledMask = 0,
-    }, pg);
+    });
 
     TEST_ASSERT_EQUAL(32, blackbox.getIInterval());
     TEST_ASSERT_EQUAL(1, blackbox.getPInterval());
@@ -82,7 +82,7 @@ void test_blackbox_init2()
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
         .fieldsDisabledMask = 0,
-    }, pg);
+    });
 
     TEST_ASSERT_EQUAL(6, blackbox.getIInterval()); // every 6*5000uS = every 30ms
     TEST_ASSERT_EQUAL(1, blackbox.getPInterval());
@@ -127,11 +127,14 @@ void test_blackbox_initial_updates()
         .mode = Blackbox::MODE_NORMAL, // logging starts immediately, file is saved when disarmed
         .gps_use_3d_speed = false,
         .fieldsDisabledMask = 0,
-    }, pg);
+    });
 
 
     const Blackbox::start_t start{};
-    blackbox.start(start, pg);
+    blackbox.start(start);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_START, blackbox.getBlackboxState());
+
+    blackbox.update_log(pg, time_us);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
     xmitState = blackbox.getXmitState();
     TEST_ASSERT_EQUAL(0, xmitState.headerIndex);
@@ -254,7 +257,10 @@ void test_blackbox_frames()
     static BlackboxTest blackbox(PID_LOOP_TIME, callbacks, serialDevice);
 
     const Blackbox::start_t start{};
-    blackbox.start(start, pg);
+    blackbox.start(start);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_START, blackbox.getBlackboxState());
+
+    blackbox.update_log(pg, 0);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     serialDevice.resetIndex();
@@ -302,7 +308,10 @@ void test_blackbox_slow_header()
     const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
-    blackbox.start(start, pg);
+    blackbox.start(start);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_START, blackbox.getBlackboxState());
+
+    blackbox.update_log(pg, 0);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     blackbox.setState(Blackbox::STATE_SEND_SLOW_FIELD_HEADER);
@@ -364,7 +373,10 @@ void test_blackbox_gps_h_header()
     const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
-    blackbox.start(start, pg);
+    blackbox.start(start);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_START, blackbox.getBlackboxState());
+
+    blackbox.update_log(pg, 0);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     blackbox.setState(Blackbox::STATE_SEND_GPS_H_HEADER);
@@ -426,7 +438,10 @@ void test_blackbox_gps_g_header()
     const Blackbox::time_us_t currentTimeUs = 0;
 
     const Blackbox::start_t start{};
-    blackbox.start(start, pg);
+    blackbox.start(start);
+    TEST_ASSERT_EQUAL(Blackbox::STATE_START, blackbox.getBlackboxState());
+
+    blackbox.update_log(pg, 0);
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     blackbox.setState(Blackbox::STATE_SEND_GPS_G_HEADER);
@@ -655,13 +670,13 @@ void test_blackbox_conditions()
         .mode = Blackbox::MODE_NORMAL,
         .gps_use_3d_speed = false,
         .fieldsDisabledMask = 0,
-    }, pg);
+    });
 
     blackbox.start({
         .debugMode = 0,
         .motorCount = 4,
         .servoCount = 0,
-    }, pg);
+    });
 
     TEST_ASSERT_EQUAL(true, blackbox.testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_ALWAYS));
 
