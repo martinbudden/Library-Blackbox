@@ -43,11 +43,12 @@
 #endif
 
 
-BlackboxTask::BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue) :
+BlackboxTask::BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group) :
     TaskBase(task_interval_microseconds),
     _task_interval_milliseconds(task_interval_microseconds/1000), // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _blackbox(blackbox),
-    _message_queue(message_queue)
+    _message_queue(message_queue),
+    _parameter_group(parameter_group)
 {
 }
 
@@ -61,7 +62,7 @@ void BlackboxTask::loop()
 
     if (_time_microseconds_delta >= _task_interval_microseconds) { // if _taskIntervalMicroSeconds has passed, then run the update
         _time_microseconds_previous = time_microseconds;
-        _blackbox.update_log(time_microseconds);
+        _blackbox.update_log(_parameter_group, time_microseconds);
     }
 }
 
@@ -75,7 +76,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
         uint32_t time_microseconds {};
         while (true) {
             _message_queue.WAIT(time_microseconds); // wait until there is AHRS data.
-            _blackbox.update_log(time_microseconds);
+            _blackbox.update_log(_parameter_group, time_microseconds);
         }
     } else {
         // pdMS_TO_TICKS Converts a time in milliseconds to a time in ticks.
@@ -94,7 +95,7 @@ Task function for the MSP. Sets up and runs the task loop() function.
             vTaskDelayUntil(&_previous_wake_time_ticks, task_interval_ticks);
 #endif
             const uint32_t time_microseconds = time_us();
-            _blackbox.update_log(time_microseconds);
+            _blackbox.update_log(_parameter_group, time_microseconds);
         }
     }
 #else

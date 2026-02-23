@@ -27,6 +27,9 @@
 #include <array>
 #include <cstdint>
 
+struct blackbox_parameter_group_t;
+
+
 #pragma pack(push, 1)
 // We pack this struct so that padding doesn't interfere with memcmp()
 // This data is updated really infrequently:
@@ -35,7 +38,7 @@ struct blackbox_slow_state_t {
     uint8_t state_flags;
     uint8_t failsafe_phase;
     bool rx_signal_received;
-    bool rx_flight_channe_is_valid;
+    bool rx_flight_channel_is_valid;
 };
 #pragma pack(pop)
 
@@ -103,18 +106,18 @@ class BlackboxCallbacksBase {
 public:
     virtual ~BlackboxCallbacksBase() = default;
     //! Load the rarely-changing values, used for slow frames
-    virtual void load_slow_state(blackbox_slow_state_t& slowState) = 0;
+    virtual void load_slow_state(blackbox_slow_state_t& slowState, blackbox_parameter_group_t& pg) = 0;
 
     //! Load the main state of the blackbox, used for I-frames and P-frames
-    virtual void load_main_state(blackbox_main_state_t& mainState, uint32_t currentTimeUs) = 0;
-    virtual void load_gps_state(blackbox_gps_state_t& gpsState) = 0;
+    virtual void load_main_state(blackbox_main_state_t& mainState, uint32_t currentTimeUs, blackbox_parameter_group_t& pg) = 0;
+    virtual void load_gps_state(blackbox_gps_state_t& gpsState, blackbox_parameter_group_t& pg) = 0;
 
-    virtual bool is_armed() const = 0;
-    virtual bool is_blackbox_mode_active() const = 0;
-    virtual bool is_blackbox_erase_mode_active() const = 0;
-    virtual bool is_blackbox_mode_activation_condition_present() const = 0;
-    virtual uint32_t get_arming_beep_time_microseconds() const = 0;
-    virtual bool are_motors_running() const = 0;
-    virtual uint32_t rc_mode_activation_mask() const = 0; // lower 32 bits of BOX_COUNT bits
-    virtual void beep() const = 0;
+    virtual bool is_armed(blackbox_parameter_group_t& pg) const = 0;
+    virtual bool is_blackbox_mode_active(blackbox_parameter_group_t& pg) const = 0;
+    virtual bool is_blackbox_erase_mode_active(blackbox_parameter_group_t& pg) const = 0;
+    virtual bool is_blackbox_mode_activation_condition_present(blackbox_parameter_group_t& pg) const = 0;
+    virtual uint32_t get_arming_beep_time_microseconds(blackbox_parameter_group_t& pg) const = 0;
+    virtual bool are_motors_running(blackbox_parameter_group_t& pg) const = 0;
+    virtual uint32_t rc_mode_activation_mask(blackbox_parameter_group_t& pg) const = 0; // lower 32 bits of BOX_COUNT bits
+    virtual void beep(blackbox_parameter_group_t& pg) const = 0;
 };

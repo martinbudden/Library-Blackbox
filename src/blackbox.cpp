@@ -41,7 +41,7 @@ enum { BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS = 200 };
 /*!
 Call during system startup.
 */
-void Blackbox::init(const config_t& config)
+void Blackbox::init(const config_t& config, blackbox_parameter_group_t& pg)
 {
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     _serialDevice.init();
@@ -83,27 +83,27 @@ void Blackbox::init(const config_t& config)
     if (_config.device == DEVICE_NONE) {
         setState(STATE_DISABLED);
     } else if (_config.mode == MODE_ALWAYS_ON) {
-        start();
+        start(pg);
     } else {
         setState(STATE_STOPPED);
     }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }
 
-Blackbox::state_e Blackbox::start()
+Blackbox::state_e Blackbox::start(blackbox_parameter_group_t& pg)
 {
-    return start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)});
+    return start({.debugMode = _debugMode, .motorCount = static_cast<uint8_t>(_motorCount), .servoCount = static_cast<uint8_t>(_servoCount)}, pg);
 }
 
-Blackbox::state_e Blackbox::start(const start_t& startParameters)
+Blackbox::state_e Blackbox::start(const start_t& startParameters, blackbox_parameter_group_t& pg)
 {
-    return start(startParameters, _logSelectEnabled);
+    return start(startParameters, _logSelectEnabled, pg);
 }
 
 /*!
 Start Blackbox logging if it is not already running. Intended to be called upon arming.
 */
-Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled)
+Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSelectEnabled, blackbox_parameter_group_t& pg)
 {
     assert(startParameters.motorCount <= blackbox_main_state_t::MAX_SUPPORTED_MOTOR_COUNT);
     assert(startParameters.servoCount <= blackbox_main_state_t::MAX_SUPPORTED_SERVO_COUNT);
@@ -128,7 +128,7 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
     if (testFieldCondition(FLIGHT_LOG_FIELD_CONDITION_BATTERY_VOLTAGE)) {
         // If we are logging battery voltage, then load_main_state to get the reference battery voltage.
         blackbox_main_state_t mainState {};
-        _callbacks.load_main_state(mainState, 0);
+        _callbacks.load_main_state(mainState, 0, pg);
         _vbatReference = mainState.vbat_latest;
     }
 
@@ -140,8 +140,8 @@ Blackbox::state_e Blackbox::start(const start_t& startParameters, uint32_t logSe
 
     // Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
     // it finally plays the beep for this arming event.
-    _lastArmingBeep = _callbacks.get_arming_beep_time_microseconds();
-    _lastFlightModeFlags = _callbacks.rc_mode_activation_mask(); // record startup status
+    _lastArmingBeep = _callbacks.get_arming_beep_time_microseconds(pg);
+    _lastFlightModeFlags = _callbacks.rc_mode_activation_mask(pg); // record startup status
 
     setState(STATE_PREPARE_LOG_FILE);
     return _state;
@@ -184,7 +184,7 @@ void Blackbox::replenishHeaderBudget()
     _headerBudget = static_cast<int32_t>(_serialDevice.replenishHeaderBudget());
 }
 
-void Blackbox::startInTestMode()
+void Blackbox::startInTestMode(blackbox_parameter_group_t& pg)
 {
     if (!_startedLoggingInTestMode) {
 #if false
@@ -195,7 +195,7 @@ void Blackbox::startInTestMode()
             }
         }
 #endif
-        start();
+        start(pg);
         _startedLoggingInTestMode = true;
     }
 }
@@ -218,9 +218,9 @@ void Blackbox::stopInTestMode()
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-bool Blackbox::inMotorTestMode()
+bool Blackbox::inMotorTestMode(blackbox_parameter_group_t& pg)
 {
-    if (!_callbacks.is_armed() && _callbacks.are_motors_running()) {
+    if (!_callbacks.is_armed(pg) && _callbacks.are_motors_running(pg)) {
         enum { FIVE_SECONDS_IN_MS = 5000 };
         _resetTime = time_ms() + FIVE_SECONDS_IN_MS;
         return true;
@@ -287,18 +287,18 @@ void Blackbox::setState(state_e newState)
  * If allowPeriodicWrite is true, the frame is also logged if it has been more than _SInterval logging iterations
  * since the field was last logged.
  */
-bool Blackbox::logSFrameIfNeeded()
+bool Blackbox::logSFrameIfNeeded(blackbox_parameter_group_t& pg)
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
     if (_SFrameIndex >= _SInterval) {
-        _callbacks.load_slow_state(_slowState);
+        _callbacks.load_slow_state(_slowState, pg);
         logSFrame();
         return true;
     }
 
     // Only write a slow frame if it was different from the previous state
     blackbox_slow_state_t newSlowState {};
-    _callbacks.load_slow_state(newSlowState);
+    _callbacks.load_slow_state(newSlowState, pg);
     if (memcmp(&newSlowState, &_slowState, sizeof(_slowState)) != 0) {
         // Use the new state as our new history
         memcpy(&_slowState, &newSlowState, sizeof(_slowState));
@@ -335,34 +335,34 @@ void Blackbox::advanceIterationTimers()
 /*!
 Called once every FC loop in order to log the current state
 */
-void Blackbox::logIteration(time_us_t currentTimeUs)
+void Blackbox::logIteration(time_us_t currentTimeUs, blackbox_parameter_group_t& pg)
 {
     // Write a keyframe every _IInterval frames so we can resynchronise upon missing frames
     if (shouldLogIFrame()) { // ie _loopIndex == 0
         // Don't log a slow frame if the slow data didn't change (IFrames are already large enough without adding
         // an additional item to write at the same time). Unless we're *only* logging IFrames, then we have no choice.
         if (isOnlyLoggingIFrames()) {
-            logSFrameIfNeeded();
+            logSFrameIfNeeded(pg);
         }
 
-        _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs);
+        _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs, pg);
         logIFrame();
     } else {
-        logEventArmingBeepIfNeeded();
-        logEventFlightModeIfNeeded(); // Check for FlightMode status change event
+        logEventArmingBeepIfNeeded(pg);
+        logEventFlightModeIfNeeded(pg); // Check for FlightMode status change event
 
         if (shouldLogPFrame()) { // ie _PFrameIndex == 0 && _PInterval != 0
             // We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
             // So only log slow frames during loop iterations where we log a main frame.
-            logSFrameIfNeeded();
+            logSFrameIfNeeded(pg);
 
-            _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs);
+            _callbacks.load_main_state(*_mainStateHistory[0], currentTimeUs, pg);
             logPFrame();
         }
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
         if (isFieldEnabled(LOG_SELECT_GPS)) {
             blackbox_gps_state_t gpsStateNew {};
-            _callbacks.load_gps_state(gpsStateNew);
+            _callbacks.load_gps_state(gpsStateNew, pg);
 
             const bool gpsStateChanged =
                 gpsStateNew.satellite_count != _gpsState.satellite_count
@@ -392,16 +392,16 @@ void Blackbox::logIteration(time_us_t currentTimeUs)
 /*!
 Called each flight loop iteration to perform blackbox logging.
 */
-uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
+uint32_t Blackbox::update_log(blackbox_parameter_group_t& pg, uint32_t currentTimeUs) // NOLINT(readability-function-cognitive-complexity)
 {
     switch (_state) {
     case STATE_STOPPED:
-        if (_callbacks.is_armed()) {
+        if (_callbacks.is_armed(pg)) {
             _serialDevice.open();
-            start();
+            start(pg);
         }
 #if defined(BLACKBOX_LIBRARY_USE_FLASHFS)
-        if (_callbacks.is_blackbox_erase_mode_active()) {
+        if (_callbacks.is_blackbox_erase_mode_active(pg)) {
             setState(STATE_START_ERASE);
         }
 #endif
@@ -478,7 +478,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
         break;
     case STATE_PAUSED:
         // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-        if (_callbacks.is_blackbox_mode_active() && shouldLogIFrame()) {
+        if (_callbacks.is_blackbox_mode_active(pg) && shouldLogIFrame()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
             //flightLogEvent_loggingResume_t resume {
             //    .logIteration = _iteration,
@@ -493,7 +493,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
             logEvent(LOG_EVENT_LOGGING_RESUME, &resume);
             setState(STATE_RUNNING);
 
-            logIteration(currentTimeUs);
+            logIteration(currentTimeUs, pg);
         }
         // Keep the logging timers ticking so our log iteration continues to advance
         advanceIterationTimers();
@@ -501,10 +501,10 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
     case STATE_RUNNING:
         // On entry to this state, _iteration, _PFrameIndex and _IFrameIndex are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-        if (_callbacks.is_blackbox_mode_activation_condition_present() && !_callbacks.is_blackbox_mode_active() && !_startedLoggingInTestMode) {
+        if (_callbacks.is_blackbox_mode_activation_condition_present(pg) && !_callbacks.is_blackbox_mode_active(pg) && !_startedLoggingInTestMode) {
             setState(STATE_PAUSED);
         } else {
-            logIteration(currentTimeUs);
+            logIteration(currentTimeUs, pg);
         }
         advanceIterationTimers();
         break;
@@ -525,17 +525,17 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
     case STATE_START_ERASE:
         _serialDevice.eraseAll();
         setState(STATE_ERASING);
-        _callbacks.beep();
+        _callbacks.beep(pg);
         break;
     case STATE_ERASING:
         if (_serialDevice.isErased()) {
             //Done erasing
             setState(STATE_ERASED);
-            _callbacks.beep();
+            _callbacks.beep(pg);
         }
         break;
     case STATE_ERASED:
-        if (!_callbacks.is_blackbox_erase_mode_active()) {
+        if (!_callbacks.is_blackbox_erase_mode_active(pg)) {
             setState(STATE_STOPPED);
         }
         break;
@@ -558,9 +558,9 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
         switch (_config.mode) {
         case MODE_MOTOR_TEST:
             // Handle Motor Test Mode
-            if (inMotorTestMode()) {
+            if (inMotorTestMode(pg)) {
                 if (_state == STATE_STOPPED) {
-                    startInTestMode();
+                    startInTestMode(pg);
                 }
             } else {
                 if (_state != STATE_STOPPED) {
@@ -570,7 +570,7 @@ uint32_t Blackbox::update_log(uint32_t currentTimeUs) // NOLINT(readability-func
             break;
         case MODE_ALWAYS_ON:
             if (_state == STATE_STOPPED) {
-                startInTestMode();
+                startInTestMode(pg);
             }
             break;
         case MODE_NORMAL:
@@ -954,7 +954,7 @@ void Blackbox::logSFrame()
     const std::array<int32_t, 3> values {
         _slowState.failsafe_phase,
         _slowState.rx_signal_received ? 1 : 0,
-        _slowState.rx_flight_channe_is_valid ? 1 : 0
+        _slowState.rx_flight_channel_is_valid ? 1 : 0
     };
 
     _encoder.writeTag2_3S32(&values[0]);
@@ -1085,10 +1085,10 @@ bool Blackbox::logEvent(log_event_e event, const log_event_data_u* data)
 }
 
 /* If an arming beep has played since it was last logged, write the time of the arming beep to the log as a synchronization point */
-void Blackbox::logEventArmingBeepIfNeeded()
+void Blackbox::logEventArmingBeepIfNeeded(blackbox_parameter_group_t& pg)
 {
     // Use != so that we can still detect a change if the counter wraps
-    const uint32_t armingBeepTimeMicroseconds = _callbacks.get_arming_beep_time_microseconds();
+    const uint32_t armingBeepTimeMicroseconds = _callbacks.get_arming_beep_time_microseconds(pg);
     if (armingBeepTimeMicroseconds != _lastArmingBeep) {
         _lastArmingBeep = armingBeepTimeMicroseconds;
         const log_event_data_u eventData {
@@ -1101,7 +1101,7 @@ void Blackbox::logEventArmingBeepIfNeeded()
 }
 
 /* monitor the flight mode event status and trigger an event record if the state changes */
-void Blackbox::logEventFlightModeIfNeeded()
+void Blackbox::logEventFlightModeIfNeeded(blackbox_parameter_group_t& pg)
 {
     // Use != so that we can still detect a change if the counter wraps
 #if false
@@ -1113,7 +1113,7 @@ void Blackbox::logEventFlightModeIfNeeded()
         logEvent(LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     }
 #endif
-    const uint32_t rc_mode_activation_mask = _callbacks.rc_mode_activation_mask();
+    const uint32_t rc_mode_activation_mask = _callbacks.rc_mode_activation_mask(pg);
     if (rc_mode_activation_mask != _lastFlightModeFlags) {
         const log_event_data_u eventData = {
             .flightMode = {

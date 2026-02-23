@@ -33,6 +33,7 @@ class BlackboxCallbacksBase;
 class BlackboxSerialDevice;
 enum flight_log_field_condition_e : uint8_t;
 struct blackbox_simple_field_definition_t;
+struct blackbox_parameter_group_t;
 
 
 class Blackbox {
@@ -197,7 +198,7 @@ public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e writeSystemInformation() = 0;
 
-    uint32_t update_log(uint32_t currentTimeUs); // main loop function, updates the blackbox log
+    uint32_t update_log(blackbox_parameter_group_t& pg, uint32_t currentTimeUs); // main loop function, updates the blackbox log
     BlackboxCallbacksBase& getCallbacks() const { return _callbacks; }
 
     bool headerReserveBufferSpace();
@@ -230,25 +231,25 @@ public:
     void logIFrame(); // Intraframe, keyframe
     void logPFrame(); // Interframe, delta frame
     void logSFrame(); // Slow frame
-    bool logSFrameIfNeeded();
+    bool logSFrameIfNeeded(blackbox_parameter_group_t& pg);
     void logHFrame(); // GPS home frame
     void logGFrame(time_us_t currentTimeUs); // GPS frame
     bool logEvent(log_event_e event, const log_event_data_u* data); // E-frame
-    void logEventArmingBeepIfNeeded(); // E-frame
-    void logEventFlightModeIfNeeded(); // E-frame
+    void logEventArmingBeepIfNeeded(blackbox_parameter_group_t& pg); // E-frame
+    void logEventFlightModeIfNeeded(blackbox_parameter_group_t& pg); // E-frame
 
-    void logIteration(time_us_t currentTimeUs);
+    void logIteration(time_us_t currentTimeUs, blackbox_parameter_group_t& pg);
     void advanceIterationTimers();
     void resetIterationTimers();
     void setState(state_e newState);
 
-    void init(const config_t& config);
-    state_e start(const start_t& startParameters, uint32_t logSelectEnabled);
-    state_e start(const start_t& startParameters);
-    state_e start();
+    void init(const config_t& config, blackbox_parameter_group_t& pg);
+    state_e start(const start_t& startParameters, uint32_t logSelectEnabled, blackbox_parameter_group_t& pg);
+    state_e start(const start_t& startParameters, blackbox_parameter_group_t& pg);
+    state_e start(blackbox_parameter_group_t& pg);
     void finish();
     void endLog();
-    void startInTestMode();
+    void startInTestMode(blackbox_parameter_group_t& pg);
     void stopInTestMode();
 
     const config_t& getConfig() const { return _config; }
@@ -261,7 +262,7 @@ public:
     uint8_t calculateSampleRate(uint16_t pRatio) const;
     int calculateP_Denominator(int rateNumerator, int rateDenominator) { return _IInterval * rateNumerator / rateDenominator; }
 
-    bool inMotorTestMode();
+    bool inMotorTestMode(blackbox_parameter_group_t& pg);
 
     void replenishHeaderBudget();
 protected:

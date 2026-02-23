@@ -44,16 +44,16 @@
 #endif
 
 
-BlackboxTask* BlackboxTask::create_task(Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::create_task(Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
     task_info_t task_info {};
-    return create_task(task_info, blackbox, message_queue, priority, core, task_interval_microseconds);
+    return create_task(task_info, blackbox, message_queue, parameter_group, priority, core, task_interval_microseconds);
 }
 
-BlackboxTask* BlackboxTask::create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
+BlackboxTask* BlackboxTask::create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds) // NOLINT(readability-convert-member-functions-to-static)
 {
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
-    static BlackboxTask blackbox_task(task_interval_microseconds, blackbox, message_queue);
+    static BlackboxTask blackbox_task(task_interval_microseconds, blackbox, message_queue, parameter_group);
 
     // Note that task parameters must not be on the stack, since they are used when the task is started, which is after this function returns.
     static TaskBase::parameters_t task_parameters { // NOLINT(misc-const-correctness) false positive
