@@ -222,11 +222,11 @@ void Blackbox::set_state(state_e newState)
         break;
     case STATE_SEND_HEADER:
         _header_budget = 0;
-        _xmit_state.headerIndex = 0;
+        _xmit_state.header_index = 0;
 #if defined(FRAMEWORK_TEST)
-        _xmit_state.startTime = 0;
+        _xmit_state.start_time = 0;
 #else
-        _xmit_state.startTime = time_ms();
+        _xmit_state.start_time = time_ms();
 #endif
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
@@ -236,11 +236,11 @@ void Blackbox::set_state(state_e newState)
     case STATE_SEND_GPS_H_HEADER:
         [[fallthrough]];
     case STATE_SEND_SLOW_FIELD_HEADER:
-        _xmit_state.headerIndex = 0;
-        _xmit_state.fieldIndex = -1;
+        _xmit_state.header_index = 0;
+        _xmit_state.field_index = -1;
         break;
     case STATE_SEND_SYSINFO:
-        _xmit_state.headerIndex = 0;
+        _xmit_state.header_index = 0;
         break;
     case STATE_RUNNING:
         _s_frame_index = _s_interval; //Force a slow frame to be written on the first iteration
@@ -250,7 +250,7 @@ void Blackbox::set_state(state_e newState)
 #endif
         break;
     case STATE_SHUTTING_DOWN:
-        _xmit_state.startTime = time_ms();
+        _xmit_state.start_time = time_ms();
         break;
 
 #if defined(USE_FLASH_TEST_PRBS)
@@ -418,9 +418,9 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         break;
     case STATE_SEND_HEADER:
         _header_budget = static_cast<int32_t>(_serial_device.replenish_header_budget());
-        //On entry of this state, _xmit_state.headerIndex is 0 and startTime is initialized
+        //On entry of this state, _xmit_state.header_index is 0 and start_time is initialized
         // Give the UART time to initialize
-        //if (time_ms() < _xmit_state.startTime + 100) {
+        //if (time_ms() < _xmit_state.start_time + 100) {
         //    break;
         //}
         if (write_header() == WRITE_COMPLETE) { // keep on writing chunks of the header until it returns false, signalling completion
@@ -429,7 +429,7 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         break;
     case STATE_SEND_MAIN_FIELD_HEADER:
         _header_budget = static_cast<int32_t>(_serial_device.replenish_header_budget());
-        // On entry of this state, _xmit_state.headerIndex is 0 and _xmit_state.fieldIndex is -1
+        // On entry of this state, _xmit_state.header_index is 0 and _xmit_state.field_index is -1
         if (write_field_header_main() == WRITE_COMPLETE) { // keep on writing chunks of the main field header until it returns false, signalling completion
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
             set_state(is_field_enabled(LOG_SELECT_GPS) ? STATE_SEND_GPS_H_HEADER : STATE_SEND_SLOW_FIELD_HEADER);
@@ -454,7 +454,7 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
 #endif
     case STATE_SEND_SLOW_FIELD_HEADER:
         _header_budget = static_cast<int32_t>(_serial_device.replenish_header_budget());
-        // On entry of this state, _xmit_state.headerIndex is 0 and _xmit_state.fieldIndex is -1
+        // On entry of this state, _xmit_state.header_index is 0 and _xmit_state.field_index is -1
         if (write_field_header_slow() == WRITE_COMPLETE) { // keep on writing chunks of the slow field header until it returns false, signalling completion
             _cache_flush_next_state = STATE_SEND_SYSINFO;
             set_state(STATE_CACHE_FLUSH);
@@ -462,7 +462,7 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         break;
     case STATE_SEND_SYSINFO:
         _header_budget = static_cast<int32_t>(_serial_device.replenish_header_budget());
-        //On entry of this state, _xmit_state.headerIndex is 0
+        //On entry of this state, _xmit_state.header_index is 0
 
         //Keep writing chunks of the system info headers until it returns true to signal completion
         if (write_system_information(pg) == WRITE_COMPLETE) {
@@ -485,14 +485,14 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
         if (_callbacks.is_blackbox_mode_active(pg) && should_log_i_frame()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
-            //flightLogEvent_loggingResume_t resume {
+            //flightLogEvent_logging_resume_t resume {
             //    .log_iteration = _iteration,
-            //    .currentTime = current_time_us
+            //    .current_time = current_time_us
             //};
             const log_event_data_u resume = {
-                .loggingResume = {
+                .logging_resume = {
                     .log_iteration = _iteration,
-                    .currentTime = current_time_us
+                    .current_time = current_time_us
                 }
             };
             log_event(LOG_EVENT_LOGGING_RESUME, &resume);
@@ -514,14 +514,14 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         advance_iteration_timers();
         break;
     case STATE_SHUTTING_DOWN:
-        //On entry of this state, startTime is set
+        //On entry of this state, start_time is set
         /*
          * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
          * since releasing the port clears the Tx buffer.
          *
          * Don't wait longer than it could possibly take if something funky happens.
          */
-        if (_serial_device.end_log(_logged_any_frames) && (time_ms() > _xmit_state.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serial_device.flush_force())) { // cppcheck-suppress unsignedLessThanZero
+        if (_serial_device.end_log(_logged_any_frames) && (time_ms() > _xmit_state.start_time + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || _serial_device.flush_force())) { // cppcheck-suppress unsignedLessThanZero
             _serial_device.close();
             set_state(STATE_STOPPED);
         }
@@ -1004,7 +1004,7 @@ void Blackbox::log_g_frame(time_us_t current_time_us)
     _encoder.beginFrame('G');
 
     // If we're logging every frame, then a GPS frame always appears just after a frame with the
-    // currentTime timestamp in the log, so the reader can just use that timestamp for the GPS frame.
+    // current_time timestamp in the log, so the reader can just use that timestamp for the GPS frame.
     // If we're not logging every frame, we need to store the time of this GPS frame.
     if (test_field_condition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
         // Predict the time of the last frame in the main log
@@ -1052,28 +1052,28 @@ bool Blackbox::log_event(log_event_e event, const log_event_data_u* data)
     //Now serialize the data for this specific frame type
     switch (event) {
     case LOG_EVENT_SYNC_BEEP:
-        _encoder.writeUnsignedVB(data->syncBeep.time);
+        _encoder.writeUnsignedVB(data->sync_beep.time);
         break;
     case LOG_EVENT_FLIGHTMODE: // New flightmode flags write
-        _encoder.writeUnsignedVB(data->flightMode.flags);
-        _encoder.writeUnsignedVB(data->flightMode.lastFlags);
+        _encoder.writeUnsignedVB(data->flight_mode.flags);
+        _encoder.writeUnsignedVB(data->flight_mode.last_flags);
         break;
     case LOG_EVENT_DISARM:
         _encoder.writeUnsignedVB(data->disarm.reason);
         break;
     case LOG_EVENT_INFLIGHT_ADJUSTMENT:
-        if (data->inflightAdjustment.floatFlag) {
+        if (data->inflight_adjustment.float_flag) {
             enum { LOG_EVENT_INFLIGHT_ADJUSTMENT_FLOAT_VALUE_FLAG = 128 };
-            _encoder.write(data->inflightAdjustment.adjustment + LOG_EVENT_INFLIGHT_ADJUSTMENT_FLOAT_VALUE_FLAG);
-            _encoder.writeFloat(data->inflightAdjustment.newFloatValue);
+            _encoder.write(data->inflight_adjustment.adjustment + LOG_EVENT_INFLIGHT_ADJUSTMENT_FLOAT_VALUE_FLAG);
+            _encoder.writeFloat(data->inflight_adjustment.new_float_value);
         } else {
-            _encoder.write(data->inflightAdjustment.adjustment);
-            _encoder.writeSignedVB(data->inflightAdjustment.newValue);
+            _encoder.write(data->inflight_adjustment.adjustment);
+            _encoder.writeSignedVB(data->inflight_adjustment.new_value);
         }
         break;
     case LOG_EVENT_LOGGING_RESUME:
-        _encoder.writeUnsignedVB(data->loggingResume.log_iteration);
-        _encoder.writeUnsignedVB(data->loggingResume.currentTime);
+        _encoder.writeUnsignedVB(data->logging_resume.log_iteration);
+        _encoder.writeUnsignedVB(data->logging_resume.current_time);
         break;
     case LOG_EVENT_LOG_END:
         // data is nullptr for LOG_EVENT_LOG_END
@@ -1097,7 +1097,7 @@ void Blackbox::log_event_arming_beep_if_needed(const blackbox_parameter_group_t&
     if (armingBeepTimeMicroseconds != _last_arming_beep) {
         _last_arming_beep = armingBeepTimeMicroseconds;
         const log_event_data_u eventData {
-            .syncBeep = {
+            .sync_beep = {
                 .time  = _last_arming_beep
             }
         };
@@ -1111,8 +1111,8 @@ void Blackbox::log_event_flight_mode_if_needed(const blackbox_parameter_group_t&
     // Use != so that we can still detect a change if the counter wraps
 #if false
     if (memcmp(&_callbacks._rc_mode_activation_mask, &_last_flight_mode_flags, sizeof(_last_flight_mode_flags))) {
-        static flightLogEvent_flightMode_t eventData {}; // Add new data for current flight mode flags
-        eventData.lastFlags = _last_flight_mode_flags;
+        static flightLogEvent_flight_mode_t eventData {}; // Add new data for current flight mode flags
+        eventData.last_flags = _last_flight_mode_flags;
         memcpy(&_last_flight_mode_flags, &_callbacks._rc_mode_activation_mask, sizeof(_last_flight_mode_flags));
         memcpy(&eventData.flags, &_callbacks._rc_mode_activation_mask, sizeof(eventData.flags));
         log_event(LOG_EVENT_FLIGHTMODE, reinterpret_cast<flightLogEventData_u*>(&eventData)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -1121,9 +1121,9 @@ void Blackbox::log_event_flight_mode_if_needed(const blackbox_parameter_group_t&
     const uint32_t rc_mode_activation_mask = _callbacks.rc_mode_activation_mask(pg);
     if (rc_mode_activation_mask != _last_flight_mode_flags) {
         const log_event_data_u eventData = {
-            .flightMode = {
+            .flight_mode = {
                 .flags = rc_mode_activation_mask,
-                .lastFlags = _last_flight_mode_flags
+                .last_flags = _last_flight_mode_flags
             }
         };
         _last_flight_mode_flags = rc_mode_activation_mask;

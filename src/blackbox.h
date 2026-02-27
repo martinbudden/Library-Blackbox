@@ -48,8 +48,8 @@ public:
     // Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
     // regular logging iteration. This way we won't hog the CPU by making a gigantic write:
 
-    enum { XYZ_AXIS_COUNT = 3 };
-    enum { RPY_AXIS_COUNT = 3 };
+    static constexpr size_t XYZ_AXIS_COUNT = 3;
+    static constexpr size_t RPY_AXIS_COUNT = 3;
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
 
     enum device_e : uint8_t {
@@ -137,9 +137,9 @@ public:
         uint8_t servo_count;
     };
     struct xmit_state_t {
-        uint32_t headerIndex;
-        int32_t fieldIndex;
-        uint32_t startTime;
+        uint32_t header_index;
+        int32_t field_index;
+        uint32_t start_time;
     };
     struct log_event_sync_beep_t {
         uint32_t time;
@@ -147,26 +147,26 @@ public:
     struct log_event_disarm_t {
         uint32_t reason;
     };
-    struct log_event_flightMode_t { // New Event Data type
+    struct log_event_flight_mode_t { // New Event Data type
         uint32_t flags;
-        uint32_t lastFlags;
+        uint32_t last_flags;
     };
     struct log_event_inflight_adjustment_t {
-        int32_t newValue;
-        float newFloatValue;
+        int32_t new_value;
+        float new_float_value;
         uint8_t adjustment;
-        bool floatFlag;
+        bool float_flag;
     };
     struct log_event_logging_resume_t {
         uint32_t log_iteration;
-        uint32_t currentTime;
+        uint32_t current_time;
     };
     union log_event_data_u {
-        log_event_sync_beep_t syncBeep;
-        log_event_flightMode_t flightMode; // New event data
+        log_event_sync_beep_t sync_beep;
+        log_event_flight_mode_t flight_mode; // New event data
         log_event_disarm_t disarm;
-        log_event_inflight_adjustment_t inflightAdjustment;
-        log_event_logging_resume_t loggingResume;
+        log_event_inflight_adjustment_t inflight_adjustment;
+        log_event_logging_resume_t logging_resume;
     };
     enum log_event_e {
         LOG_EVENT_SYNC_BEEP = 0,
@@ -190,9 +190,9 @@ public:
     };
     // Only available on U-blox protocol
     struct gps_accuracy_t {
-        uint32_t horizontalAccuracy_mm;
-        uint32_t verticalAccuracy_mm;
-        uint32_t speedAccuracy_mmps;
+        uint32_t horizontal_accuracy_mm;
+        uint32_t vertical_accuracy_mm;
+        uint32_t speed_accuracy_mmps;
     };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };

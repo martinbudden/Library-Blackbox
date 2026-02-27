@@ -306,15 +306,15 @@ Blackbox::write_e Blackbox::write_header()
     // Transmit the header in chunks so we don't overflow its transmit
     // buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
     if (_serial_device.reserve_buffer_space(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
-        for (size_t ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[_xmit_state.headerIndex] != '\0'; ++ii) {
+        for (size_t ii = 0; ii < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[_xmit_state.header_index] != '\0'; ++ii) {
             //Write header, ie
             //"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
             //"H Data version:2\n"
-            _encoder.write(static_cast<uint8_t>(blackboxHeader[_xmit_state.headerIndex]));
+            _encoder.write(static_cast<uint8_t>(blackboxHeader[_xmit_state.header_index]));
             --_header_budget;
-            ++_xmit_state.headerIndex;
+            ++_xmit_state.header_index;
         }
-        if (blackboxHeader[_xmit_state.headerIndex] == 0) {
+        if (blackboxHeader[_xmit_state.header_index] == 0) {
             return WRITE_COMPLETE; // we have finished
         }
     }
@@ -328,27 +328,27 @@ Blackbox::write_e Blackbox::write_field_header_main() // NOLINT(readability-func
 
     // On our first call we need to print the name of the header and a colon
     const int32_t field_count = sizeof(blackboxMainFields) / sizeof(blackbox_delta_field_definition_t);
-    if (_xmit_state.fieldIndex == -1) {
-        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.headerIndex]);
+    if (_xmit_state.field_index == -1) {
+        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.header_index]);
         if (_serial_device.reserve_buffer_space(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        if (_xmit_state.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
-            _header_budget -= static_cast<int32_t>(header_printf("H Field P %s:", blackboxFieldHeaderNames[_xmit_state.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        if (_xmit_state.header_index >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT) {
+            _header_budget -= static_cast<int32_t>(header_printf("H Field P %s:", blackboxFieldHeaderNames[_xmit_state.header_index])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         } else {
-            _header_budget -= static_cast<int32_t>(header_printf("H Field I %s:", blackboxFieldHeaderNames[_xmit_state.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+            _header_budget -= static_cast<int32_t>(header_printf("H Field I %s:", blackboxFieldHeaderNames[_xmit_state.header_index])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
-        ++_xmit_state.fieldIndex;
+        ++_xmit_state.field_index;
     }
-    if (_xmit_state.headerIndex == 0) {
+    if (_xmit_state.header_index == 0) {
         //0: H Field I name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2],rc_command[0],rc_command[1],rc_command[2],rc_command[3],vbat_latest,amperage_latest,gyro_adc[0],gyro_adc[1],gyro_adc[2],motor[0],motor[1],motor[2],motor[3]
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmit_state.fieldIndex];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmit_state.field_index];
             if (test_field_condition(def.condition)) {
                 if (def.field_name_index == -1) {
-                    header_printf(_xmit_state.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                    header_printf(_xmit_state.field_index == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
                 } else {
-                    header_printf(_xmit_state.fieldIndex == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                    header_printf(_xmit_state.field_index == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
                 }
             }
         }
@@ -358,27 +358,27 @@ Blackbox::write_e Blackbox::write_field_header_main() // NOLINT(readability-func
         //3: H Field I encoding: 1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0, 1,0,0,0
         //4: H Field P predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3, 3,3,3,3
         //5: H Field P encoding: 9,0,0,0,0,7,7,7,0,0,0,8,8,8,8,6,6,0,0,0, 0,0,0,0
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmit_state.fieldIndex];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_delta_field_definition_t& def = blackboxMainFields[_xmit_state.field_index];
             const uint8_t value =
-                _xmit_state.headerIndex == 1 ? def.is_signed :
-                _xmit_state.headerIndex == 2 ? def.i_predict :
-                _xmit_state.headerIndex == 3 ? def.i_encode :
-                _xmit_state.headerIndex == 4 ? def.p_predict : def.p_encode;
+                _xmit_state.header_index == 1 ? def.is_signed :
+                _xmit_state.header_index == 2 ? def.i_predict :
+                _xmit_state.header_index == 3 ? def.i_encode :
+                _xmit_state.header_index == 4 ? def.p_predict : def.p_encode;
             if (test_field_condition(def.condition)) {
-                header_printf(_xmit_state.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                header_printf(_xmit_state.field_index == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             }
         }
     }
-    if (_xmit_state.fieldIndex == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_xmit_state.field_index == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         --_header_budget;
         header_write('\n');
-        ++_xmit_state.headerIndex;
-        _xmit_state.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
+        ++_xmit_state.header_index;
+        _xmit_state.field_index = -1; // set field_index to -1 to write the field header next time round
     }
 
     // return WRITE_COMPLETE if we have nothing more to write
-    return _xmit_state.headerIndex < BLACKBOX_DELTA_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+    return _xmit_state.header_index < BLACKBOX_DELTA_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 }
 
 Blackbox::write_e Blackbox::write_field_header_simple(char field_char, const blackbox_simple_field_definition_t* fields, int32_t field_count) // NOLINT(readability-function-cognitive-complexity)
@@ -387,45 +387,45 @@ Blackbox::write_e Blackbox::write_field_header_simple(char field_char, const bla
     // the whole header.
 
     // On our first call we need to print the name of the header and a colon
-    if (_xmit_state.fieldIndex == -1) {
-        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.headerIndex]);
+    if (_xmit_state.field_index == -1) {
+        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.header_index]);
         if (_serial_device.reserve_buffer_space(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        _header_budget -= static_cast<int32_t>(header_printf("H Field %c %s:", field_char, blackboxFieldHeaderNames[_xmit_state.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-        ++_xmit_state.fieldIndex;
+        _header_budget -= static_cast<int32_t>(header_printf("H Field %c %s:", field_char, blackboxFieldHeaderNames[_xmit_state.header_index])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        ++_xmit_state.field_index;
     }
-    if (_xmit_state.headerIndex == 0) {
+    if (_xmit_state.header_index == 0) {
         // H Field S name:flight_mode_flags,state_flags,failsafe_phase,rx_signal_received,rx_flight_channe_is_valid
         // H Field H name:GPS_home[0],GPS_home[1]
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_simple_field_definition_t& def = fields[static_cast<size_t>(_xmit_state.fieldIndex)];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_simple_field_definition_t& def = fields[static_cast<size_t>(_xmit_state.field_index)];
             if (def.field_name_index == -1) {
-                header_printf(_xmit_state.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                header_printf(_xmit_state.field_index == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             } else {
-                header_printf(_xmit_state.fieldIndex == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                header_printf(_xmit_state.field_index == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             }
         }
     } else {
         //1:H Field S signed:   0,0,0,0,0
         //2:H Field S predictor:0,0,0,0,0
         //3:H Field S encoding: 1,1,7,7,7
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_simple_field_definition_t& def = fields[static_cast<size_t>(_xmit_state.fieldIndex)];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_simple_field_definition_t& def = fields[static_cast<size_t>(_xmit_state.field_index)];
             const uint8_t value =
-                _xmit_state.headerIndex == 1 ? def.is_signed :
-                _xmit_state.headerIndex == 2 ? def.predict : def.encode;
-            header_printf(_xmit_state.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                _xmit_state.header_index == 1 ? def.is_signed :
+                _xmit_state.header_index == 2 ? def.predict : def.encode;
+            header_printf(_xmit_state.field_index == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     }
-    if (_xmit_state.fieldIndex == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_xmit_state.field_index == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         --_header_budget;
         header_write('\n');
-        ++_xmit_state.headerIndex;
-        _xmit_state.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
+        ++_xmit_state.header_index;
+        _xmit_state.field_index = -1; // set field_index to -1 to write the field header next time round
     }
     // return WRITE_COMPLETE if we have nothing more to write
-    return _xmit_state.headerIndex < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+    return _xmit_state.header_index < BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 }
 
 Blackbox::write_e Blackbox::write_field_header_slow()
@@ -447,45 +447,45 @@ Blackbox::write_e Blackbox::write_field_header_gps_g() // NOLINT(readability-con
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
     // On our first call we need to print the name of the header and a colon
     const int32_t field_count = blackboxGpsGFields.size();
-    if (_xmit_state.fieldIndex == -1) {
-        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.headerIndex]);
+    if (_xmit_state.field_index == -1) {
+        const size_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[_xmit_state.header_index]);
         if (_serial_device.reserve_buffer_space(charsToBeWritten) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
             return WRITE_NOT_COMPLETE; // Try again later
         }
-        _header_budget -= static_cast<int32_t>(header_printf("H Field G %s:", blackboxFieldHeaderNames[_xmit_state.headerIndex])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-        ++_xmit_state.fieldIndex;
+        _header_budget -= static_cast<int32_t>(header_printf("H Field G %s:", blackboxFieldHeaderNames[_xmit_state.header_index])); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+        ++_xmit_state.field_index;
     }
-    if (_xmit_state.headerIndex == 0) {
+    if (_xmit_state.header_index == 0) {
         // H Field G name:time,GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed,GPS_ground_course,GPS_velned[0],GPS_velned[1],GPS_velned[2]
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmit_state.fieldIndex)];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmit_state.field_index)];
             if (def.field_name_index == -1) {
-                header_printf(_xmit_state.fieldIndex == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                header_printf(_xmit_state.field_index == 0 ? "%s" : ",%s", def.name); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             } else {
-                header_printf(_xmit_state.fieldIndex == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                header_printf(_xmit_state.field_index == 0 ? "%s[%d]" : ",%s[%d]", def.name, def.field_name_index); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
             }
         }
     } else {
         // H Field G signed:0,0,1,1,1,0,0,1,1,1
         // H Field G predictor:10,0,7,7,0,0,0,0,0,0
         // H Field G encoding:1,1,0,0,0,1,1,0,0,0
-        for (; _xmit_state.fieldIndex < field_count; ++_xmit_state.fieldIndex) {
-            const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmit_state.fieldIndex)];
+        for (; _xmit_state.field_index < field_count; ++_xmit_state.field_index) {
+            const blackbox_conditional_field_definition_t& def = blackboxGpsGFields[static_cast<size_t>(_xmit_state.field_index)];
             const uint8_t value =
-                _xmit_state.headerIndex == 1 ? def.is_signed :
-                _xmit_state.headerIndex == 2 ? def.predict : def.encode;
-            header_printf(_xmit_state.fieldIndex == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
+                _xmit_state.header_index == 1 ? def.is_signed :
+                _xmit_state.header_index == 2 ? def.predict : def.encode;
+            header_printf(_xmit_state.field_index == 0 ? "%d" : ",%d", value); // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
         }
     }
-    if (_xmit_state.fieldIndex == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_xmit_state.field_index == field_count && _serial_device.reserve_buffer_space(1) == BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         --_header_budget;
         header_write('\n');
-        ++_xmit_state.headerIndex;
-        _xmit_state.fieldIndex = -1; // set fieldIndex to -1 to write the field header next time round
+        ++_xmit_state.header_index;
+        _xmit_state.field_index = -1; // set field_index to -1 to write the field header next time round
     }
 
     // return WRITE_COMPLETE if we have nothing more to write
-    return _xmit_state.headerIndex < BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
+    return _xmit_state.header_index < BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT ? WRITE_NOT_COMPLETE : WRITE_COMPLETE;
 #else
     return WRITE_COMPLETE;
 #endif
