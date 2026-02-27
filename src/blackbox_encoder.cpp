@@ -41,7 +41,7 @@ void BlackboxEncoder::beginFrame(uint8_t value)
     _serial_device.write(value);
 }
 
-void BlackboxEncoder::end_frame()
+void BlackboxEncoder::endframe()
 {
 }
 

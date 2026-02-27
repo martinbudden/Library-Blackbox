@@ -582,7 +582,7 @@ bool Blackbox::test_field_condition_uncached(uint8_t condition) const
         return is_field_enabled(LOG_SELECT_RSSI);
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-        return _p_interval != _i_interval;
+        return _pinterval != _iinterval;
 
     case FLIGHT_LOG_FIELD_CONDITION_GYRO:
         return is_field_enabled(LOG_SELECT_GYRO);

@@ -27,7 +27,7 @@ public:
 public:
     uint32_t getBlackboxIteration() const { return _iteration; }
     uint16_t getBlackboxLoopIndex() const { return static_cast<uint16_t>(_loop_index); }
-    uint16_t get_p_frame_index() const { return static_cast<uint16_t>(_p_frame_index); }
+    uint16_t get_pframe_index() const { return static_cast<uint16_t>(_pframe_index); }
 
     state_e getBlackboxState() const { return _state; }
     const xmit_state_t& getXmitState() const { return _xmit_state; }
@@ -44,10 +44,10 @@ void test_blackbox_init()
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
-    TEST_ASSERT_EQUAL(0, blackbox.get_p_frame_index());
+    TEST_ASSERT_EQUAL(0, blackbox.get_pframe_index());
 
-    TEST_ASSERT_EQUAL(true, blackbox.should_log_i_frame()); // IFrames are keyframes
-    TEST_ASSERT_EQUAL(false, blackbox.should_log_p_frame()); // PFrames are delta frames
+    TEST_ASSERT_EQUAL(true, blackbox.should_log_iframe()); // IFrames are keyframes
+    TEST_ASSERT_EQUAL(false, blackbox.should_log_pframe()); // PFrames are delta frames
 
     blackbox.init({
         .sample_rate = Blackbox::RATE_ONE,
@@ -57,9 +57,9 @@ void test_blackbox_init()
         .fields_disabled_mask = 0,
     });
 
-    TEST_ASSERT_EQUAL(32, blackbox.get_i_interval());
-    TEST_ASSERT_EQUAL(1, blackbox.get_p_interval());
-    TEST_ASSERT_EQUAL(8192, blackbox.get_s_interval());
+    TEST_ASSERT_EQUAL(32, blackbox.get_iinterval());
+    TEST_ASSERT_EQUAL(1, blackbox.get_pinterval());
+    TEST_ASSERT_EQUAL(8192, blackbox.get_sinterval());
 }
 
 void test_blackbox_init2()
@@ -71,10 +71,10 @@ void test_blackbox_init2()
 
     TEST_ASSERT_EQUAL(Blackbox::STATE_DISABLED, blackbox.getBlackboxState());
 
-    TEST_ASSERT_EQUAL(0, blackbox.get_p_frame_index());
+    TEST_ASSERT_EQUAL(0, blackbox.get_pframe_index());
 
-    TEST_ASSERT_EQUAL(true, blackbox.should_log_i_frame()); // IFrames are keyframes
-    TEST_ASSERT_EQUAL(false, blackbox.should_log_p_frame()); // PFrames are delta frames
+    TEST_ASSERT_EQUAL(true, blackbox.should_log_iframe()); // IFrames are keyframes
+    TEST_ASSERT_EQUAL(false, blackbox.should_log_pframe()); // PFrames are delta frames
 
     blackbox.init({
         .sample_rate = Blackbox::RATE_ONE,
@@ -84,9 +84,9 @@ void test_blackbox_init2()
         .fields_disabled_mask = 0,
     });
 
-    TEST_ASSERT_EQUAL(6, blackbox.get_i_interval()); // every 6*5000uS = every 30ms
-    TEST_ASSERT_EQUAL(1, blackbox.get_p_interval());
-    TEST_ASSERT_EQUAL(1536, blackbox.get_s_interval()); // SFrame written every 8192ms, approx every 8 seconds
+    TEST_ASSERT_EQUAL(6, blackbox.get_iinterval()); // every 6*5000uS = every 30ms
+    TEST_ASSERT_EQUAL(1, blackbox.get_pinterval());
+    TEST_ASSERT_EQUAL(1536, blackbox.get_sinterval()); // SFrame written every 8192ms, approx every 8 seconds
 }
 /*
 H Product:Blackbox flight data recorder by Nicholas Sherlock
@@ -264,19 +264,19 @@ void test_blackbox_frames()
     TEST_ASSERT_EQUAL(Blackbox::STATE_PREPARE_LOG_FILE, blackbox.getBlackboxState());
 
     serial_device.resetIndex();
-    blackbox.log_s_frame();
+    blackbox.log_sframe();
     TEST_ASSERT_EQUAL('S', serial_device[0]);
 
     serial_device.resetIndex();
-    blackbox.log_i_frame(); // Intraframe
+    blackbox.log_iframe(); // Intraframe
     TEST_ASSERT_EQUAL('I', serial_device[0]);
 
     serial_device.resetIndex();
-    blackbox.log_p_frame(); // Interframe
+    blackbox.log_pframe(); // Interframe
     TEST_ASSERT_EQUAL('P', serial_device[0]);
 
     serial_device.resetIndex();
-    blackbox.log_p_frame(); // Interframe
+    blackbox.log_pframe(); // Interframe
     TEST_ASSERT_EQUAL('P', serial_device[0]);
 
     serial_device.resetIndex();

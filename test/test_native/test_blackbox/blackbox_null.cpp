@@ -39,8 +39,8 @@ Blackbox::write_e BlackboxNull::write_system_information(const blackbox_paramete
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                "Jun 28 2025", "00:00:00");
         BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              "0000-01-01T00:00:00.000");
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      "NullCraft");
-        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      _i_interval);
-        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      _p_interval);
+        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      _iinterval);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      _pinterval);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     1000);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     2000);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     BlackboxEncoder::castFloatBytesToInt(1.0F));

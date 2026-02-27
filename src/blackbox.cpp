@@ -70,15 +70,15 @@ void Blackbox::init(const config_t& config)
     // an I-frame is written every 32ms
     // blackboxUpdate() is run in synchronisation with the PID loop
     // _target_pid_looptime_us is 1000 for 1kHz loop, 500 for 2kHz loop etc, _target_pid_looptime_us is rounded for short looptimes
-    _i_interval = static_cast<int32_t>(32 * 1000 / _target_pid_looptime_us);
+    _iinterval = static_cast<int32_t>(32 * 1000 / _target_pid_looptime_us);
 
-    _p_interval = static_cast<int32_t>(1U << _config.sample_rate);
-    if (_p_interval > _i_interval) {
-        _p_interval = 0; // log only I frames if logging frequency is too low
+    _pinterval = static_cast<int32_t>(1U << _config.sample_rate);
+    if (_pinterval > _iinterval) {
+        _pinterval = 0; // log only I frames if logging frequency is too low
     }
 
     // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
-    _s_interval = _i_interval * 256;
+    _sinterval = _iinterval * 256;
 
     if (_config.device == DEVICE_NONE) {
         set_state(STATE_DISABLED);
@@ -211,10 +211,10 @@ bool Blackbox::in_motor_test_mode(const blackbox_parameter_group_t& pg)
     return (time_ms() < _reset_time);
 }
 
-void Blackbox::set_state(state_e newState)
+void Blackbox::set_state(state_e new_state)
 {
     //Perform initial setup required for the new state
-    switch (newState) {
+    switch (new_state) {
     case STATE_START:
         break;
     case STATE_PREPARE_LOG_FILE:
@@ -243,7 +243,7 @@ void Blackbox::set_state(state_e newState)
         _xmit_state.header_index = 0;
         break;
     case STATE_RUNNING:
-        _s_frame_index = _s_interval; //Force a slow frame to be written on the first iteration
+        _sframe_index = _sinterval; //Force a slow frame to be written on the first iteration
 #if defined(USE_FLASH_TEST_PRBS)
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
@@ -262,21 +262,21 @@ void Blackbox::set_state(state_e newState)
     default:
         break;
     }
-    _state = newState;
+    _state = new_state;
 }
 
 /**
  * If the data in the slow frame has changed, log a slow frame.
  *
- * If allowPeriodicWrite is true, the frame is also logged if it has been more than _s_interval logging iterations
+ * If allowPeriodicWrite is true, the frame is also logged if it has been more than _sinterval logging iterations
  * since the field was last logged.
  */
-bool Blackbox::log_s_frame_if_needed(const blackbox_parameter_group_t& pg)
+bool Blackbox::log_sframe_if_needed(const blackbox_parameter_group_t& pg)
 {
     // Write the slow frame periodically so it can be recovered if we ever lose sync
-    if (_s_frame_index >= _s_interval) {
+    if (_sframe_index >= _sinterval) {
         _callbacks.load_slow_state(_slow_state, pg);
-        log_s_frame();
+        log_sframe();
         return true;
     }
 
@@ -286,7 +286,7 @@ bool Blackbox::log_s_frame_if_needed(const blackbox_parameter_group_t& pg)
     if (memcmp(&newSlowState, &_slow_state, sizeof(_slow_state)) != 0) {
         // Use the new state as our new history
         memcpy(&_slow_state, &newSlowState, sizeof(_slow_state));
-        log_s_frame();
+        log_sframe();
         return true;
     }
     return false;
@@ -296,23 +296,23 @@ void Blackbox::reset_iteration_timers()
 {
     _iteration = 0;
     _loop_index = 0;
-    _i_frame_index = 0;
-    _p_frame_index = 0;
-    _s_frame_index = 0;
+    _iframe_index = 0;
+    _pframe_index = 0;
+    _sframe_index = 0;
 }
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 void Blackbox::advance_iteration_timers()
 {
-    ++_s_frame_index;
+    ++_sframe_index;
     ++_iteration;
 
-    if (++_loop_index >= _i_interval) {
+    if (++_loop_index >= _iinterval) {
         _loop_index = 0; // value of zero means IFrame will be written on next update
-        ++_i_frame_index;
-        _p_frame_index = 0;
-    } else if (++_p_frame_index >= _p_interval) {
-        _p_frame_index = 0; // value of zero means PFrame will be written on next update, if IFrame not written
+        ++_iframe_index;
+        _pframe_index = 0;
+    } else if (++_pframe_index >= _pinterval) {
+        _pframe_index = 0; // value of zero means PFrame will be written on next update, if IFrame not written
     }
 }
 
@@ -321,27 +321,27 @@ Called once every FC loop in order to log the current state
 */
 void Blackbox::log_iteration(time_us_t current_time_us, const blackbox_parameter_group_t& pg)
 {
-    // Write a keyframe every _i_interval frames so we can resynchronise upon missing frames
-    if (should_log_i_frame()) { // ie _loop_index == 0
+    // Write a keyframe every _iinterval frames so we can resynchronise upon missing frames
+    if (should_log_iframe()) { // ie _loop_index == 0
         // Don't log a slow frame if the slow data didn't change (IFrames are already large enough without adding
         // an additional item to write at the same time). Unless we're *only* logging IFrames, then we have no choice.
-        if (is_only_logging_i_frames()) {
-            log_s_frame_if_needed(pg);
+        if (is_only_logging_iframes()) {
+            log_sframe_if_needed(pg);
         }
 
         _callbacks.load_main_state(*_main_state_history[0], current_time_us, pg);
-        log_i_frame();
+        log_iframe();
     } else {
         log_event_arming_beep_if_needed(pg);
         log_event_flight_mode_if_needed(pg); // Check for FlightMode status change event
 
-        if (should_log_p_frame()) { // ie _p_frame_index == 0 && _p_interval != 0
+        if (should_log_pframe()) { // ie _pframe_index == 0 && _pinterval != 0
             // We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
             // So only log slow frames during loop iterations where we log a main frame.
-            log_s_frame_if_needed(pg);
+            log_sframe_if_needed(pg);
 
             _callbacks.load_main_state(*_main_state_history[0], current_time_us, pg);
-            log_p_frame();
+            log_pframe();
         }
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
         if (is_field_enabled(LOG_SELECT_GPS)) {
@@ -355,15 +355,15 @@ void Blackbox::log_iteration(time_us_t current_time_us, const blackbox_parameter
 
             _gps_state = gps_stateNew;
 
-            if (should_log_h_frame()) {
+            if (should_log_hframe()) {
                 _gps_home_location.latitude_degrees1E7 = _gps_state.home_latitude_degrees1E7;
                 _gps_home_location.longitude_degrees1E7 = _gps_state.home_longitude_degrees1E7;
                 _gps_home_location.altitude_cm = _gps_state.home_altitude_cm;
-                log_h_frame();
-                log_g_frame(current_time_us);
+                log_hframe();
+                log_gframe(current_time_us);
             } else if (gps_stateChanged) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
-                log_g_frame(current_time_us);
+                log_gframe(current_time_us);
             }
         }
 #endif
@@ -483,7 +483,7 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         break;
     case STATE_PAUSED:
         // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-        if (_callbacks.is_blackbox_mode_active(pg) && should_log_i_frame()) {
+        if (_callbacks.is_blackbox_mode_active(pg) && should_log_iframe()) {
             // Write a log entry so the decoder is aware that our large time/iteration skip is intended
             //flightLogEvent_logging_resume_t resume {
             //    .log_iteration = _iteration,
@@ -504,7 +504,7 @@ uint32_t Blackbox::update_log(const blackbox_parameter_group_t& pg, uint32_t cur
         advance_iteration_timers();
         break;
     case STATE_RUNNING:
-        // On entry to this state, _iteration, _p_frame_index and _i_frame_index are reset to 0
+        // On entry to this state, _iteration, _pframe_index and _iframe_index are reset to 0
         // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
         if (_callbacks.is_blackbox_mode_activation_condition_present(pg) && !_callbacks.is_blackbox_mode_active(pg) && !_started_logging_in_test_mode) {
             set_state(STATE_PAUSED);
@@ -602,7 +602,7 @@ bool Blackbox::may_edit_config()
     return _state <= STATE_STOPPED;
 }
 
-void Blackbox::log_i_frame() // NOLINT(readability-function-cognitive-complexity)
+void Blackbox::log_iframe() // NOLINT(readability-function-cognitive-complexity)
 {
     _encoder.beginFrame('I');
 
@@ -738,7 +738,7 @@ void Blackbox::log_i_frame() // NOLINT(readability-function-cognitive-complexity
     }
 #endif
 
-    _encoder.end_frame();
+    _encoder.endframe();
 // 2=1
 // 1=0
 // 0=2
@@ -774,7 +774,7 @@ inline std::array<int32_t, 4> operator-(const std::array<int16_t, 4>& a, const s
     };
 }
 
-void Blackbox::log_p_frame() // NOLINT(readability-function-cognitive-complexity)
+void Blackbox::log_pframe() // NOLINT(readability-function-cognitive-complexity)
 {
     _encoder.beginFrame('P');
     const blackbox_main_state_t* mainState = _main_state_history[0];
@@ -941,14 +941,14 @@ void Blackbox::log_p_frame() // NOLINT(readability-function-cognitive-complexity
     _main_state_history[0] = history2Save;
 
     _logged_any_frames = true;
-    _encoder.end_frame();
+    _encoder.endframe();
 }
 
 /*!
 Write the contents of the global "_slow_state" to the log as an S frame.
 Because this data is logged so infrequently, delta updates are not reasonable, so we log independent frames.
 */
-void Blackbox::log_s_frame()
+void Blackbox::log_sframe()
 {
     _encoder.beginFrame('S');
 
@@ -964,9 +964,9 @@ void Blackbox::log_s_frame()
 
     _encoder.writeTag2_3S32(&values[0]);
 
-    _s_frame_index = 0;
+    _sframe_index = 0;
 
-    _encoder.end_frame();
+    _encoder.endframe();
 }
 
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
@@ -977,18 +977,18 @@ GPS home position.
 We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
 still be interpreted correctly.
 */
-bool Blackbox::should_log_h_frame() const
+bool Blackbox::should_log_hframe() const
 {
     if ((_gps_home_location.latitude_degrees1E7 != _gps_state.home_latitude_degrees1E7
          || _gps_home_location.longitude_degrees1E7 != _gps_state.home_longitude_degrees1E7
-         || (_p_frame_index == _i_interval / 2 && _i_frame_index % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
+         || (_pframe_index == _iinterval / 2 && _iframe_index % 128 == 0)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
         && is_field_enabled(LOG_SELECT_GPS)) {
         return true; // NOLINT(readability-simplify-boolean-expr)
     }
     return false;
 }
 
-void Blackbox::log_h_frame()
+void Blackbox::log_hframe()
 {
     _encoder.beginFrame('H');
 
@@ -996,10 +996,10 @@ void Blackbox::log_h_frame()
     _encoder.writeSignedVB(_gps_state.home_longitude_degrees1E7);
     _encoder.writeSignedVB(_gps_state.home_altitude_cm / 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,modernize-deprecated-headers,readability-magic-numbers)
 
-    _encoder.end_frame();
+    _encoder.endframe();
 }
 
-void Blackbox::log_g_frame(time_us_t current_time_us)
+void Blackbox::log_gframe(time_us_t current_time_us)
 {
     _encoder.beginFrame('G');
 
@@ -1029,7 +1029,7 @@ void Blackbox::log_g_frame(time_us_t current_time_us)
     _encoder.writeSignedVB(_gps_state.velocity_east_cmps);
     _encoder.writeSignedVB(_gps_state.velocity_down_cmps);
 
-    _encoder.end_frame();
+    _encoder.endframe();
 }
 #endif // LIBRARY_BLACKBOX_USE_GPS
 
@@ -1084,7 +1084,7 @@ bool Blackbox::log_event(log_event_e event, const log_event_data_u* data)
         break;
     }
 
-    _encoder.end_frame();
+    _encoder.endframe();
 
     return true;
 }

@@ -39,7 +39,7 @@ public:
     static void putc(void* handle, char c);
 
     void beginFrame(uint8_t value);
-    void end_frame();
+    void endframe();
 
     void write(uint8_t value);
 

@@ -222,17 +222,17 @@ public:
     bool test_field_condition_uncached(uint8_t condition) const;
     inline bool test_field_condition(uint8_t condition) const { return _condition_cache.test(condition); }
 
-    bool is_only_logging_i_frames() const { return _p_interval == 0; }
-    bool should_log_i_frame() const { return _loop_index == 0; }
-    bool should_log_p_frame() const { return _p_frame_index == 0 && _p_interval != 0; }
-    bool should_log_h_frame() const;
+    bool is_only_logging_iframes() const { return _pinterval == 0; }
+    bool should_log_iframe() const { return _loop_index == 0; }
+    bool should_log_pframe() const { return _pframe_index == 0 && _pinterval != 0; }
+    bool should_log_hframe() const;
 
-    void log_i_frame(); // Intraframe, keyframe
-    void log_p_frame(); // Interframe, delta frame
-    void log_s_frame(); // Slow frame
-    bool log_s_frame_if_needed(const blackbox_parameter_group_t& pg);
-    void log_h_frame(); // GPS home frame
-    void log_g_frame(time_us_t current_time_us); // GPS frame
+    void log_iframe(); // Intraframe, keyframe
+    void log_pframe(); // Interframe, delta frame
+    void log_sframe(); // Slow frame
+    bool log_sframe_if_needed(const blackbox_parameter_group_t& pg);
+    void log_hframe(); // GPS home frame
+    void log_gframe(time_us_t current_time_us); // GPS frame
     bool log_event(log_event_e event, const log_event_data_u* data); // E-frame
     void log_event_arming_beep_if_needed(const blackbox_parameter_group_t& pg); // E-frame
     void log_event_flight_mode_if_needed(const blackbox_parameter_group_t& pg); // E-frame
@@ -240,7 +240,7 @@ public:
     void log_iteration(time_us_t current_time_us, const blackbox_parameter_group_t& pg);
     void advance_iteration_timers();
     void reset_iteration_timers();
-    void set_state(state_e newState);
+    void set_state(state_e new_state);
 
     void init(const config_t& config);
     state_e start(const start_t& start_parameters, uint32_t log_select_enabled);
@@ -253,13 +253,13 @@ public:
 
     const config_t& get_config() const { return _config; }
     uint16_t get_debug_mode() const { return _debug_mode; }
-    int32_t get_i_interval() const { return _i_interval; }
-    int32_t get_p_interval() const { return _p_interval; }
-    int32_t get_s_interval() const { return _s_interval; }
+    int32_t get_iinterval() const { return _iinterval; }
+    int32_t get_pinterval() const { return _pinterval; }
+    int32_t get_sinterval() const { return _sinterval; }
     bool may_edit_config(void);
 
     uint8_t calculate_sample_rate(uint16_t p_ration) const;
-    int calculate_p_denominator(int rate_numerator, int rate_denominator) { return _i_interval * rate_numerator / rate_denominator; }
+    int calculate_p_denominator(int rate_numerator, int rate_denominator) { return _iinterval * rate_numerator / rate_denominator; }
 
     bool in_motor_test_mode(const blackbox_parameter_group_t& pg);
 
@@ -295,12 +295,12 @@ protected:
 
     uint32_t _iteration {};
     int32_t _loop_index {};
-    int32_t _p_frame_index {};
-    int32_t _i_frame_index {}; // use to determine if HFrames should be logged
-    int32_t _s_frame_index {};
-    int32_t _i_interval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
-    int32_t _p_interval = 0; //!< number of flight loop iterations before logging P-frame
-    int32_t _s_interval = 0;
+    int32_t _pframe_index {};
+    int32_t _iframe_index {}; // use to determine if HFrames should be logged
+    int32_t _sframe_index {};
+    int32_t _iinterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
+    int32_t _pinterval = 0; //!< number of flight loop iterations before logging P-frame
+    int32_t _sinterval = 0;
     bool _logged_any_frames {};
     // We store voltages in I-frames relative to _vbat_reference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.
