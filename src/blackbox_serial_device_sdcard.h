@@ -63,24 +63,24 @@ public:
 
     virtual bool open() override;
     virtual void close() override;
-    virtual bool isDeviceFull() override;
+    virtual bool is_device_full() override;
 
 public:
-    void enumerateFiles();
-    void createLogFile();
+    void enumerate_files();
+    void create_log_file();
 public:
-    virtual void eraseAll() override;
-    virtual bool isErased() override;
+    virtual void erase_all() override;
+    virtual bool is_erased() override;
 
-    virtual bool beginLog() override;
-    virtual bool endLog(bool retainLog) override;
+    virtual bool begin_log() override;
+    virtual bool end_log(bool retainLog) override;
 
     virtual bool flush() override;
-    virtual bool flushForce() override;
-    virtual bool flushForceComplete() override;
+    virtual bool flush_force() override;
+    virtual bool flush_force_complete() override;
 
-    virtual size_t replenishHeaderBudget() override;
-    virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) override;
+    virtual size_t replenish_header_budget() override;
+    virtual blackbox_buffer_reserve_status_e reserve_buffer_space(size_t bytes) override;
 private:
     enum state_e {
         INITIAL,
@@ -89,7 +89,7 @@ private:
         READY_TO_LOG
     };
     state_e _state {INITIAL};
-    size_t _largestLogFileNumber {0};
+    size_t _largest_log_file_number {0};
     stm32_spi_pins_t _pins;
     enum { BUFFER_SIZE = 256 };
     std::array<uint8_t, BUFFER_SIZE> _buf {};

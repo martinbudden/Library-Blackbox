@@ -40,22 +40,22 @@ void BlackboxSerialDeviceNull::close()
 {
 }
 
-void BlackboxSerialDeviceNull::eraseAll()
+void BlackboxSerialDeviceNull::erase_all()
 {
 }
 
-bool BlackboxSerialDeviceNull::isErased()
+bool BlackboxSerialDeviceNull::is_erased()
 {
     return true;
 }
 
-bool BlackboxSerialDeviceNull::beginLog()
+bool BlackboxSerialDeviceNull::begin_log()
 {
     resetIndex();
     return true;
 }
 
-bool BlackboxSerialDeviceNull::endLog(bool retainLog) {
+bool BlackboxSerialDeviceNull::end_log(bool retainLog) {
     (void)retainLog;
     return true;
 }
@@ -65,28 +65,28 @@ bool BlackboxSerialDeviceNull::flush()
     return true;
 }
 
-bool BlackboxSerialDeviceNull::flushForce()
+bool BlackboxSerialDeviceNull::flush_force()
 {
     return true;
 }
 
-bool BlackboxSerialDeviceNull::flushForceComplete()
+bool BlackboxSerialDeviceNull::flush_force_complete()
 {
     return true;
 }
 
-bool BlackboxSerialDeviceNull::isDeviceFull()
+bool BlackboxSerialDeviceNull::is_device_full()
 {
     return false;
 }
 
-size_t BlackboxSerialDeviceNull::replenishHeaderBudget()
+size_t BlackboxSerialDeviceNull::replenish_header_budget()
 {
     _sbuf.reset();
     return HEADER_BUDGET_SIZE;
 }
 
-BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceNull::reserveBufferSpace(size_t bytes)
+BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceNull::reserve_buffer_space(size_t bytes)
 {
     (void)bytes;
     return BLACKBOX_RESERVE_SUCCESS;

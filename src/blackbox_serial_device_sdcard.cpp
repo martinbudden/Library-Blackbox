@@ -83,7 +83,7 @@ void BlackboxSerialDeviceSDCard::close()
 #endif
 }
 
-bool BlackboxSerialDeviceSDCard::isDeviceFull()
+bool BlackboxSerialDeviceSDCard::is_device_full()
 {
 #if defined(FRAMEWORK_ARDUINO_ESP32)
     //return (_file.available() > 0) ? false : true;
@@ -147,7 +147,7 @@ size_t BlackboxSerialDeviceSDCard::write(const uint8_t* buf, size_t length)
 static auto constexpr LOGFILE_PREFIX = "LOG";
 static auto constexpr LOGFILE_SUFFIX = "BFL";
 
-void BlackboxSerialDeviceSDCard::enumerateFiles()
+void BlackboxSerialDeviceSDCard::enumerate_files()
 {
 #if defined(FRAMEWORK_ARDUINO_ESP32)
     File dir = SD.open("/logs");
@@ -157,10 +157,10 @@ void BlackboxSerialDeviceSDCard::enumerateFiles()
             //Serial.printf("Entry:%s\r\n", entry.name());
             if (strncmp(entry.name(), LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0) {
                     //&& strncmp(entry.name() + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
-                std::array<char, 6> logSequenceNumberString;
-                memcpy(&logSequenceNumberString[0], entry.name() + 3, 5);
-                logSequenceNumberString[5] = '\0';
-                _largestLogFileNumber = std::max(static_cast<size_t>(atoi(&logSequenceNumberString[0])), _largestLogFileNumber);
+                std::array<char, 6> log_sequenceNumberString;
+                memcpy(&log_sequenceNumberString[0], entry.name() + 3, 5);
+                log_sequenceNumberString[5] = '\0';
+                _largest_log_file_number = std::max(static_cast<size_t>(atoi(&log_sequenceNumberString[0])), _largest_log_file_number);
             }
         }
         entry = dir.openNextFile();
@@ -170,16 +170,16 @@ void BlackboxSerialDeviceSDCard::enumerateFiles()
 #endif
 }
 
-void BlackboxSerialDeviceSDCard::createLogFile()
+void BlackboxSerialDeviceSDCard::create_log_file()
 {
-    ++_largestLogFileNumber;
+    ++_largest_log_file_number;
 
 #if defined(FRAMEWORK_ARDUINO_ESP32)
     // filename is of form LOGnnnnn.BFL
     std::array<char, 20> filename;
     strcpy(&filename[0], "/logs/LOGnnnnn.BFL");
     const int offset = 9;
-    size_t remainder = _largestLogFileNumber;
+    size_t remainder = _largest_log_file_number;
     for (int ii = 4; ii >= 0; --ii) {
         filename[ii + offset] = (remainder % 10) + '0';
         remainder /= 10;
@@ -192,11 +192,11 @@ void BlackboxSerialDeviceSDCard::createLogFile()
 #endif
 }
 
-void BlackboxSerialDeviceSDCard::eraseAll()
+void BlackboxSerialDeviceSDCard::erase_all()
 {
 }
 
-bool BlackboxSerialDeviceSDCard::isErased()
+bool BlackboxSerialDeviceSDCard::is_erased()
 {
     return true;
 }
@@ -205,7 +205,7 @@ bool BlackboxSerialDeviceSDCard::isErased()
 Begin a new log on the SDCard.
 Keep calling until the function returns true (open is complete).
 */
-bool BlackboxSerialDeviceSDCard::beginLog()
+bool BlackboxSerialDeviceSDCard::begin_log()
 {
     switch (_state) {
     case INITIAL:
@@ -219,14 +219,14 @@ bool BlackboxSerialDeviceSDCard::beginLog()
 #if defined(USE_PRINTF)
         Serial.printf("begin:ENUMERATE\r\n");
 #endif
-        enumerateFiles();
+        enumerate_files();
         _state = READY_TO_CREATE_LOG;
         break;
     case READY_TO_CREATE_LOG:
 #if defined(USE_PRINTF)
         Serial.printf("begin:CREATE\r\n");
 #endif
-        createLogFile();
+        create_log_file();
         _state = READY_TO_LOG;
         break;
 
@@ -241,10 +241,10 @@ bool BlackboxSerialDeviceSDCard::beginLog()
     return false;
 }
 
-bool BlackboxSerialDeviceSDCard::endLog(bool retainLog)
+bool BlackboxSerialDeviceSDCard::end_log(bool retainLog)
 {
 #if defined(USE_PRINTF)
-    Serial.printf("SD:endLog\r\n\r\n\r\n");
+    Serial.printf("SD:end_log\r\n\r\n\r\n");
 #endif
     (void)retainLog;
 
@@ -265,12 +265,12 @@ bool BlackboxSerialDeviceSDCard::flush()
     return true;
 }
 
-bool BlackboxSerialDeviceSDCard::flushForce()
+bool BlackboxSerialDeviceSDCard::flush_force()
 {
     return flush();
 }
 
-bool BlackboxSerialDeviceSDCard::flushForceComplete()
+bool BlackboxSerialDeviceSDCard::flush_force_complete()
 {
     return flush();
 }
@@ -279,11 +279,11 @@ bool BlackboxSerialDeviceSDCard::flushForceComplete()
  * Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
  * regular logging iteration. This way we won't hog the CPU by making a gigantic write:
  */
-size_t BlackboxSerialDeviceSDCard::replenishHeaderBudget()
+size_t BlackboxSerialDeviceSDCard::replenish_header_budget()
 {
     //enum { BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET = 256 };
     //const int freeSpace = _file.available();
-    //_headerBudget = MIN(MIN(freeSpace, _headerBudget + blackboxMaxHeaderBytesPerIteration), BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET);
+    //_header_budget = MIN(MIN(freeSpace, _header_budget + blackboxMaxHeaderBytesPerIteration), BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET);
     enum { BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION = 64 };
 #if defined(USE_BLACKBOX_SBUF)
     if (_sbuf.bytes_remaining() <= BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) {
@@ -295,7 +295,7 @@ size_t BlackboxSerialDeviceSDCard::replenishHeaderBudget()
     return BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
 }
 
-BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceSDCard::reserveBufferSpace(size_t bytes)
+BlackboxSerialDevice::blackbox_buffer_reserve_status_e BlackboxSerialDeviceSDCard::reserve_buffer_space(size_t bytes)
 {
     (void)bytes;
     return BLACKBOX_RESERVE_SUCCESS;

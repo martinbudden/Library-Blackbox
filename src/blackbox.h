@@ -31,7 +31,6 @@
 
 class BlackboxCallbacksBase;
 class BlackboxSerialDevice;
-enum flight_log_field_condition_e : uint8_t;
 struct blackbox_simple_field_definition_t;
 struct blackbox_parameter_group_t;
 
@@ -39,11 +38,11 @@ struct blackbox_parameter_group_t;
 class Blackbox {
 public:
     virtual ~Blackbox() = default;
-    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serialDevice) :
-        _serialDevice(serialDevice),
-        _encoder(_serialDevice),
+    Blackbox(uint32_t pidLoopTimeUs, BlackboxCallbacksBase& callbacks, BlackboxSerialDevice& serial_device) :
+        _serial_device(serial_device),
+        _encoder(_serial_device),
         _callbacks(callbacks),
-        _targetPidLooptime_us(pidLoopTimeUs)
+        _target_pid_looptime_us(pidLoopTimeUs)
         {}
 public:
     // Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
@@ -130,12 +129,12 @@ public:
         device_e device;
         mode_e mode;
         bool gps_use_3d_speed;
-        uint32_t fieldsDisabledMask;
+        uint32_t fields_disabled_mask;
     };
     struct start_t {
-        uint16_t debugMode;
-        uint8_t motorCount;
-        uint8_t servoCount;
+        uint16_t debug_mode;
+        uint8_t motor_count;
+        uint8_t servo_count;
     };
     struct xmit_state_t {
         uint32_t headerIndex;
@@ -159,7 +158,7 @@ public:
         bool floatFlag;
     };
     struct log_event_logging_resume_t {
-        uint32_t logIteration;
+        uint32_t log_iteration;
         uint32_t currentTime;
     };
     union log_event_data_u {
@@ -199,126 +198,126 @@ public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
     virtual write_e write_system_information(const blackbox_parameter_group_t& pg) = 0;
 
-    uint32_t update_log(const blackbox_parameter_group_t& pg, uint32_t currentTimeUs); // main loop function, updates the blackbox log
+    uint32_t update_log(const blackbox_parameter_group_t& pg, uint32_t current_time_us); // main loop function, updates the blackbox log
 
-    bool headerReserveBufferSpace();
+    bool header_reserve_buffer_space();
     size_t printfv(const char* fmt, va_list va);
     size_t printf(const char* fmt, ...);
-    size_t headerPrintfHeaderLine(const char* name, const char* fmt, ...);
-    size_t headerPrintf(const char* fmt, ...);
-    void headerWrite(uint8_t value);
-    size_t headerWriteString(const char* s);
+    size_t header_printf_header_line(const char* name, const char* fmt, ...);
+    size_t header_printf(const char* fmt, ...);
+    void header_write(uint8_t value);
+    size_t header_write_string(const char* s);
 
-    write_e writeHeader();
-    write_e writeFieldHeaderMain();
-    write_e writeFieldHeaderSimple(char fieldChar, const blackbox_simple_field_definition_t* fields, int32_t fieldCount);
-    write_e writeFieldHeaderSlow();
-    write_e writeFieldHeaderGPS_H();
-    write_e writeFieldHeaderGPS_G();
+    write_e write_header();
+    write_e write_field_header_main();
+    write_e write_field_header_simple(char field_char, const blackbox_simple_field_definition_t* fields, int32_t field_count);
+    write_e write_field_header_slow();
+    write_e write_field_header_gps_h();
+    write_e write_field_header_gps_g();
 
-    static inline bool isFieldEnabled(uint32_t enabledMask, log_field_select_e field) { return (enabledMask & static_cast<uint32_t>(field)) != 0; }
-    inline bool isFieldEnabled(log_field_select_e field) const { return isFieldEnabled(_logSelectEnabled, field); }
+    static inline bool is_field_enabled(uint32_t enabled_mask, log_field_select_e field) { return (enabled_mask & static_cast<uint32_t>(field)) != 0; }
+    inline bool is_field_enabled(log_field_select_e field) const { return is_field_enabled(_log_select_enabled, field); }
 
-    void buildFieldConditionCache();
-    bool testFieldConditionUncached(flight_log_field_condition_e condition) const;
-    inline bool testFieldCondition(flight_log_field_condition_e condition) const { return _conditionCache.test(condition); }
+    void build_field_condition_cache();
+    bool test_field_condition_uncached(uint8_t condition) const;
+    inline bool test_field_condition(uint8_t condition) const { return _condition_cache.test(condition); }
 
-    bool isOnlyLoggingIFrames() const { return _PInterval == 0; }
-    bool shouldLogPFrame() const { return _PFrameIndex == 0 && _PInterval != 0; }
-    bool shouldLogIFrame() const { return _loopIndex == 0; }
-    bool shouldLogHFrame() const;
+    bool is_only_logging_i_frames() const { return _p_interval == 0; }
+    bool should_log_i_frame() const { return _loop_index == 0; }
+    bool should_log_p_frame() const { return _p_frame_index == 0 && _p_interval != 0; }
+    bool should_log_h_frame() const;
 
-    void logIFrame(); // Intraframe, keyframe
-    void logPFrame(); // Interframe, delta frame
-    void logSFrame(); // Slow frame
-    bool logSFrameIfNeeded(const blackbox_parameter_group_t& pg);
-    void logHFrame(); // GPS home frame
-    void logGFrame(time_us_t currentTimeUs); // GPS frame
-    bool logEvent(log_event_e event, const log_event_data_u* data); // E-frame
-    void logEventArmingBeepIfNeeded(const blackbox_parameter_group_t& pg); // E-frame
-    void logEventFlightModeIfNeeded(const blackbox_parameter_group_t& pg); // E-frame
+    void log_i_frame(); // Intraframe, keyframe
+    void log_p_frame(); // Interframe, delta frame
+    void log_s_frame(); // Slow frame
+    bool log_s_frame_if_needed(const blackbox_parameter_group_t& pg);
+    void log_h_frame(); // GPS home frame
+    void log_g_frame(time_us_t current_time_us); // GPS frame
+    bool log_event(log_event_e event, const log_event_data_u* data); // E-frame
+    void log_event_arming_beep_if_needed(const blackbox_parameter_group_t& pg); // E-frame
+    void log_event_flight_mode_if_needed(const blackbox_parameter_group_t& pg); // E-frame
 
-    void logIteration(time_us_t currentTimeUs, const blackbox_parameter_group_t& pg);
-    void advanceIterationTimers();
-    void resetIterationTimers();
-    void setState(state_e newState);
+    void log_iteration(time_us_t current_time_us, const blackbox_parameter_group_t& pg);
+    void advance_iteration_timers();
+    void reset_iteration_timers();
+    void set_state(state_e newState);
 
     void init(const config_t& config);
-    state_e start(const start_t& startParameters, uint32_t logSelectEnabled);
-    state_e start(const start_t& startParameters);
+    state_e start(const start_t& start_parameters, uint32_t log_select_enabled);
+    state_e start(const start_t& start_parameters);
     state_e start();
     void finish();
-    void endLog();
-    void startInTestMode();
-    void stopInTestMode();
+    void end_log();
+    void start_in_test_mode();
+    void stop_in_test_mode();
 
-    const config_t& getConfig() const { return _config; }
-    uint16_t getDebugMode() const { return _debugMode; }
-    int32_t getIInterval() const { return _IInterval; }
-    int32_t getPInterval() const { return _PInterval; }
-    int32_t getSInterval() const { return _SInterval; }
-    bool mayEditConfig(void);
+    const config_t& get_config() const { return _config; }
+    uint16_t get_debug_mode() const { return _debug_mode; }
+    int32_t get_i_interval() const { return _i_interval; }
+    int32_t get_p_interval() const { return _p_interval; }
+    int32_t get_s_interval() const { return _s_interval; }
+    bool may_edit_config(void);
 
-    uint8_t calculateSampleRate(uint16_t pRatio) const;
-    int calculateP_Denominator(int rateNumerator, int rateDenominator) { return _IInterval * rateNumerator / rateDenominator; }
+    uint8_t calculate_sample_rate(uint16_t p_ration) const;
+    int calculate_p_denominator(int rate_numerator, int rate_denominator) { return _i_interval * rate_numerator / rate_denominator; }
 
-    bool inMotorTestMode(const blackbox_parameter_group_t& pg);
+    bool in_motor_test_mode(const blackbox_parameter_group_t& pg);
 
-    void replenishHeaderBudget();
+    void replenish_header_budget();
 protected:
-    BlackboxSerialDevice& _serialDevice;
+    BlackboxSerialDevice& _serial_device;
     BlackboxEncoder _encoder;
     BlackboxCallbacksBase& _callbacks;
-    size_t _motorCount;
-    size_t _servoCount;
-    uint32_t _logSelectEnabled {};
-    float _motorOutputLow { 0.0F }; //!!TODO allow this to be set
-    uint32_t _resetTime = 0;
-    uint16_t _debugMode;
+    size_t _motor_count;
+    size_t _servo_count;
+    uint32_t _log_select_enabled {};
+    float _motor_output_low { 0.0F }; //!!TODO allow this to be set
+    uint32_t _reset_time = 0;
+    uint16_t _debug_mode;
 
     config_t _config {
         .sample_rate = RATE_ONE,
         .device = DEVICE_SDCARD,
         .mode = MODE_NORMAL,
         .gps_use_3d_speed = false,
-        .fieldsDisabledMask = 0
+        .fields_disabled_mask = 0
     };
-    int32_t _headerBudget {};
-    // _targetPidLooptime_us is 1000 for 1kHz loop, 500 for 2kHz loop etc, _targetPidLooptime_us is rounded for short looptimes
-    uint32_t _targetPidLooptime_us; // time in microseconds
+    int32_t _header_budget {};
+    // _target_pid_looptime_us is 1000 for 1kHz loop, 500 for 2kHz loop etc, _target_pid_looptime_us is rounded for short looptimes
+    uint32_t _target_pid_looptime_us; // time in microseconds
     state_e _state = STATE_DISABLED;
 
-    bool _startedLoggingInTestMode = false;
-    uint32_t _lastArmingBeep = 0;
-    uint32_t _lastFlightModeFlags = 0; // New event tracking of flight modes
+    bool _started_logging_in_test_mode = false;
+    uint32_t _last_arming_beep = 0;
+    uint32_t _last_flight_mode_flags = 0; // New event tracking of flight modes
 // Cache for FLIGHT_LOG_FIELD_CONDITION_* test results:
-    std::bitset<64> _conditionCache {};
+    std::bitset<64> _condition_cache {};
 
     uint32_t _iteration {};
-    int32_t _loopIndex {};
-    int32_t _PFrameIndex {};
-    int32_t _IFrameIndex {}; // use to determine if HFrames should be logged
-    int32_t _SFrameIndex {};
-    int32_t _IInterval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
-    int32_t _PInterval = 0; //!< number of flight loop iterations before logging P-frame
-    int32_t _SInterval = 0;
-    bool _loggedAnyFrames {};
-    // We store voltages in I-frames relative to _vbatReference, which was the voltage when the blackbox was activated.
+    int32_t _loop_index {};
+    int32_t _p_frame_index {};
+    int32_t _i_frame_index {}; // use to determine if HFrames should be logged
+    int32_t _s_frame_index {};
+    int32_t _i_interval = 0; //!< number of flight loop iterations before logging I-frame, typically 32 for 1kHz loop, 64 for 2kHz loop etc
+    int32_t _p_interval = 0; //!< number of flight loop iterations before logging P-frame
+    int32_t _s_interval = 0;
+    bool _logged_any_frames {};
+    // We store voltages in I-frames relative to _vbat_reference, which was the voltage when the blackbox was activated.
     // This helps out since the voltage is only expected to fall from that point and we can reduce our diffs to encode.
-    uint16_t _vbatReference {};
-    xmit_state_t  _xmitState {};
-    state_e _cacheFlushNextState {};
+    uint16_t _vbat_reference {};
+    xmit_state_t  _xmit_state {};
+    state_e _cache_flush_next_state {};
 #if defined(LIBRARY_BLACKBOX_USE_GPS)
-    gps_location_t _gpsHomeLocation {};
-    blackbox_gps_state_t _gpsState {};
+    gps_location_t _gps_home_location {};
+    blackbox_gps_state_t _gps_state {};
 #endif
-    blackbox_slow_state_t _slowState {};
+    blackbox_slow_state_t _slow_state {};
     // Keep a history of length 2, plus a buffer to store the new values into
-    std::array<blackbox_main_state_t, 3> _mainStateHistoryRing {};
-    // These point into _mainStateHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-    std::array<blackbox_main_state_t*, 3> _mainStateHistory {
-        &_mainStateHistoryRing[0],
-        &_mainStateHistoryRing[1],
-        &_mainStateHistoryRing[2]
+    std::array<blackbox_main_state_t, 3> _main_state_history_ring {};
+    // These point into _main_state_history_ring, use them to know where to store history of a given age (0, 1 or 2 generations old)
+    std::array<blackbox_main_state_t*, 3> _main_state_history {
+        &_main_state_history_ring[0],
+        &_main_state_history_ring[1],
+        &_main_state_history_ring[2]
     };
 };

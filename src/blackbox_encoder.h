@@ -33,13 +33,13 @@ class BlackboxSerialDevice;
 
 class BlackboxEncoder {
 public:
-    explicit BlackboxEncoder(BlackboxSerialDevice& serialDevice) :
-        _serialDevice(serialDevice) {}
+    explicit BlackboxEncoder(BlackboxSerialDevice& serial_device) :
+        _serial_device(serial_device) {}
 public:
     static void putc(void* handle, char c);
 
     void beginFrame(uint8_t value);
-    void endFrame();
+    void end_frame();
 
     void write(uint8_t value);
 
@@ -78,5 +78,5 @@ public:
     }
 
 protected:
-    BlackboxSerialDevice& _serialDevice;
+    BlackboxSerialDevice& _serial_device;
 };

@@ -38,22 +38,22 @@ beginFrame and endFrame to support future Huffman compression of frame.
 */
 void BlackboxEncoder::beginFrame(uint8_t value)
 {
-    _serialDevice.write(value);
+    _serial_device.write(value);
 }
 
-void BlackboxEncoder::endFrame()
+void BlackboxEncoder::end_frame()
 {
 }
 
 void BlackboxEncoder::write(uint8_t value)
 {
-    _serialDevice.write(value);
+    _serial_device.write(value);
 }
 
 #if false
 size_t BlackboxEncoder::writeString(const char *s)
 {
-    return _serialDevice.write(reinterpret_cast<const uint8_t*>(s), strlen(s));
+    return _serial_device.write(reinterpret_cast<const uint8_t*>(s), strlen(s));
 }
 #endif
 

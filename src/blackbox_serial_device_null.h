@@ -38,29 +38,29 @@ public:
 
     virtual bool open() override;
     virtual void close() override;
-    virtual bool isDeviceFull() override;
+    virtual bool is_device_full() override;
 
-    virtual void eraseAll() override;
-    virtual bool isErased() override;
+    virtual void erase_all() override;
+    virtual bool is_erased() override;
 
-    virtual bool beginLog() override;
-    virtual bool endLog(bool retainLog) override;
+    virtual bool begin_log() override;
+    virtual bool end_log(bool retainLog) override;
 
     virtual bool flush() override;
-    virtual bool flushForce() override;
-    virtual bool flushForceComplete() override;
+    virtual bool flush_force() override;
+    virtual bool flush_force_complete() override;
 
-    virtual size_t replenishHeaderBudget() override;
-    virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) override;
+    virtual size_t replenish_header_budget() override;
+    virtual blackbox_buffer_reserve_status_e reserve_buffer_space(size_t bytes) override;
 
 // debugging functions
     void resetIndex();
     void fill(uint8_t value);
     uint8_t operator[](size_t index) const { return _output[index]; }
-    const uint8_t* getBuf() const { return &_buf[0]; }
-    const char* getBufChar() const { return reinterpret_cast<const char*>(&_buf[0]); }
-    const uint8_t* getOutput() const { return &_output[0]; }
-    const char* getOutputChar() const { return reinterpret_cast<const char*>(&_output[0]); }
+    const uint8_t* get_buf() const { return &_buf[0]; }
+    const char* get_buf_char() const { return reinterpret_cast<const char*>(&_buf[0]); }
+    const uint8_t* get_output() const { return &_output[0]; }
+    const char* get_output_char() const { return reinterpret_cast<const char*>(&_output[0]); }
 public:
     size_t _index = 0;
     enum { HEADER_BUDGET_SIZE = 64 };

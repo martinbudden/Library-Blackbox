@@ -43,18 +43,18 @@ public:
 
     virtual bool open() = 0;
     virtual void close() = 0;
-    virtual bool isDeviceFull() = 0;
+    virtual bool is_device_full() = 0;
 
-    virtual void eraseAll() = 0;
-    virtual bool isErased() = 0;
+    virtual void erase_all() = 0;
+    virtual bool is_erased() = 0;
 
-    virtual bool beginLog() = 0;
-    virtual bool endLog(bool retainLog) = 0;
+    virtual bool begin_log() = 0;
+    virtual bool end_log(bool retainLog) = 0;
 
     virtual bool flush() = 0;
-    virtual bool flushForce() = 0;
-    virtual bool flushForceComplete() = 0;
+    virtual bool flush_force() = 0;
+    virtual bool flush_force_complete() = 0;
 
-    virtual size_t replenishHeaderBudget() = 0;
-    virtual blackbox_buffer_reserve_status_e reserveBufferSpace(size_t bytes) = 0;
+    virtual size_t replenish_header_budget() = 0;
+    virtual blackbox_buffer_reserve_status_e reserve_buffer_space(size_t bytes) = 0;
 };

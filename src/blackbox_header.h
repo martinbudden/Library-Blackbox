@@ -31,8 +31,8 @@
 // simple fields, used for S-Frames and H-Frames
 struct blackbox_simple_field_definition_t {
     const char *name;
-    int8_t fieldNameIndex;
-    uint8_t isSigned;
+    int8_t field_name_index;
+    uint8_t is_signed;
     uint8_t predict;
     uint8_t encode;
 };
@@ -40,23 +40,23 @@ struct blackbox_simple_field_definition_t {
 // conditional fields, used for G-Frames
 struct blackbox_conditional_field_definition_t {
     const char *name;
-    int8_t fieldNameIndex;
-    uint8_t isSigned;
+    int8_t field_name_index;
+    uint8_t is_signed;
     uint8_t predict;
     uint8_t encode;
-    flight_log_field_condition_e condition;
+    uint8_t condition;
 };
 
 // delta fields, used for I-Frames and P-frames
 struct blackbox_delta_field_definition_t {
     const char* name;
-    int8_t fieldNameIndex;
-    uint8_t isSigned;
-    uint8_t Ipredict;
-    uint8_t Iencode;
-    uint8_t Ppredict;
-    uint8_t Pencode;
-    flight_log_field_condition_e condition; // Decide whether this field should appear in the log
+    int8_t field_name_index;
+    uint8_t is_signed;
+    uint8_t i_predict;
+    uint8_t i_encode;
+    uint8_t p_predict;
+    uint8_t p_encode;
+    uint8_t condition; // Decide whether this field should appear in the log
 };
 #pragma pack(pop)
 

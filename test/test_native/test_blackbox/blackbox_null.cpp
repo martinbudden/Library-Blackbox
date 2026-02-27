@@ -7,14 +7,14 @@
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) case __COUNTER__: \
-                                                headerPrintfHeaderLine(name, format, __VA_ARGS__); \
+                                                header_printf_header_line(name, format, __VA_ARGS__); \
                                                 break;
 #endif
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 
 /*!
-Transmit a portion of the system information headers. Call the first time with _xmitState.headerIndex == 0.
+Transmit a portion of the system information headers. Call the first time with _xmit_state.headerIndex == 0.
 Returns true iff transmission is complete, otherwise call again later to continue transmission.
 */
 Blackbox::write_e BlackboxNull::write_system_information(const blackbox_parameter_group_t& pg)
@@ -28,19 +28,19 @@ Blackbox::write_e BlackboxNull::write_system_information(const blackbox_paramete
 
     // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
     enum { LONGEST_LINE_LENGTH = 64 };
-    if (_serialDevice.reserveBufferSpace(LONGEST_LINE_LENGTH) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
+    if (_serial_device.reserve_buffer_space(LONGEST_LINE_LENGTH) != BlackboxSerialDevice::BLACKBOX_RESERVE_SUCCESS) {
         return WRITE_NOT_COMPLETE;
     }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-    switch (_xmitState.headerIndex) {
+    switch (_xmit_state.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "ProtoFlight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    "ProtoFlight", "0.0.1", "-", "alpha");
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                "Jun 28 2025", "00:00:00");
         BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              "0000-01-01T00:00:00.000");
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      "NullCraft");
-        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      _IInterval);
-        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      _PInterval);
+        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      _i_interval);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      _p_interval);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     1000);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     2000);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     BlackboxEncoder::castFloatBytesToInt(1.0F));
@@ -58,6 +58,6 @@ Blackbox::write_e BlackboxNull::write_system_information(const blackbox_paramete
     }
 // NOLINTEND(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
-    _xmitState.headerIndex++;
+    _xmit_state.headerIndex++;
         return WRITE_NOT_COMPLETE;
 }
