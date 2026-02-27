@@ -134,33 +134,33 @@ static const blackbox_delta_field_definition_t blackboxMainFields[]={ // NOLINT(
     {.name="axisS",         .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_PITCH)},
     {.name="axisS",         .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(PID_S_YAW)},
     // rc_commands are encoded together as a group in P-frames:
-    {.name="rc_command",     .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rc_command",     .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rc_command",     .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
-    {.name="rc_command",     .field_name_index=3,  .is_signed=UNSIGNED, .i_predict=PREDICT(0),   .i_encode=ENCODING(UNSIGNED_VB), .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",    .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",    .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",    .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
+    {.name="rc_command",    .field_name_index=3,  .is_signed=UNSIGNED, .i_predict=PREDICT(0),   .i_encode=ENCODING(UNSIGNED_VB), .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(RC_COMMANDS)},
     // setpoint - define 4 fields like rc_command to use the same encoding. setpoint[4] contains the mixer throttle
     {.name="setpoint",      .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
     {.name="setpoint",      .field_name_index=3,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_4S16),.condition=CONDITION(SETPOINT)},
-    {.name="vbat_latest",    .field_name_index=-1, .is_signed=UNSIGNED, .i_predict=PREDICT(VBATREF),.i_encode=ENCODING(NEG_14BIT),.p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
-    {.name="amperage_latest",.field_name_index=-1, .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_CURRENT)},
+    {.name="vbat_latest",   .field_name_index=-1, .is_signed=UNSIGNED, .i_predict=PREDICT(VBATREF),.i_encode=ENCODING(NEG_14BIT),.p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_VOLTAGE)},
+    {.name="amperage_latest",.field_name_index=-1,.is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BATTERY_CURRENT)},
 #if defined(LIBRARY_BLACKBOX_USE_MAGNETOMETER)
-    {.name="mag_adc",        .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
-    {.name="mag_adc",        .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
-    {.name="mag_adc",        .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",       .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",       .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
+    {.name="mag_adc",       .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(MAGNETOMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_BAROMETER)
-    {.name="baro_altitude",       .field_name_index=-1, .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BAROMETER)},
+    {.name="baro_altitude", .field_name_index=-1, .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(BAROMETER)},
 #endif
 #if defined(LIBRARY_BLACKBOX_USE_RANGEFINDER)
-    {.name="surface_raw",    .field_name_index=-1, .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(RANGEFINDER)},
+    {.name="surface_raw",   .field_name_index=-1, .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(RANGEFINDER)},
 #endif
     {.name="rssi",          .field_name_index=-1, .is_signed=UNSIGNED, .i_predict=PREDICT(0),   .i_encode=ENCODING(UNSIGNED_VB), .p_predict=PREDICT(PREVIOUS),    .p_encode=ENCODING(TAG8_8SVB),.condition=CONDITION(RSSI)},
     // Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact
-    {.name="gyro_adc",       .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
-    {.name="gyro_adc",       .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
-    {.name="gyro_adc",       .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",      .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",      .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
+    {.name="gyro_adc",      .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO)},
     {.name="gyroUnfilt",    .field_name_index=0,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
     {.name="gyroUnfilt",    .field_name_index=1,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
     {.name="gyroUnfilt",    .field_name_index=2,  .is_signed=SIGNED,   .i_predict=PREDICT(0),   .i_encode=ENCODING(SIGNED_VB),   .p_predict=PREDICT(AVERAGE_2),   .p_encode=ENCODING(SIGNED_VB),.condition=CONDITION(GYRO_UNFILTERED)},
