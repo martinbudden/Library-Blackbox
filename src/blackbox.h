@@ -32,7 +32,7 @@
 class BlackboxCallbacksBase;
 class BlackboxSerialDevice;
 struct blackbox_simple_field_definition_t;
-struct blackbox_parameter_group_t;
+struct blackbox_context_t;
 
 
 class Blackbox {
@@ -196,9 +196,9 @@ public:
     };
 public:
     enum write_e { WRITE_COMPLETE, WRITE_NOT_COMPLETE };
-    virtual write_e write_system_information(const blackbox_parameter_group_t& pg) = 0;
+    virtual write_e write_system_information(const blackbox_context_t& pg) = 0;
 
-    uint32_t update_log(const blackbox_parameter_group_t& pg, uint32_t current_time_us); // main loop function, updates the blackbox log
+    uint32_t update_log(const blackbox_context_t& pg, uint32_t current_time_us); // main loop function, updates the blackbox log
 
     bool header_reserve_buffer_space();
     size_t printfv(const char* fmt, va_list va);
@@ -230,14 +230,14 @@ public:
     void log_iframe(); // Intraframe, keyframe
     void log_pframe(); // Interframe, delta frame
     void log_sframe(); // Slow frame
-    bool log_sframe_if_needed(const blackbox_parameter_group_t& pg);
+    bool log_sframe_if_needed(const blackbox_context_t& pg);
     void log_hframe(); // GPS home frame
     void log_gframe(time_us_t current_time_us); // GPS frame
     bool log_event(log_event_e event, const log_event_data_u* data); // E-frame
-    void log_event_arming_beep_if_needed(const blackbox_parameter_group_t& pg); // E-frame
-    void log_event_flight_mode_if_needed(const blackbox_parameter_group_t& pg); // E-frame
+    void log_event_arming_beep_if_needed(const blackbox_context_t& pg); // E-frame
+    void log_event_flight_mode_if_needed(const blackbox_context_t& pg); // E-frame
 
-    void log_iteration(time_us_t current_time_us, const blackbox_parameter_group_t& pg);
+    void log_iteration(time_us_t current_time_us, const blackbox_context_t& pg);
     void advance_iteration_timers();
     void reset_iteration_timers();
     void set_state(state_e new_state);
@@ -261,7 +261,7 @@ public:
     uint8_t calculate_sample_rate(uint16_t p_ration) const;
     int calculate_p_denominator(int rate_numerator, int rate_denominator) { return _iinterval * rate_numerator / rate_denominator; }
 
-    bool in_motor_test_mode(const blackbox_parameter_group_t& pg);
+    bool in_motor_test_mode(const blackbox_context_t& pg);
 
     void replenish_header_budget();
 protected:

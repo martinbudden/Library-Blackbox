@@ -30,15 +30,15 @@ class Blackbox;
 class BlackboxCallbacksBase;
 class MessageQueueBase;
 
-struct blackbox_parameter_group_t;
+struct blackbox_context_t;
 
 
 class BlackboxTask : public TaskBase {
 public:
-    BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group);
+    BlackboxTask(uint32_t task_interval_microseconds, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_context_t& context);
 public:
-    static BlackboxTask* create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
-    static BlackboxTask* create_task(Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_parameter_group_t& parameter_group, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
+    static BlackboxTask* create_task(task_info_t& task_info, Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_context_t& context, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
+    static BlackboxTask* create_task(Blackbox& blackbox, MessageQueueBase& message_queue, blackbox_context_t& context, uint8_t priority, uint32_t core, uint32_t task_interval_microseconds);
 private:
     // class is not copyable or moveable
     BlackboxTask(const BlackboxTask&) = delete;
@@ -54,5 +54,5 @@ private:
     uint32_t _task_interval_milliseconds;
     Blackbox& _blackbox;
     MessageQueueBase& _message_queue;
-    blackbox_parameter_group_t& _parameter_group;
+    blackbox_context_t& _context;
 };

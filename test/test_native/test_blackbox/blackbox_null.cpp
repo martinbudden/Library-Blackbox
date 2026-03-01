@@ -17,7 +17,7 @@
 Transmit a portion of the system information headers. Call the first time with _xmit_state.header_index == 0.
 Returns true iff transmission is complete, otherwise call again later to continue transmission.
 */
-Blackbox::write_e BlackboxNull::write_system_information(const blackbox_parameter_group_t& pg)
+Blackbox::write_e BlackboxNull::write_system_information(const blackbox_context_t& pg)
 {
     (void)pg;
 

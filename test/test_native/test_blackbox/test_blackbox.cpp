@@ -14,10 +14,10 @@ void tearDown()
 {
 }
 
-struct blackbox_parameter_group_t {
+struct blackbox_context_t {
 };
 
-static blackbox_parameter_group_t pg;
+static blackbox_context_t pg;
 
 
 class BlackboxTest : public BlackboxNull {
